@@ -10,7 +10,6 @@
   --color-blush-200: #F2D2DA;
   --color-blush-300: #E6AEC0;
   --color-blush-400: #D97E8B;
-  --color-blush-50: #FDF7F8;
   --color-blush-600: #B95368;
   --color-blush-800: #7E3B46;
 
@@ -49,6 +48,16 @@
   }
   
   .text-gradient {
+    background: linear-gradient(to right, var(--color-naranja-500), var(--color-blush-400));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .premium-shadow {
+    shadow: 0 25px 50px -12px rgba(126, 59, 70, 0.15);
+  }
+
   @keyframes fade-in-up {
     from {
       opacity: 0;
@@ -62,5 +71,33 @@
 
   .reveal {
     animation: fade-in-up 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  .animate-float {
+    animation: float 20s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: scale(1.05) translateY(0); }
+    50% { transform: scale(1.1) translateY(-20px); }
+  }
+
+  @keyframes slideUpFade {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .hero-text-mobile {
+    font-size: clamp(3rem, 10vw, 8.5rem) !important;
   }
 }
