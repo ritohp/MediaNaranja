@@ -1,27 +1,40 @@
 @echo off
+color 06
 echo 🍊 Optimizando Media Naranja para Despliegue...
 cd /d "C:\Users\LAPTOP-HP\Documents\Media Naranja"
 
-:: Limpiar errores previos
-echo 🧹 Limpiando rastros...
+echo 🧹 Limpiando rastros previos...
 if exist "public\.git" rmdir /s /q "public\.git"
-if exist ".git" rmdir /s /q ".git"
 
-:: Configurar Identidad
-echo 👤 Firmando como Media Naranja...
-git config --global user.email "ritohp@gmail.com"
-git config --global user.name "ritohp"
+echo 👤 Configurando Identidad...
+git config user.email "ritohp@gmail.com"
+git config user.name "ritohp"
 
-:: Inicializar y Subir
-echo 🚀 Lanzando a la nube...
+echo 📦 Preparando archivos...
 git init
 git add .
-git commit -m "Media Naranja: Lanzamiento Boutique Premium"
+git commit -m "Fix: Ignore TS errors and cleanup imports for Vercel"
+
+echo 🚀 Intentando subir a GitHub...
+echo (Si se detiene aqui, es que falta tu acceso de GitHub)
+git remote add origin https://github.com/ritohp/MediaNaranja.git 2>nul
+git remote set-url origin https://github.com/ritohp/MediaNaranja.git
 git branch -M main
-git remote add origin https://github.com/ritohp/MediaNaranja.git
+
+:: Intentar Push y capturar error
 git push -u origin main --force
 
-echo.
-echo ✅ ¡PROCESO COMPLETADO! 🍊
-echo Ahora ve a Vercel.com y conecta este repositorio.
+if %errorlevel% neq 0 (
+    color 0C
+    echo.
+    echo ❌ ERROR DETECTADO: El codigo NO se subio a GitHub.
+    echo Por favor, lee los mensajes de arriba. 
+    echo Si te pide "Username" o "Password", es que necesitas un Token.
+) else (
+    color 0A
+    echo.
+    echo ✅ ¡EXITO TOTAL! El codigo ya esta en la nube.
+    echo Revisa Vercel en 1 minuto.
+)
+
 pause
