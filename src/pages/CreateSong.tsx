@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Music, Sparkles, BookOpen, User, Mic, Target, CalendarDays, Lock, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -14,45 +14,55 @@ export default function CreateSong() {
   const [feedback, setFeedback] = useState('');
   const [currentSongId, setCurrentSongId] = useState<string | null>(null);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'completed' | 'error'>('idle');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
-    nombreDestinatario: '',
-    edad: '',
-    relacion: '',
-    relacionOtro: '',
-    apodos: '',
-    ocasion: '',
-    ocasionOtro: '',
-    fechaEntrega: '',
-    fechaEspecial: '',
-    comoSeConocieron: '',
-    momentosImportantes: '',
-    queAdmiras: '',
-    queSientes: '',
-    anecdota: '',
-    algoQueDecirle: '',
-    tresPalabrasPersona: '',
-    tresPalabrasRelacion: '',
-    queHagaSentir: '',
-    queHagaSentirOtro: '',
-    genero: '',
-    generoOtro: '',
-    cancionReferencia: '',
-    frasesEspecificas: '',
-    palabrasNo: '',
-    idioma: 'espanol',
-    nombreInicioFinal: '',
-    narracionOMusical: 'musical',
-    mensajeHablado: '',
-    detallePerfecto: ''
+  // ESTADO DEL FORMULARIO CON CARGA DESDE LOCALSTORAGE
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('mn_draft_song');
+    return saved ? JSON.parse(saved) : {
+      nombreDestinatario: '',
+      edad: '',
+      relacion: '',
+      relacionOtro: '',
+      apodos: '',
+      ocasion: '',
+      ocasionOtro: '',
+      fechaEntrega: '',
+      fechaEspecial: '',
+      comoSeConocieron: '',
+      momentosImportantes: '',
+      queAdmiras: '',
+      queSientes: '',
+      anecdota: '',
+      algoQueDecirle: '',
+      tresPalabrasPersona: '',
+      tresPalabrasRelacion: '',
+      queHagaSentir: '',
+      queHagaSentirOtro: '',
+      genero: '',
+      generoOtro: '',
+      cancionReferencia: '',
+      frasesEspecificas: '',
+      palabrasNo: '',
+      idioma: 'espanol',
+      nombreInicioFinal: '',
+      narracionOMusical: 'musical',
+      mensajeHablado: '',
+      detallePerfecto: ''
+    };
   });
 
   const [lyrics, setLyrics] = useState('');
+
+  // AUTO-GUARDADO: Guardar en localStorage cada vez que el form cambie
+  useEffect(() => {
+    localStorage.setItem('mn_draft_song', JSON.stringify(formData));
+  }, [formData]);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -72,8 +82,12 @@ export default function CreateSong() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setTokens(null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        setShowLoginModal(false);
+      } else {
+        setTokens(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -113,24 +127,26 @@ export default function CreateSong() {
     if (!email || !password) return;
     setIsLoginLoading(true);
     
-    // Intentar Login
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     
     if (signInError) {
-      // Si falla, intentar Registro
       const { error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError) {
         alert("Error: " + signUpError.message);
       } else {
-        alert("¡Cuenta creada con éxito! Ya puedes componer.");
+        alert("¡Cuenta casi lista! Por favor, confirma tu correo para crear tu canción. No te preocupes, tus datos están guardados.");
       }
     }
-    
     setIsLoginLoading(false);
   };
 
   const handleStartLyrics = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (tokens !== null && tokens <= 0) {
       alert("❌ No tienes tokens suficientes. ¡Adquiere más!");
       return;
@@ -154,7 +170,11 @@ export default function CreateSong() {
         .select()
         .single();
       
-      if (data) setCurrentSongId(data.id);
+      if (data) {
+        setCurrentSongId(data.id);
+        // LIMPIAR LOCALSTORAGE al tener éxito inicial
+        localStorage.removeItem('mn_draft_song');
+      }
       setStep(2);
       window.scrollTo(0, 0);
     } catch (error: any) {
@@ -195,7 +215,6 @@ export default function CreateSong() {
     window.scrollTo(0, 0);
 
     try {
-      // 1. Descontar Token en Supabase
       const { error: tokenError } = await supabase
         .from('mn_profiles')
         .update({ tokens_balance: tokens! - 1 })
@@ -203,31 +222,26 @@ export default function CreateSong() {
       
       if (tokenError) throw new Error("Error al procesar el token.");
 
-      // 2. Solicitar música a Kie.ai
-      const isTestMode = false; // MODO PRODUCCIÓN ACTIVO 🚀
+      const isTestMode = false;
       const { generateMusicTask, checkMusicStatus } = await import('../services/music');
       
       let taskId;
       if (isTestMode) {
         taskId = "mock-task-id-" + Date.now();
-        console.log("🛠️ MODO PRUEBA ACTIVO: No se gastarán créditos reales.");
       } else {
         taskId = await generateMusicTask(lyrics, formData.genero, `Canción para ${formData.nombreDestinatario}`);
       }
 
-      // 3. Actualizar la canción en la DB con el taskId
       if (currentSongId) {
         await supabase.from('mn_songs')
           .update({ task_id: taskId, status: 'generating_music' })
           .eq('id', currentSongId);
       }
 
-      // 4. Polling (Esperar resultado)
       let attempts = 0;
-      const maxAttempts = 100; // Hasta 10 minutos de paciencia por canción
+      const maxAttempts = 100;
       const pollInterval = setInterval(async () => {
         attempts++;
-        
         let response;
         if (isTestMode) {
           response = { response: { sunoData: [{ audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }] } };
@@ -235,7 +249,6 @@ export default function CreateSong() {
           try {
             response = await checkMusicStatus(taskId);
           } catch (e) {
-            console.warn("Reintentando consulta de estado...");
             return;
           }
         }
@@ -246,20 +259,14 @@ export default function CreateSong() {
           const song = sunoData[0];
           if (song.audioUrl) {
             clearInterval(pollInterval);
-            
-            // --- LLAMADA AL TRATAMIENTO DE AUDIO REAL ---
             try {
               let finalUrl = song.audioUrl;
-              
               const { data: treatmentData } = await supabase.functions.invoke('process-audio', {
                 body: { originalUrl: song.audioUrl, songId: currentSongId, taskId }
               });
-              
               finalUrl = treatmentData?.demoUrl || song.audioUrl;
-              
               setAudioUrl(finalUrl);
               setGenerationStatus('completed');
-              
               if (currentSongId) {
                 await supabase.from('mn_songs').update({ 
                   audio_url: song.audioUrl,
@@ -268,25 +275,19 @@ export default function CreateSong() {
                 }).eq('id', currentSongId);
               }
             } catch (err) {
-              console.error("Error en tratamiento:", err);
               setAudioUrl(song.audioUrl);
               setGenerationStatus('completed');
             }
-            
             fetchProfile(user!.id);
           }
         }
-
         if (attempts >= maxAttempts) {
           clearInterval(pollInterval);
           setGenerationStatus('error');
         }
       }, isTestMode ? 1000 : 7000); 
-
     } catch (error) {
-      console.error(error);
       setGenerationStatus('error');
-      alert("Ocurrió un error al iniciar la grabación.");
     }
   };
 
@@ -296,51 +297,49 @@ export default function CreateSong() {
     </div>
   );
 
-  if (!user) {
-    return (
-      <div className="relative min-h-[70vh] flex flex-col items-center justify-center py-16 px-6">
-        <div className="max-w-md w-full bg-white p-10 rounded-[2rem] shadow-xl text-center border border-blush-100 relative z-10">
-          <div className="w-20 h-20 bg-blush-50 text-blush-400 rounded-full flex items-center justify-center mx-auto mb-6"><Lock size={40} /></div>
-          <h2 className="text-3xl font-serif text-blush-800 mb-4">Área Exclusiva</h2>
-          <p className="text-ink-600/70 mb-8 font-light">Introduce tu email para enviarte un acceso mágico y empezar a componer.</p>
-          
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <input 
-              type="email" 
-              placeholder="tu@email.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-4 bg-blush-50 border border-blush-100 rounded-xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all text-center font-medium"
-              required
-            />
-            <input 
-              type="password" 
-              placeholder="Tu contraseña (mín 6 caracteres)" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-4 bg-blush-50 border border-blush-100 rounded-xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all text-center font-medium"
-              required
-            />
-            <button 
-              type="submit" 
-              disabled={isLoginLoading}
-              className="w-full py-4 bg-naranja-500 text-white rounded-xl font-bold tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isLoginLoading ? <RefreshCw className="animate-spin" size={20} /> : "ENTRAR / REGISTRARSE"}
-            </button>
-          </form>
-          
-          <p className="mt-6 text-[10px] text-blush-400 uppercase tracking-widest font-bold">Sin contraseñas, directo a tu bandeja</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="relative min-h-[80vh] flex flex-col items-center py-16 px-4 md:px-6">
+      
+      {showLoginModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-ink-950/40 backdrop-blur-md" onClick={() => setShowLoginModal(false)}></div>
+          <div className="max-w-md w-full bg-white p-10 rounded-[2.5rem] shadow-2xl text-center border border-blush-100 relative z-10 animate-in zoom-in-95 duration-300">
+            <button onClick={() => setShowLoginModal(false)} className="absolute top-6 right-6 text-blush-400 hover:text-naranja-500 transition-colors">✕</button>
+            <div className="w-16 h-16 bg-blush-50 text-blush-400 rounded-full flex items-center justify-center mx-auto mb-6"><Lock size={32} /></div>
+            <h2 className="text-3xl font-serif text-blush-800 mb-2">¡Casi Listo!</h2>
+            <p className="text-ink-600/70 mb-8 text-sm leading-relaxed">Solo entra con tu email para procesar tu canción. <br/><span className="text-naranja-500 font-bold italic">¡No perderás nada de lo que escribiste!</span></p>
+            
+            <form onSubmit={handleEmailLogin} className="space-y-4">
+              <input 
+                type="email" 
+                placeholder="tu@email.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-4 bg-blush-50 border border-blush-200 rounded-xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all text-center font-medium"
+                required
+              />
+              <input 
+                type="password" 
+                placeholder="Escoge una contraseña" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-4 bg-blush-50 border border-blush-200 rounded-xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all text-center font-medium"
+                required
+              />
+              <button 
+                type="submit" 
+                disabled={isLoginLoading}
+                className="w-full py-4 bg-naranja-500 text-white rounded-xl font-bold tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoginLoading ? <RefreshCw className="animate-spin" size={20} /> : "ENTRAR / REGISTRARSE"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl w-full bg-white/90 backdrop-blur-md p-6 md:p-12 rounded-[2rem] shadow-2xl border border-blush-50 relative z-10">
         
-        {/* PASO 1: FORMULARIO DETALLADO */}
         {step === 1 && (
           <form onSubmit={handleStartLyrics} className="space-y-12">
             <div className="text-center mb-12">
@@ -349,7 +348,6 @@ export default function CreateSong() {
               <p className="text-ink-600/70 text-lg font-light max-w-2xl mx-auto">Cuéntanos cada detalle. Entre más información, más mágica será la letra.</p>
             </div>
 
-            {/* SECCIÓN 2: Los Protagonistas */}
             <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
               <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><User size={24} className="text-naranja-500"/> 💝 ¿Para quién es la canción?</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -378,7 +376,6 @@ export default function CreateSong() {
               </div>
             </div>
 
-            {/* SECCIÓN 3: Motivo */}
             <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
               <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><CalendarDays size={24} className="text-naranja-500"/> 🎯 Motivo</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -400,7 +397,6 @@ export default function CreateSong() {
               </div>
             </div>
 
-            {/* SECCIÓN 4: Historia */}
             <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
               <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><BookOpen size={24} className="text-naranja-500"/> 💭 La Historia (Clave)</h3>
               <div className="space-y-6">
@@ -425,7 +421,6 @@ export default function CreateSong() {
               </div>
             </div>
 
-            {/* SECCIÓN 5: Estilo */}
             <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
               <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><Target size={24} className="text-naranja-500"/> 🎶 Estilo Musical</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -459,7 +454,6 @@ export default function CreateSong() {
           </form>
         )}
 
-        {/* PASO 2: TALLER POÉTICO */}
         {step === 2 && (
           <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
             <button onClick={() => setStep(1)} className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-8"><ArrowLeft size={16} /> Volver a los datos</button>
@@ -508,7 +502,6 @@ export default function CreateSong() {
           </div>
         )}
 
-        {/* PASO 3: ESTUDIO DE GRABACIÓN / RESULTADO */}
         {step === 3 && (
           <div className="text-center py-16 animate-in zoom-in duration-700">
             {generationStatus === 'generating' ? (
@@ -537,7 +530,6 @@ export default function CreateSong() {
               </>
             ) : generationStatus === 'completed' && audioUrl ? (
               <div className="max-w-2xl mx-auto space-y-10 relative">
-                {/* Modal Premium de Final de Demo */}
                 {showDemoModal && (
                   <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
                     <div className="absolute inset-0 bg-ink-950/40 backdrop-blur-md" onClick={() => setShowDemoModal(false)}></div>
@@ -567,8 +559,6 @@ export default function CreateSong() {
                     </div>
                   </div>
                 )}
-
-
                 <div className="w-24 h-24 bg-naranja-50 text-naranja-500 rounded-full flex items-center justify-center mx-auto mb-6 relative">
                   <Music size={40} />
                   <div className="absolute -bottom-1 -right-1 bg-white p-2 rounded-full shadow-lg text-amber-500">
@@ -582,18 +572,15 @@ export default function CreateSong() {
                     Versión Demo (1 Minuto con Marca de Agua)
                   </div>
                 </div>
-                
                 <div className="bg-white p-8 md:p-12 rounded-[2.5rem] border-2 border-naranja-100 shadow-xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-5">
                     <Music size={120} />
                   </div>
-                  
                   <audio 
                     controls 
                     controlsList="nodownload" 
                     onContextMenu={(e) => e.preventDefault()}
                     onTimeUpdate={(e) => {
-                      // Protección Nativa: 1 Minuto (60 segundos)
                       if (e.currentTarget.currentTime >= 60) {
                         e.currentTarget.pause();
                         e.currentTarget.currentTime = 0;
@@ -605,7 +592,6 @@ export default function CreateSong() {
                     <source src={audioUrl} type="audio/mpeg" />
                     Tu navegador no soporta el reproductor de audio.
                   </audio>
-                  
                   <div className="space-y-4 relative z-10">
                     <button 
                       onClick={() => alert("¡Llevándote a la pasarela de pago para desbloquear!")}
@@ -613,13 +599,11 @@ export default function CreateSong() {
                     >
                       DESBLOQUEAR CANCIÓN COMPLETA <Sparkles size={20} />
                     </button>
-                    
                     <p className="text-[10px] text-ink-400 font-medium">
                       Al comprar recibirás la versión original de alta fidelidad, de duración completa y sin voces de marca de agua.
                     </p>
                   </div>
                 </div>
-
                 <div className="pt-4">
                    <button onClick={() => setStep(1)} className="text-blush-400 text-xs font-bold hover:text-naranja-500 transition-all uppercase tracking-widest underline decoration-blush-200">
                     ¿PROBAR CON OTRA LETRA?
@@ -645,7 +629,6 @@ export default function CreateSong() {
             )}
           </div>
         )}
-
       </div>
     </div>
   );
