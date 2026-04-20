@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Camera, Upload, ArrowLeft, Search, Bell, ThumbsUp, ThumbsDown, Download, Loader2, Save, Trash2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabase';
 
@@ -59,7 +59,7 @@ export default function MemoryCustomizer() {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const MAX = 1100; // Optimizado para web
+          const MAX = 1100;
           if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
           else if (height > MAX) { width *= MAX / height; height = MAX; }
           canvas.width = width;
@@ -97,7 +97,6 @@ export default function MemoryCustomizer() {
       const { data, error } = await supabase.storage
         .from('memories')
         .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
-      
       if (error) throw error;
       return supabase.storage.from('memories').getPublicUrl(path).data.publicUrl;
     } catch (err: any) {
@@ -107,28 +106,27 @@ export default function MemoryCustomizer() {
 
   const saveMemory = async () => {
     if (!user) { alert("Sesión expirada. Por favor, vuelve a entrar."); return; }
-    if (!mainPhoto) { alert("Falta la foto principal."); return; }
+    if (!mainPhoto) { alert("Sube la foto principal."); return; }
 
     setIsSaving(true);
     const area = document.getElementById('capture-area');
     
     try {
-      if (!area) throw new Error("No se encontró el diseño para capturar.");
-      await new Promise(r => setTimeout(r, 1000));
+      if (!area) throw new Error("No se pudo encontrar el área de diseño.");
       
-      const canvas = await html2canvas(area, { 
-        scale: 1.5, 
-        useCORS: true,
+      // 1. Generar Captura Maestra con html-to-image (MÁS MODERNO Y FIEL)
+      await new Promise(r => setTimeout(r, 1000));
+      const masterShotDataUrl = await toJpeg(area, { 
+        quality: 0.95,
         backgroundColor: '#000000',
-        onclone: (clonedDoc) => {
-          const el = clonedDoc.getElementById('capture-area');
-          if (el) { el.style.width = '550px'; el.style.height = '778px'; }
-        }
+        width: 550,
+        height: 778,
+        pixelRatio: 2
       });
-      const masterShotBase64 = canvas.toDataURL('image/jpeg', 0.85);
 
+      // 2. Subir Todo
       const timestamp = Date.now();
-      const masterUrl = await uploadBase64(masterShotBase64, `${user.id}/${timestamp}_master.jpg`);
+      const masterUrl = await uploadBase64(masterShotDataUrl, `${user.id}/${timestamp}_master.jpg`);
       const mainUrl = await uploadBase64(mainPhoto, `${user.id}/${timestamp}_main.jpg`);
       
       const galleryUrls = [];
@@ -156,12 +154,12 @@ export default function MemoryCustomizer() {
         : await supabase.from('memories').insert(memoryData).select();
 
       if (error) throw error;
-      alert("¡Recuerdo guardado con éxito!");
+      alert("¡Producción guardada con éxito!");
       navigate('/mis-recuerdos');
 
     } catch (err: any) {
       console.error("Critical Save Error:", err);
-      alert(`Error al guardar: ${err.message || "Problema técnico desconocido"}`);
+      alert(`Error al guardar: ${err.message || "Problema técnico"}`);
     } finally {
       setIsSaving(false);
     }
@@ -173,17 +171,12 @@ export default function MemoryCustomizer() {
     setIsExporting(true);
     try {
         await new Promise(r => setTimeout(r, 1000));
-        const canvas = await html2canvas(area, { 
-            scale: 2, 
-            useCORS: true,
-            backgroundColor: '#000000'
-        });
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgData = await toJpeg(area, { quality: 0.95, pixelRatio: 2 });
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
         pdf.save(`Serie_MediaNaranja_${names.split(' ')[0]}.pdf`);
     } catch (err: any) {
-        alert(`Error: ${err.message}`);
+        alert(`Error al generar PDF: ${err.message}`);
     } finally {
         setIsExporting(false);
     }
@@ -215,12 +208,12 @@ export default function MemoryCustomizer() {
                    <h1 className="text-2xl font-serif italic text-white leading-tight">Estudio <span className="text-[#E50914]">Loveflix</span></h1>
                    {id && <button onClick={() => navigate('/mis-recuerdos')} className="text-[10px] text-gray-500 hover:text-white uppercase tracking-widest font-bold">Mis Series</button>}
                 </div>
-                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2 italic">Snapshot Technology Active</p>
+                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2 italic">Procesamiento Premium Activado</p>
             </header>
 
             <section className="space-y-4">
               <h3 className="text-[10px] font-black uppercase text-[#E50914] tracking-widest">1. Portada del Recuerdo</h3>
-              <div onClick={() => document.getElementById('main-upload')?.click()} className="w-full aspect-video bg-[#0a0a0a] rounded-2xl border-2 border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden group">
+              <div onClick={() => document.getElementById('main-upload')?.click()} className="w-full aspect-video bg-[#0a0a0a] rounded-2xl border-2 border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden group transition-all">
                 {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover" /> : <Upload className="text-gray-700 font-bold group-hover:scale-110 transition-transform" />}
                 <input type="file" id="main-upload" hidden onChange={(e) => handlePhotoUpload(e)} />
               </div>
@@ -245,8 +238,8 @@ export default function MemoryCustomizer() {
             </section>
 
             <div className="space-y-3 pt-4">
-              <button onClick={saveMemory} disabled={isSaving} className={`w-full py-6 bg-[#E50914] text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(229,9,20,0.3)] ${isSaving ? 'opacity-50 cursor-wait' : 'hover:bg-[#ff1f2d]'}`}>
-                {isSaving ? <><Loader2 className="animate-spin" size={20} /> CREANDO SNAPSHOT...</> : <><Save size={20} /> GUARDAR Y PROCESAR </>}
+              <button onClick={saveMemory} disabled={isSaving} className={`w-full py-6 bg-[#E50914] text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(229,9,20,0.3)] ${isSaving ? 'opacity-50 cursor-wait' : 'hover:bg-[#ff1f2d] active:scale-95'}`}>
+                {isSaving ? <><Loader2 className="animate-spin" size={20} /> GUARDANDO...</> : <><Save size={20} /> GUARDAR RECUERDO </>}
               </button>
               
               <button onClick={exportPDF} disabled={isExporting} className="w-full py-6 border border-white/5 text-gray-400 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all active:scale-95">
@@ -256,7 +249,7 @@ export default function MemoryCustomizer() {
           </div>
         </div>
 
-        {/* ÁREA DE PREVISUALIZACIÓN */}
+        {/* ÁREA DE PREVISUALIZACIÓN (CAPTURE AREA) */}
         <div className="xl:col-span-8 flex justify-center sticky top-24">
           <div id="capture-area" className="w-full max-w-[550px] aspect-[1/1.414] bg-black shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 z-0">
@@ -284,7 +277,7 @@ export default function MemoryCustomizer() {
                <h4 className="text-[10px] font-black mb-3 uppercase tracking-[0.3em] text-white/20 italic">Sigue viendo tus momentos</h4>
                <div className="grid grid-cols-5 gap-3">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)]">{photo && <img src={photo} className="w-full h-full object-cover" />}</div>
+                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-transform group">{photo && <img src={photo} className="w-full h-full object-cover" />}</div>
                   ))}
                </div>
             </div>
