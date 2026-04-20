@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Camera, Upload, ArrowLeft, Loader2, Save, Trash2, Search, Bell } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { toPng, toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabase';
 
@@ -114,16 +114,17 @@ export default function MemoryCustomizer() {
     try {
       if (!area) throw new Error("Área no encontrada");
       
-      // ESPERAR PARA RENDERIZADO TOTAL
-      await new Promise(r => setTimeout(r, 2000));
+      // ESPERAR PARA RENDERIZADO TOTAL (AUMENTADO PARA ALTA CALIDAD)
+      await new Promise(r => setTimeout(r, 2500));
       
-      const masterShotDataUrl = await toPng(area, { 
-        pixelRatio: 1.5, // RESOLUCION SEGURA Y NITIDA
+      const masterShotDataUrl = await toJpeg(area, { 
+        quality: 0.95,
+        pixelRatio: 2.2, // MAS NITIDEZ PARA IMPRESION
         cacheBust: true,
         backgroundColor: '#000000',
       });
 
-      const masterUrl = await uploadBase64(masterShotDataUrl, `${user.id}/${Date.now()}_master.png`);
+      const masterUrl = await uploadBase64(masterShotDataUrl, `${user.id}/${Date.now()}_master.jpg`);
       const mainUrl = await uploadBase64(mainPhoto, `${user.id}/${Date.now()}_main.jpg`);
       
       const galleryUrls = [];
