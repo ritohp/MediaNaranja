@@ -1,13 +1,13 @@
 import { useState, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Camera, Upload, ArrowLeft, CheckCircle2, ChevronRight, Play, Info, Search, Gift, Bell, ThumbsUp, ThumbsDown, Plus, Download, Printer } from 'lucide-react';
+import { Camera, Upload, ArrowLeft, CheckCircle2, Play, Search, Gift, Bell, ThumbsUp, ThumbsDown, Plus, Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 export default function MemoryCustomizer() {
   const [names, setNames] = useState("Valentina & Alejandro");
   const [date, setDate] = useState("2018");
-  const [synopsis, setSynopsis] = useState("Desde aquel café en la esquina, supe que nuestra historia sería mi serie favorita. Eres la dueña de esa mirada que es más de lo que podía imaginar, risueña, cariñosa y entrañable. Lo suficiente como para amar para siempre.");
+  const [synopsis, setSynopsis] = useState("Miro a los ojos y mi mundo se detuvo, fue extraño como empezó todo quería ir allí de nuevo...");
   const [writtenBy, setWrittenBy] = useState("Alejandro");
   const [destinedTo, setDestinedTo] = useState("Valentina");
   
@@ -20,9 +20,8 @@ export default function MemoryCustomizer() {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      if (index === undefined) {
-        setMainPhoto(url);
-      } else {
+      if (index === undefined) setMainPhoto(url);
+      else {
         const newGallery = [...galleryPhotos];
         newGallery[index] = url;
         setGalleryPhotos(newGallery);
@@ -32,12 +31,11 @@ export default function MemoryCustomizer() {
 
   const exportPDF = async () => {
     if (!previewRef.current) return;
-    const canvas = await html2canvas(previewRef.current, { scale: 2 });
+    const canvas = await html2canvas(previewRef.current, { scale: 3, useCORS: true });
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('l', 'mm', 'a4'); // Paisaje para este diseño
-    const imgProps = pdf.getImageProperties(imgData);
+    const pdf = new jsPDF('l', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pdfHeight = pdf.internal.pageSize.getHeight();
     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     pdf.save(`MediaNaranja_Recuerdo_${names}.pdf`);
   };
@@ -46,38 +44,30 @@ export default function MemoryCustomizer() {
     <div className="min-h-screen bg-[#050505] text-white pt-20">
       <div className="max-w-[1700px] mx-auto px-6 grid grid-cols-1 xl:grid-cols-12 gap-10">
         
-        {/* 🛠️ PANEL DE EDICIÓN (IZQUIERDA) */}
+        {/* 🛠️ PANEL DE EDICIÓN */}
         <div className="xl:col-span-4 space-y-6 pb-20 max-h-[85vh] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-gray-800">
           <Link to="/galeria-recuerdos" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest">
             <ArrowLeft size={14} /> Volver al catálogo
           </Link>
 
           <div className="bg-[#111] p-8 rounded-[2.5rem] border border-white/5 space-y-8">
-            <section>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-6 text-[#E50914]">1. Imagen Principal (Fondo)</h3>
+            <section className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#E50914]">Imagen de Fondo</h3>
               <div 
                 onClick={() => document.getElementById('main-upload')?.click()}
-                className="w-full aspect-video bg-[#1a1a1a] rounded-2xl border-2 border-dashed border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:border-[#E50914] transition-all overflow-hidden relative group"
+                className="w-full aspect-video bg-[#1a1a1a] rounded-2xl border-2 border-dashed border-gray-700 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden"
               >
-                {mainPhoto ? (
-                  <img src={mainPhoto} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Main Photo" />
-                ) : (
-                  <Upload className="text-gray-600 group-hover:text-[#E50914]" size={32} />
-                )}
+                {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover" /> : <Upload size={24} />}
                 <input type="file" id="main-upload" hidden onChange={(e) => handlePhotoUpload(e)} />
               </div>
             </section>
 
-            <section>
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-6 text-[#E50914]">2. Galería de Momentos (Abajo)</h3>
+            <section className="space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#E50914]">Tus 5 Momentos</h3>
               <div className="grid grid-cols-5 gap-2">
                 {galleryPhotos.map((photo, i) => (
-                  <div 
-                    key={i}
-                    onClick={() => document.getElementById(`gallery-${i}`)?.click()}
-                    className="aspect-square bg-[#1a1a1a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden"
-                  >
-                    {photo ? <img src={photo} className="w-full h-full object-cover" alt="Moment" /> : <Camera size={16} className="text-gray-700" />}
+                  <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-square bg-[#1a1a1a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden">
+                    {photo ? <img src={photo} className="w-full h-full object-cover" /> : <Camera size={14} />}
                     <input type="file" id={`gallery-${i}`} hidden onChange={(e) => handlePhotoUpload(e, i)} />
                   </div>
                 ))}
@@ -85,122 +75,109 @@ export default function MemoryCustomizer() {
             </section>
 
             <section className="space-y-4">
-              <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-2 text-[#E50914]">3. Contenido de la "Serie"</h3>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#E50914]">Detalles</h3>
               <div className="space-y-4">
-                <input type="text" value={names} onChange={(e) => setNames(e.target.value)} placeholder="Nombres" className="w-full bg-[#050505] border border-gray-800 rounded-xl px-4 py-3 focus:border-[#E50914] outline-none text-sm" />
-                <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Año inicial" className="w-full bg-[#050505] border border-gray-800 rounded-xl px-4 py-3 focus:border-[#E50914] outline-none text-sm" />
-                <textarea value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={3} placeholder="Nuestra historia..." className="w-full bg-[#050505] border border-gray-800 rounded-xl px-4 py-3 focus:border-[#E50914] outline-none text-sm resize-none"></textarea>
-                <div className="grid grid-cols-2 gap-4">
-                  <input type="text" value={writtenBy} onChange={(e) => setWrittenBy(e.target.value)} placeholder="Escrito por" className="w-full bg-[#050505] border border-gray-800 rounded-xl px-4 py-3 focus:border-[#E50914] outline-none text-sm" />
-                  <input type="text" value={destinedTo} onChange={(e) => setDestinedTo(e.target.value)} placeholder="Destinado a" className="w-full bg-[#050505] border border-gray-800 rounded-xl px-4 py-3 focus:border-[#E50914] outline-none text-sm" />
-                </div>
+                <input type="text" value={names} onChange={(e) => setNames(e.target.value)} placeholder="Nombres" className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914]" />
+                <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Año" className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914]" />
+                <textarea value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={3} className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914] resize-none"></textarea>
               </div>
             </section>
 
-            <button onClick={exportPDF} className="w-full py-5 bg-white text-black rounded-2xl font-black tracking-widest hover:bg-gray-200 transition-all flex items-center justify-center gap-3">
-              <Download size={20} /> DESCARGAR PDF PARA IMPRIMIR
+            <button onClick={exportPDF} className="w-full py-5 bg-white text-black rounded-2xl font-black tracking-widest hover:bg-gray-100 transition-all flex items-center justify-center gap-3">
+              <Download size={20} /> DESCARGAR PDF
             </button>
           </div>
         </div>
 
-        {/* 🖼️ PREVISUALIZACIÓN COMPLETA (DERECHA) */}
+        {/* 🖼️ PREVIEW LIMPIO (DERECHA) */}
         <div className="xl:col-span-8">
           <div 
             ref={previewRef}
-            className="w-full aspect-[16/11] bg-black shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden relative"
-            id="print-area"
+            className="w-full aspect-[16/11] bg-black shadow-2xl relative overflow-hidden"
+            id="render-area"
           >
-            {/* 🍿 BARRA SUPERIOR ESTILO NETFLIX */}
-            <header className="absolute top-0 inset-x-0 h-16 md:h-20 bg-gradient-to-b from-black/80 to-transparent z-40 flex items-center justify-between px-8 md:px-12">
-               <div className="flex items-center gap-8">
-                  <div className="text-[#E50914] text-2xl md:text-3xl font-black tracking-tighter">MEDIA NARANJA</div>
-                  <nav className="hidden md:flex items-center gap-6 text-[11px] font-medium text-white/90">
+            {/* FONDO */}
+            <div className="absolute inset-0">
+               {mainPhoto && <img src={mainPhoto} className="w-full h-full object-cover opacity-80" />}
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+               <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent"></div>
+            </div>
+
+            {/* HEADER COMPACTO */}
+            <header className="absolute top-0 inset-x-0 h-16 flex items-center justify-between px-10 z-50">
+               <div className="flex items-center gap-6">
+                  <div className="text-[#E50914] text-xl font-black tracking-tighter">MEDIA NARANJA</div>
+                  <nav className="flex gap-4 text-[9px] font-bold text-white/50 uppercase tracking-widest">
                      <span>Inicio</span>
                      <span>Series</span>
                      <span>Películas</span>
-                     <span>Novedades</span>
                   </nav>
                </div>
-               <div className="flex items-center gap-6">
-                  <Search size={18} />
-                  <Gift size={18} />
-                  <Bell size={18} />
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded bg-[#E50914] flex items-center justify-center overflow-hidden">
-                     <img src="https://wallpapers.com/images/hd/netflix-profile-pictures-1000-x-1000-qo9h82134t9nv0j0.jpg" className="w-full h-full object-cover" alt="Profile" />
+               <div className="flex items-center gap-4 opacity-70">
+                  <Search size={14} /> <Gift size={14} /> <Bell size={14} />
+                  <div className="w-8 h-8 rounded bg-[#E50914] flex items-center justify-center overflow-hidden">
+                     <img src="https://wallpapers.com/images/hd/netflix-profile-pictures-1000-x-1000-qo9h82134t9nv0j0.jpg" className="w-full object-cover" />
                   </div>
                </div>
             </header>
 
-            {/* 🌆 FONDO PRINCIPAL */}
-            <div className="absolute inset-x-0 top-0 h-[80%]">
-               {mainPhoto ? (
-                 <img src={mainPhoto} className="w-full h-full object-cover" alt="Hero" />
-               ) : (
-                 <div className="w-full h-full bg-gray-900 border-b border-white/5"></div>
-               )}
-               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
-               <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent"></div>
-            </div>
-
-            {/* ✍️ TEXTOS Y UI PRINCIPAL */}
-            <div className="absolute inset-x-0 top-40 md:top-56 px-12 z-30 space-y-6">
-                <div className="flex items-center gap-2 opacity-80 scale-90 origin-left">
-                  <span className="bg-[#E50914] text-white text-[12px] font-black px-2 py-0.5 rounded-sm">N</span>
-                  <span className="text-white font-bold tracking-[0.3em] text-[10px] uppercase">Parejas</span>
+            {/* CONTENIDO CENTRAL */}
+            <div className="absolute inset-x-10 top-24 md:top-32 z-40 space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#E50914] text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm">N</span>
+                  <span className="text-white/60 font-bold tracking-[0.2em] text-[8px] uppercase">Original de Media Naranja</span>
                 </div>
                 
-                <h2 className="text-5xl md:text-8xl font-serif italic text-white drop-shadow-2xl leading-none tracking-tight">
+                <h2 className="text-6xl md:text-7xl font-serif italic text-white leading-none tracking-tight py-2">
                     {names}
                 </h2>
 
-                <div className="flex items-center gap-5 text-sm font-bold">
+                <div className="flex items-center gap-4 text-xs font-bold text-white/80">
                     <span className="text-[#46d369]">98% para ti</span>
-                    <span className="text-white/80">Juntos desde {date}</span>
-                    <span className="border border-white/40 px-2 py-0.5 rounded-sm text-[10px]">L</span>
-                    <span className="text-white/80">1º Gran Amor</span>
-                    <span className="border border-white/40 px-1.5 rounded-sm text-[9px] font-black">HD</span>
+                    <span className="text-white/40">●</span>
+                    <span>Juntos desde {date}</span>
+                    <span className="text-white/40">●</span>
+                    <span className="border border-white/30 px-1 rounded-sm text-[8px]">13+</span>
+                    <span>1º Gran Amor</span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#E50914] rounded-md flex flex-col items-center justify-center font-black leading-none">
-                        <span className="text-[7px] opacity-70">TOP</span>
-                        <span className="text-lg">10</span>
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-[#E50914] rounded-sm flex flex-col items-center justify-center font-black leading-none">
+                        <span className="text-[6px] opacity-70 italic">TOP</span>
+                        <span className="text-sm">10</span>
                     </div>
-                    <span className="text-xl font-bold italic">Mejores Parejas Del Mundo</span>
+                    <span className="text-lg font-bold italic tracking-tight">Mejores Parejas Del Mundo</span>
                 </div>
 
-                <p className="text-lg text-white/90 max-w-2xl font-light leading-relaxed">
+                <p className="text-sm text-white/70 max-w-xl font-medium leading-relaxed">
                    {synopsis}
                 </p>
 
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-4">
-                      <button className="flex items-center gap-2 px-10 py-4 bg-white text-black rounded-lg font-black text-xl"><Play fill="black" size={24} /> Tocar</button>
-                      <button className="flex items-center gap-2 px-10 py-4 bg-gray-500/40 backdrop-blur-md text-white rounded-lg font-black text-xl border border-white/20"><CheckCircle2 size={24} /> Favorito</button>
-                      <div className="flex gap-2">
-                        <div className="w-12 h-12 rounded-full border-2 border-white/40 flex items-center justify-center"><ThumbsUp size={20}/></div>
-                        <div className="w-12 h-12 rounded-full border-2 border-white/40 flex items-center justify-center"><ThumbsDown size={20}/></div>
-                      </div>
-                   </div>
-
-                   <div className="text-right text-[10px] font-bold text-white/40 uppercase tracking-widest leading-loose">
-                      Escrito por: <span className="text-white/70">{writtenBy}</span><br />
-                      Destinado a: <span className="text-white/70">{destinedTo}</span>
-                   </div>
+                <div className="flex items-center gap-3 pt-2">
+                  <button className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded font-bold text-lg shadow-xl"><Play fill="black" size={20} /> Tocar</button>
+                  <button className="flex items-center gap-2 px-6 py-3 bg-gray-500/30 backdrop-blur-md text-white rounded font-bold text-lg border border-white/10"><Plus size={20} /> Favorito</button>
+                  <div className="flex gap-2">
+                    <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center opacity-70"><ThumbsUp size={16}/></div>
+                    <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center opacity-70"><ThumbsDown size={16}/></div>
+                  </div>
                 </div>
             </div>
 
-            {/* 🎞️ CARRUSEL INFERIOR DE MOMENTOS */}
-            <div className="absolute inset-x-0 bottom-4 px-12 z-30">
-               <h4 className="text-sm font-bold mb-4 uppercase tracking-widest text-white/60 flex items-center gap-3">
-                  Nuestros Mejores Momentos <Plus size={16} />
-               </h4>
-               <div className="grid grid-cols-5 md:grid-cols-7 gap-3">
+            {/* GALERÍA INFERIOR (Con espacio real) */}
+            <div className="absolute inset-x-10 bottom-8 z-40">
+               <h4 className="text-[9px] font-black mb-3 uppercase tracking-[0.3em] text-white/40">Nuestros Mejores Momentos</h4>
+               <div className="flex gap-2.5">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-square bg-gray-800/20 rounded-md border border-white/5 overflow-hidden group">
-                       {photo && <img src={photo} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="Moment" />}
+                    <div key={i} className="w-24 h-28 bg-gray-800/10 rounded-md border border-white/5 overflow-hidden">
+                       {photo && <img src={photo} className="w-full h-full object-cover" />}
                     </div>
                   ))}
+               </div>
+               
+               {/* Metadata Bottom Right */}
+               <div className="absolute right-0 bottom-0 text-[8px] font-bold text-white/30 uppercase tracking-widest text-right leading-relaxed">
+                  Escrito por: <span className="text-white/60">{writtenBy}</span><br />
+                  Para: <span className="text-white/60">{destinedTo}</span>
                </div>
             </div>
           </div>
@@ -209,4 +186,8 @@ export default function MemoryCustomizer() {
       </div>
     </div>
   );
+}
+
+function ThumbsDown({ size, className }: { size: number, className: string }) {
+    return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.99-2.28l.83-5a2 2 0 0 1 2-1.72h12.83a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1.34l-5.65 6.13a1 1 0 0 1-1.85-.35l-.01-.01Z"/></svg>;
 }
