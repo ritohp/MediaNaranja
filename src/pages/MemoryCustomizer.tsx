@@ -26,26 +26,15 @@ export default function MemoryCustomizer() {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const MAX_SIZE = 1200; // Bajamos un poco más para seguridad total
-
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-
+          const MAX = 1200; 
+          if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
+          else if (height > MAX) { width *= MAX / height; height = MAX; }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compresión óptima
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
           }
         };
         img.src = e.target?.result as string;
@@ -57,43 +46,42 @@ export default function MemoryCustomizer() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      const optimizedBase64 = await optimizeImage(file);
-      if (index === undefined) setMainPhoto(optimizedBase64);
+      const optimized = await optimizeImage(file);
+      if (index === undefined) setMainPhoto(optimized);
       else {
         const newGallery = [...galleryPhotos];
-        newGallery[index] = optimizedBase64;
+        newGallery[index] = optimized;
         setGalleryPhotos(newGallery);
       }
     }
   };
 
   const exportPDF = async () => {
-    if (!previewRef.current) return;
+    const area = document.getElementById('capture-area'); // Buscador directo por ID
+    if (!area) {
+        alert("Error: No se encontró el área de diseño.");
+        return;
+    }
+    
     setIsExporting(true);
     
     try {
-        // Aseguramos que el usuario esté arriba para evitar fallos de posición
-        window.scrollTo(0, 0);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const w = area.offsetWidth;
+        const h = area.offsetHeight;
+        
+        // Esperamos un momento para el renderizado
+        await new Promise(r => setTimeout(r, 600));
 
-        const canvas = await html2canvas(previewRef.current, { 
-            scale: 1.5,
+        const canvas = await html2canvas(area, { 
+            scale: 2, 
             useCORS: true,
             backgroundColor: '#000000',
+            width: w,
+            height: h,
             logging: false,
-            // Truco maestro: Forzamos dimensiones fijas para la captura independientemente de la pantalla
-            width: previewRef.current.offsetWidth,
-            height: previewRef.current.offsetHeight,
-            onclone: (clonedDoc) => {
-                const el = clonedDoc.getElementById('capture-area');
-                if (el) {
-                    el.style.width = '800px'; // Tamaño controlado para el clon
-                    el.style.height = '1131px'; // Proporción A4 exacta para el clon
-                }
-            }
         });
         
-        const imgData = canvas.toDataURL('image/jpeg', 0.75);
+        const imgData = canvas.toDataURL('image/jpeg', 0.8);
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'mm',
@@ -101,10 +89,10 @@ export default function MemoryCustomizer() {
         });
 
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-        pdf.save(`Boutique_Naranja_${Date.now()}.pdf`);
+        pdf.save(`Diseño_Personalizado_${Date.now()}.pdf`);
     } catch (err: any) {
-        console.error("PDF Error:", err);
-        alert(`Error técnico: ${err.message || 'Memoria'}). Intenta subir fotos de menos de 1MB o usa una ventana de incógnito.`);
+        console.error("Export Error:", err);
+        alert(`Error técnico: ${err.message || 'Error en proceso'}. Por favor intenta de nuevo.`);
     } finally {
         setIsExporting(false);
     }
@@ -123,23 +111,23 @@ export default function MemoryCustomizer() {
         <div className="xl:col-span-4 space-y-6">
           <div className="bg-[#111] p-8 rounded-[2.5rem] border border-white/5 space-y-8 shadow-2xl">
             <header className="border-b border-white/5 pb-6">
-                <h1 className="text-2xl font-serif italic text-white leading-tight">Media Naranja <span className="text-[#E50914]">Boutique</span></h1>
-                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2">Estudio de Impresión Final</p>
+                <h1 className="text-2xl font-serif italic">Media Naranja <span className="text-[#E50914]">Boutique</span></h1>
+                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2">Estudio de Edición Final</p>
             </header>
 
             <section className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase text-[#E50914]">1. Foto Principal</h3>
-              <div onClick={() => document.getElementById('main-upload')?.click()} className="w-full aspect-video bg-[#1a1a1a] rounded-2xl border-2 border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden">
+              <h3 className="text-[10px] font-black uppercase text-[#E50914] tracking-widest">1. Imagen de Portada</h3>
+              <div onClick={() => document.getElementById('main-upload')?.click()} className="w-full aspect-video bg-[#1a1a1a] rounded-2xl border-2 border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden transition-all">
                 {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover" /> : <Upload className="text-gray-700" />}
                 <input type="file" id="main-upload" hidden onChange={(e) => handlePhotoUpload(e)} />
               </div>
             </section>
 
             <section className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase text-[#E50914]">2. Momentos Clave</h3>
+              <h3 className="text-[10px] font-black uppercase text-[#E50914] tracking-widest">2. Momentos Clave</h3>
               <div className="grid grid-cols-5 gap-2">
                 {galleryPhotos.map((photo, i) => (
-                  <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-[3/4] bg-[#1a1a1a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden">
+                  <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-[3/4] bg-[#1a1a1a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden transition-all">
                     {photo ? <img src={photo} className="w-full h-full object-cover" /> : <Camera size={14} className="text-gray-700" />}
                     <input type="file" id={`gallery-${i}`} hidden onChange={(e) => handlePhotoUpload(e, i)} />
                   </div>
@@ -148,37 +136,36 @@ export default function MemoryCustomizer() {
             </section>
 
             <section className="space-y-3">
-              <input type="text" value={names} onChange={(e) => setNames(e.target.value)} placeholder="Nombres" className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm" />
-              <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Año (ej: 2020)" className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm" />
-              <textarea value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={3} placeholder="Danos una sinopsis..." className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm resize-none"></textarea>
+              <input type="text" value={names} onChange={(e) => setNames(e.target.value)} placeholder="Nombres" className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm text-white" />
+              <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Año" className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm text-white" />
+              <textarea value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={3} placeholder="Sinopsis..." className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm text-white resize-none"></textarea>
             </section>
 
-            <button onClick={exportPDF} disabled={isExporting} className={`w-full py-6 bg-white text-black rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl ${isExporting ? 'opacity-50' : 'hover:bg-red-50'}`}>
-              {isExporting ? <><Loader2 className="animate-spin" size={20} /> Generando...</> : <><Download size={20} /> Descargar PDF</>}
+            <button onClick={exportPDF} disabled={isExporting} className={`w-full py-6 bg-white text-black rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-2xl ${isExporting ? 'opacity-50' : 'hover:scale-[1.02] active:scale-95'}`}>
+              {isExporting ? <><Loader2 className="animate-spin" size={20} /> Preparando PDF...</> : <><Download size={20} /> DESCARGAR DISEÑO </>}
             </button>
           </div>
         </div>
 
-        {/* ÁREA DE RENDERIZADO (PROTEGIDA) */}
-        <div className="xl:col-span-8 flex justify-center">
+        {/* ÁREA DE CAPTURA (ESTÁTICA PARA MÁXIMA COMPATIBILIDAD) */}
+        <div className="xl:col-span-8 flex justify-center sticky top-24">
           <div 
-            ref={previewRef} 
             id="capture-area"
-            className="w-full max-w-[600px] aspect-[1/1.414] bg-black shadow-[0_0_80px_rgba(0,0,0,0.5)] relative overflow-hidden ring-1 ring-white/10"
+            className="w-full max-w-[550px] aspect-[1/1.414] bg-black shadow-2xl relative overflow-hidden"
           >
-            {/* BACKGROUND */}
+            {/* PORTADA */}
             <div className="absolute inset-0 z-0">
                {mainPhoto ? (
                  <img src={mainPhoto} className="w-full h-full object-cover object-center" />
                ) : (
-                 <div className="w-full h-full bg-[#111]"></div>
+                 <div className="w-full h-full bg-[#080808]"></div>
                )}
-               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
-               <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-black/20 via-transparent to-transparent"></div>
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+               <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-black/20 via-transparent to-transparent"></div>
             </div>
 
-            {/* TOP LOGO */}
-            <header className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-10 z-50 bg-black/80 backdrop-blur-sm border-b border-white/5">
+            {/* HEADER */}
+            <header className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-10 z-50 bg-black/80 backdrop-blur-sm">
                <div className="text-[#E50914] text-lg font-black tracking-tighter">LOVEFLIX</div>
                <div className="flex gap-4 items-center opacity-40 scale-75 text-white">
                  <Search size={16}/> <Bell size={16}/>
@@ -186,7 +173,7 @@ export default function MemoryCustomizer() {
                </div>
             </header>
 
-            {/* TEXT CONTENT */}
+            {/* TEXTOS PROCESADOS */}
             <div className="absolute inset-x-10 bottom-44 z-40 space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="bg-[#E50914] text-white text-[10px] font-black px-1.5 py-0.5 rounded-sm">N</span>
@@ -208,8 +195,8 @@ export default function MemoryCustomizer() {
                 </p>
 
                 <div className="flex items-center gap-3 pt-2">
-                    <div className="px-8 py-2.5 bg-white text-black rounded font-black text-[9px] uppercase tracking-widest">Play</div>
-                    <div className="px-8 py-2.5 bg-gray-900/60 text-white rounded font-black text-[9px] uppercase tracking-widest border border-white/5">+ Mi Lista</div>
+                    <div className="px-8 py-2 bg-white text-black rounded font-black text-[9px] uppercase tracking-widest shadow-xl">Ver Ahora</div>
+                    <div className="px-8 py-2 bg-gray-900/60 text-white rounded font-black text-[9px] uppercase tracking-widest border border-white/5">+ Favorito</div>
                 </div>
                 
                 <div className="pt-4 text-[7px] font-bold text-white/30 uppercase tracking-[0.2em] flex items-center gap-3">
@@ -219,9 +206,9 @@ export default function MemoryCustomizer() {
                 </div>
             </div>
 
-            {/* GALLERIA INTERNA */}
+            {/* GALERÍA */}
             <div className="absolute inset-x-10 bottom-6 z-40">
-               <h4 className="text-[10px] font-black mb-3 uppercase tracking-[0.3em] text-white/20 italic">Historias recomendadas</h4>
+               <h4 className="text-[10px] font-black mb-3 uppercase tracking-[0.3em] text-white/20 italic tracking-widest">Recomendados</h4>
                <div className="grid grid-cols-5 gap-3">
                   {galleryPhotos.map((photo, i) => (
                     <div key={i} className="aspect-[3/4.2] bg-gray-950 rounded-sm border border-white/5 overflow-hidden shadow-2xl">
