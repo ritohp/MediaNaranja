@@ -20,6 +20,7 @@ function App() {
           <Route path="/mis-recuerdos" element={<MyMemories />} />
           <Route path="/galeria-recuerdos" element={<MemoryGallery />} />
           <Route path="/personalizar-cuadro" element={<MemoryCustomizer />} />
+          <Route path="/personalizar-cuadro/:id" element={<MemoryCustomizer />} />
         </Routes>
       </div>
     </Router>

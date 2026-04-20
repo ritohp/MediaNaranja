@@ -1,25 +1,55 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Camera, Upload, ArrowLeft, Search, Bell, ThumbsUp, ThumbsDown, Download, Loader2, Save } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Camera, Upload, ArrowLeft, Search, Bell, ThumbsUp, ThumbsDown, Download, Loader2, Save, Trash2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabase';
 
 export default function MemoryCustomizer() {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [loadingMemory, setLoadingMemory] = useState(!!id);
+  
   const [names, setNames] = useState("Valentina & Alejandro");
   const [date, setDate] = useState("2018");
   const [synopsis, setSynopsis] = useState("Mirada a los ojos y mi mundo se detuvo, fue extraño cómo todo comenzó. Quise pasar de nuevo por allí y en ese instante me di cuenta...");
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [user, setUser] = useState<any>(null);
   
   const [mainPhoto, setMainPhoto] = useState<string | null>(null);
   const [galleryPhotos, setGalleryPhotos] = useState<(string | null)[]>([null, null, null, null, null]);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
-  }, []);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (id) fetchSavedMemory(id);
+    });
+  }, [id]);
+
+  const fetchSavedMemory = async (memoryId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('memories')
+        .select('*')
+        .eq('id', memoryId)
+        .single();
+      
+      if (error) throw error;
+      if (data) {
+        setNames(data.names);
+        setDate(data.date_text);
+        setSynopsis(data.synopsis);
+        setMainPhoto(data.main_photo_url);
+        setGalleryPhotos(data.gallery_photos_urls || [null, null, null, null, null]);
+      }
+    } catch (err: any) {
+      console.error("Error loading memory:", err);
+      alert("No se pudo cargar el recuerdo.");
+    } finally {
+      setLoadingMemory(false);
+    }
+  };
   
   const optimizeImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -60,8 +90,11 @@ export default function MemoryCustomizer() {
     }
   };
 
-  const uploadBase64 = async (base64: string, path: string) => {
-    const base64Data = base64.split(',')[1];
+  const uploadBase64 = async (base64String: string, path: string) => {
+    // Si ya es una URL de Supabase, no la volvemos a subir
+    if (base64String.startsWith('http')) return base64String;
+
+    const base64Data = base64String.split(',')[1];
     const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
     const { data, error } = await supabase.storage
       .from('memories')
@@ -72,34 +105,23 @@ export default function MemoryCustomizer() {
   };
 
   const saveMemory = async () => {
-    if (!user) {
-      alert("Debes iniciar sesión para guardar tu recuerdo.");
-      return;
-    }
-    if (!mainPhoto) {
-      alert("Por favor, sube al menos la foto principal.");
-      return;
-    }
+    if (!user) { alert("Inicia sesión para guardar."); return; }
+    if (!mainPhoto) { alert("Sube la foto principal."); return; }
 
     setIsSaving(true);
     try {
-      // 1. Subir Foto Principal
-      const mainPath = `${user.id}/${Date.now()}_main.jpg`;
-      const mainUrl = await uploadBase64(mainPhoto, mainPath);
-
-      // 2. Subir Galería
+      const mainUrl = await uploadBase64(mainPhoto, `${user.id}/${Date.now()}_main.jpg`);
+      
       const galleryUrls = [];
       for (let i = 0; i < galleryPhotos.length; i++) {
-        const photo = galleryPhotos[i];
-        if (photo) {
-          const path = `${user.id}/${Date.now()}_gal_${i}.jpg`;
-          const url = await uploadBase64(photo, path);
+        const p = galleryPhotos[i];
+        if (p) {
+          const url = await uploadBase64(p, `${user.id}/${Date.now()}_gal_${i}.jpg`);
           galleryUrls.push(url);
         }
       }
 
-      // 3. Guardar en DB
-      const { error } = await supabase.from('memories').insert({
+      const memoryData = {
         user_id: user.id,
         names,
         date_text: date,
@@ -107,28 +129,30 @@ export default function MemoryCustomizer() {
         main_photo_url: mainUrl,
         gallery_photos_urls: galleryUrls,
         style: 'loveflix'
-      });
+      };
+
+      const { data, error } = id 
+        ? await supabase.from('memories').update(memoryData).eq('id', id).select()
+        : await supabase.from('memories').insert(memoryData).select();
 
       if (error) throw error;
 
-      alert("¡Recuerdo guardado con éxito! Ahora aparecerá en tu sección de Mis Recuerdos.");
-      navigate('/mis-recuerdos');
+      alert(id ? "¡Cambios guardados!" : "¡Recuerdo guardado con éxito!");
+      if (!id && data?.[0]) navigate(`/personalizar-cuadro/${data[0].id}`);
 
     } catch (err: any) {
-      console.error("Save Error:", err);
-      alert(`Error al guardar: ${err.message}`);
+      alert(`Error: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Mantener la función de descarga directa por si acaso
   const exportPDF = async () => {
     const area = document.getElementById('capture-area');
     if (!area) return;
     setIsExporting(true);
     try {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1200));
         const canvas = await html2canvas(area, { 
             scale: 2, 
             useCORS: true,
@@ -138,7 +162,7 @@ export default function MemoryCustomizer() {
               if (el) { el.style.width = '550px'; el.style.height = '778px'; }
             }
         });
-        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
         pdf.save(`Serie_MediaNaranja_${names.split(' ')[0]}.pdf`);
@@ -148,6 +172,14 @@ export default function MemoryCustomizer() {
         setIsExporting(false);
     }
   };
+
+  if (loadingMemory) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <Loader2 className="animate-spin text-[#E50914]" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pt-20 pb-20">
@@ -163,8 +195,11 @@ export default function MemoryCustomizer() {
         <div className="xl:col-span-4 space-y-6">
           <div className="bg-[#111] p-8 rounded-[2.5rem] border border-white/5 space-y-8 shadow-2xl">
             <header className="border-b border-white/5 pb-6">
-                <h1 className="text-2xl font-serif italic text-white leading-tight">Estudio <span className="text-[#E50914]">Loveflix</span></h1>
-                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2 italic">Guardado en la Nube Activado</p>
+                <div className="flex items-center justify-between">
+                   <h1 className="text-2xl font-serif italic text-white leading-tight">Estudio <span className="text-[#E50914]">Loveflix</span></h1>
+                   {id && <button onClick={() => navigate('/mis-recuerdos')} className="text-[10px] text-gray-500 hover:text-white uppercase tracking-widest font-bold">Volver</button>}
+                </div>
+                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2 italic">Edición de Producción Original</p>
             </header>
 
             <section className="space-y-4">
@@ -179,7 +214,7 @@ export default function MemoryCustomizer() {
               <h3 className="text-[10px] font-black uppercase text-[#E50914] tracking-widest">2. Momentos Galería</h3>
               <div className="grid grid-cols-5 gap-2">
                 {galleryPhotos.map((photo, i) => (
-                  <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-square bg-[#0a0a0a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden">
+                  <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-square bg-[#0a0a0a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden transition-all">
                     {photo ? <img src={photo} className="w-full h-full object-cover" /> : <Camera size={14} className="text-gray-700" />}
                     <input type="file" id={`gallery-${i}`} hidden onChange={(e) => handlePhotoUpload(e, i)} />
                   </div>
@@ -189,23 +224,23 @@ export default function MemoryCustomizer() {
 
             <section className="space-y-3">
               <input type="text" value={names} onChange={(e) => setNames(e.target.value)} placeholder="Protagonistas" className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm" />
-              <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Año de inicio" className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm" />
+              <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Año" className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm" />
               <textarea value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={3} placeholder="Sinopsis..." className="w-full bg-[#080808] border border-gray-800 rounded-xl px-5 py-4 outline-none focus:border-[#E50914] text-sm resize-none"></textarea>
             </section>
 
             <div className="space-y-3 pt-4">
-              <button onClick={saveMemory} disabled={isSaving} className={`w-full py-6 bg-[#E50914] text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(229,9,20,0.3)] ${isSaving ? 'opacity-50 cursor-wait' : 'hover:scale-[1.02] active:scale-95'}`}>
-                {isSaving ? <><Loader2 className="animate-spin" size={20} /> GUARDANDO EN LA NUBE...</> : <><Save size={20} /> FINALIZAR Y GUARDAR </>}
+              <button onClick={saveMemory} disabled={isSaving} className={`w-full py-6 bg-[#E50914] text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(229,9,20,0.3)] ${isSaving ? 'opacity-50 cursor-wait' : 'hover:bg-[#ff1f2d] active:scale-95'}`}>
+                {isSaving ? <><Loader2 className="animate-spin" size={20} /> GUARDANDO...</> : <><Save size={20} /> {id ? 'ACTUALIZAR DISEÑO' : 'GUARDAR RECUERDO'} </>}
               </button>
               
-              <button onClick={exportPDF} disabled={isExporting} className="w-full py-4 text-gray-500 border border-white/5 rounded-full font-black text-[9px] uppercase tracking-widest hover:text-white transition-colors">
-                 O Descargar PDF ahora (Vista Rápida)
+              <button onClick={exportPDF} disabled={isExporting} className="w-full py-6 bg-white text-black rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-2xl hover:bg-gray-100 active:scale-95">
+                {isExporting ? <><Loader2 className="animate-spin" size={20} /> CAPTURANDO...</> : <><Download size={20} /> DESCARGAR PDF </>}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ÁREA DE PREVISUALIZACIÓN */}
+        {/* ÁREA DE PREVISUALIZACIÓN (CAPTURE AREA) */}
         <div className="xl:col-span-8 flex justify-center sticky top-24">
           <div id="capture-area" className="w-full max-w-[550px] aspect-[1/1.414] bg-black shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 z-0">
@@ -224,8 +259,8 @@ export default function MemoryCustomizer() {
                 <div className="flex items-center gap-4 text-[11px] font-bold text-white/90"><span className="text-[#46D369]">98% para ti</span><span>{date}</span><span className="border border-white/40 px-1.5 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-widest">HD 4K</span></div>
                 <p className="text-xs text-white/80 max-w-sm font-medium leading-relaxed italic drop-shadow-md">{synopsis}</p>
                 <div className="flex items-center gap-3 pt-2">
-                    <div className="px-10 py-2.5 bg-white text-black rounded font-black text-[10px] uppercase tracking-widest shadow-2xl">Jugar</div>
-                    <div className="px-10 py-2.5 bg-gray-500/30 text-white rounded font-black text-[10px] uppercase tracking-widest border border-white/10 backdrop-blur-md">+ Mi Lista</div>
+                    <div className="px-10 py-2.5 bg-white text-black rounded font-black text-[10px] uppercase tracking-widest shadow-2xl transition-colors">Jugar</div>
+                    <div className="px-10 py-2.5 bg-gray-500/30 text-white rounded font-black text-[10px] uppercase tracking-widest border border-white/10 backdrop-blur-md transition-colors">+ Mi Lista</div>
                 </div>
             </div>
 
@@ -233,7 +268,7 @@ export default function MemoryCustomizer() {
                <h4 className="text-[10px] font-black mb-3 uppercase tracking-[0.3em] text-white/20 italic">Sigue viendo tus momentos</h4>
                <div className="grid grid-cols-5 gap-3">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30_rgba(0,0,0,0.5)]">{photo && <img src={photo} className="w-full h-full object-cover" />}</div>
+                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-transform group">{photo && <img src={photo} className="w-full h-full object-cover" />}</div>
                   ))}
                </div>
             </div>
