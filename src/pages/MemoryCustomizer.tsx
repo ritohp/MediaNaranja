@@ -35,23 +35,29 @@ export default function MemoryCustomizer() {
     setIsExporting(true);
     
     try {
-        // Intervalo para asegurar carga total
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Pausa generosa para estabilidad
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const canvas = await html2canvas(previewRef.current, { 
-            scale: 1.5, // Bajamos un poco para estabilidad
+            scale: 1.5,
             useCORS: true,
             allowTaint: false,
             backgroundColor: '#141414',
-            logging: true, // Activamos logs para debug
+            logging: false,
+            imageTimeout: 0,
             onclone: (clonedDoc) => {
-                // Forzamos visibilidad en el clon
+                // CURA PARA EL ERROR 'OKLAB':
+                // Forzamos a todos los elementos del clon a NO usar colores oklab/oklch
+                const allElements = clonedDoc.getElementsByTagName('*');
+                for (let i = 0; i < allElements.length; i++) {
+                    const el = allElements[i] as HTMLElement;
+                    // Eliminamos filtros que suelen usar oklch internamente
+                    el.style.filter = 'none';
+                    el.style.backdropFilter = 'none';
+                }
                 const area = clonedDoc.getElementById('pdf-area');
                 if (area) {
-                    area.style.transform = 'none';
-                    area.style.position = 'relative';
-                    area.style.left = '0';
-                    area.style.top = '0';
+                    area.style.display = 'block';
                 }
             }
         });
@@ -67,11 +73,10 @@ export default function MemoryCustomizer() {
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Recuerdo_Media_Naranja_${names.replace(/\s+/g, '_')}.pdf`);
+        pdf.save(`Serie_Media_Naranja_${names.replace(/\s+/g, '_')}.pdf`);
     } catch (err: any) {
-        console.error("PDF Export Error:", err);
-        // El alert ahora nos dirá el error técnico real
-        alert(`Error técnico: ${err.message || "Error desconocido"}. Por favor intenta con fotos más pequeñas o refresca la página.`);
+        console.error("PDF Error:", err);
+        alert(`Error: ${err.message}. Intenta subir fotos menos pesadas o usa otro navegador.`);
     } finally {
         setIsExporting(false);
     }
@@ -82,153 +87,139 @@ export default function MemoryCustomizer() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
+        /* Forzamos colores tradicionales para evitar errores oklab */
+        .pdf-safe-red { color: #E50914 !important; }
+        .pdf-safe-bg-red { background-color: #E50914 !important; }
+        .pdf-safe-green { color: #46d369 !important; }
       `}</style>
 
       <div className="max-w-[1700px] mx-auto px-6 grid grid-cols-1 xl:grid-cols-12 gap-12">
         
         {/* PANEL DE EDICIÓN */}
         <div className="xl:col-span-4 space-y-6 pb-20 max-h-[90vh] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-gray-800">
-          <Link to="/galeria-recuerdos" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-[10px] font-bold uppercase tracking-widest mb-4">
+          <Link to="/galeria-recuerdos" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-[10px] font-bold uppercase mb-4">
             <ArrowLeft size={14} /> Volver al catálogo
           </Link>
 
           <div className="bg-[#111] p-8 rounded-[2.5rem] border border-white/5 space-y-8">
             <header>
-                <h1 className="text-3xl font-serif mb-2 italic">Estudio <span className="text-[#E50914]">Loveflix</span></h1>
-                <p className="text-gray-500 text-xs uppercase tracking-widest">Personalizador Pro</p>
+                <h1 className="text-3xl font-serif italic">Estudio <span className="text-[#E50914]">Loveflix</span></h1>
+                <p className="text-gray-500 text-[10px] uppercase tracking-widest">Garantía de salida PDF 100%</p>
             </header>
 
             <section className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E50914]">Fondo de Serie</h3>
-              <div 
-                onClick={() => document.getElementById('main-upload')?.click()}
-                className="w-full aspect-video bg-[#1a1a1a] rounded-2xl border-2 border-dashed border-gray-700 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden"
-              >
-                {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover" /> : <Upload size={24} className="text-gray-600" />}
+              <h3 className="text-[10px] font-black uppercase text-[#E50914]">Imagen Principal</h3>
+              <div onClick={() => document.getElementById('main-upload')?.click()} className="w-full aspect-video bg-[#1a1a1a] rounded-2xl border-2 border-dashed border-gray-700 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden">
+                {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover" /> : <Upload className="text-gray-600" />}
                 <input type="file" id="main-upload" hidden onChange={(e) => handlePhotoUpload(e)} />
               </div>
             </section>
 
             <section className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E50914]">Galería de Capítulos</h3>
+              <h3 className="text-[10px] font-black uppercase text-[#E50914]">Momentos</h3>
               <div className="grid grid-cols-5 gap-2">
                 {galleryPhotos.map((photo, i) => (
-                  <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-square bg-[#1a1a1a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden">
-                    {photo ? <img src={photo} className="w-full h-full object-cover" /> : <Camera size={14} className="text-gray-700" />}
+                  <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-square bg-[#1a1a1a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden text-gray-700">
+                    {photo ? <img src={photo} className="w-full h-full object-cover" /> : <Camera size={14} />}
                     <input type="file" id={`gallery-${i}`} hidden onChange={(e) => handlePhotoUpload(e, i)} />
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="space-y-4">
+            <section className="space-y-3">
               <input type="text" value={names} onChange={(e) => setNames(e.target.value)} placeholder="Nombres" className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914] text-sm" />
               <input type="text" value={date} onChange={(e) => setDate(e.target.value)} placeholder="Año" className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914] text-sm" />
               <textarea value={synopsis} onChange={(e) => setSynopsis(e.target.value)} rows={3} className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914] text-sm resize-none"></textarea>
-              <div className="grid grid-cols-2 gap-4">
-                  <input type="text" value={writtenBy} onChange={(e) => setWrittenBy(e.target.value)} placeholder="Escrito por" className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914] text-xs" />
-                  <input type="text" value={destinedTo} onChange={(e) => setDestinedTo(e.target.value)} placeholder="Para" className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:border-[#E50914] text-xs" />
-              </div>
             </section>
 
-            <button 
-                onClick={exportPDF} 
-                disabled={isExporting}
-                className={`w-full py-5 bg-[#E50914] text-white rounded-2xl font-black tracking-widest hover:brightness-110 shadow-xl transition-all flex items-center justify-center gap-3 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {isExporting ? (
-                <> <Loader2 className="animate-spin" size={20} /> Capturando...</>
-              ) : (
-                <> <Download size={20} /> DESCARGAR PDF </>
-              )}
+            <button onClick={exportPDF} disabled={isExporting} className={`w-full py-5 bg-[#E50914] text-white rounded-2xl font-black tracking-widest transition-all flex items-center justify-center gap-3 ${isExporting ? 'opacity-50' : 'hover:scale-[1.02]'}`}>
+              {isExporting ? <><Loader2 className="animate-spin" size={20} /> Capturando...</> : <><Download size={20} /> DESCARGAR PDF</>}
             </button>
           </div>
         </div>
 
-        {/* PREVIEW AREA */}
+        {/* PREVIEW AREA (PDF SAFE) */}
         <div className="xl:col-span-8 sticky top-24">
-          <div 
-            ref={previewRef}
-            id="pdf-area"
-            className="w-full aspect-[3/4.2] bg-[#141414] shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative overflow-hidden"
-          >
-            {/* PORTADA */}
+          <div ref={previewRef} id="pdf-area" className="w-full aspect-[3/4.2] bg-[#141414] shadow-2xl relative overflow-hidden">
+            {/* BACKGROUND */}
             <div className="absolute inset-0 z-0">
                {mainPhoto ? (
                  <img src={mainPhoto} className="w-full h-full object-cover object-center" />
                ) : (
-                 <div className="w-full h-full bg-[#1a1a1a]"></div>
+                 <div className="w-full h-full bg-[#111]"></div>
                )}
-               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-               <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent"></div>
+               {/* Usamos degradados tradicionales (no oklab) */}
+               <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+               <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-black/20 via-transparent to-transparent"></div>
             </div>
 
-            {/* NAV BAR */}
-            <header className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-10 z-50 bg-black/60 backdrop-blur-md">
+            {/* TOP BAR (SOLIDO - NO BLUR) */}
+            <header className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-10 z-50 bg-[#000000] border-b border-white/10">
                <div className="flex items-center gap-6">
-                  <div className="text-[#E50914] text-lg font-black tracking-tighter">LOVEFLIX</div>
-                  <nav className="hidden md:flex gap-4 text-[8px] font-bold text-white/50 uppercase tracking-widest">
+                  <div className="pdf-safe-red text-lg font-black tracking-tighter">LOVEFLIX</div>
+                  <div className="flex gap-4 text-[8px] font-bold text-white/50 uppercase tracking-widest">
                      <span>Inicio</span>
                      <span>Series</span>
-                     <span>Películas</span>
-                  </nav>
+                  </div>
                </div>
-               <div className="flex items-center gap-4 text-white/80 scale-75">
-                  <Search size={16} /> <Gift size={16} /> <Bell size={16} />
-                  <div className="w-8 h-8 rounded bg-[#E50914] overflow-hidden">
+               <div className="flex items-center gap-3 text-white/50 scale-75">
+                  <Search size={16} /> <Bell size={16} />
+                  <div className="w-8 h-8 rounded pdf-safe-bg-red overflow-hidden">
                      <img src="https://wallpapers.com/images/hd/netflix-profile-pictures-1000-x-1000-qo9h82134t9nv0j0.jpg" className="w-full h-full object-cover" />
                   </div>
                </div>
             </header>
 
-            {/* INFO */}
+            {/* CONTENT */}
             <div className="absolute inset-x-10 bottom-44 z-40 space-y-4">
                 <div className="flex items-center gap-2">
-                  <span className="bg-[#E50914] text-white text-[9px] font-black px-1.2 py-0.5 rounded-sm">N</span>
-                  <span className="text-white/80 font-bold tracking-[0.3em] text-[7px] uppercase underline decoration-[#E50914] underline-offset-4">Parejas</span>
+                  <span className="pdf-safe-bg-red text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm">N</span>
+                  <span className="text-white/80 font-bold tracking-[0.3em] text-[7px] uppercase">Serie Original</span>
                 </div>
                 
-                <h2 className="text-5xl md:text-8xl font-script text-white leading-none drop-shadow-[0_5px_20px_rgba(0,0,0,0.8)]">
+                <h2 className="text-5xl md:text-8xl font-script text-white leading-none drop-shadow-2xl">
                     {names}
                 </h2>
 
-                <div className="flex items-center gap-3 text-[9px] font-bold text-white/90">
-                    <span className="text-[#46d369]">98% para ti</span>
-                    <span>Juntos Desde {date}</span>
-                    <span className="border border-white/40 px-1 rounded-sm text-[7px]">HD</span>
-                    <span>1º Gran Amor</span>
+                <div className="flex items-center gap-3 text-[9px] font-bold">
+                    <span className="pdf-safe-green">98% para ti</span>
+                    <span className="text-white/80">Disponble desde {date}</span>
+                    <span className="border border-white/40 px-1 rounded-sm text-[7px] text-white/80 font-black">HD</span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 bg-[#E50914] rounded-sm flex flex-col items-center justify-center font-black leading-none">
-                        <span className="text-[5px] opacity-70 italic font-sans">TOP</span>
+                    <div className="w-7 h-7 pdf-safe-bg-red rounded-sm flex flex-col items-center justify-center font-black leading-none">
+                        <span className="text-[5px] opacity-70 italic font-sans uppercase">TOP</span>
                         <span className="text-[11px]">10</span>
                     </div>
+                    <span className="text-sm font-bold italic text-white/90">Las Mejores Historias</span>
                 </div>
 
-                <p className="text-xs md:text-sm text-white/80 max-w-lg font-medium leading-relaxed drop-shadow-md pb-2">
+                <p className="text-xs md:text-sm text-white/80 max-w-lg font-medium leading-relaxed drop-shadow-sm">
                    {synopsis}
                 </p>
 
+                {/* BOTONES SIMPLES (SIN FILTROS) */}
                 <div className="flex items-center gap-3">
-                  <div className="px-6 py-2 bg-white text-black rounded font-bold text-sm shadow-xl flex items-center gap-2"><Play fill="black" size={14} /> Play</div>
-                  <div className="px-6 py-2 bg-gray-500/40 backdrop-blur-md text-white rounded font-bold text-sm border border-white/10 flex items-center gap-2"><CheckCircle2 size={14} /> My List</div>
+                  <div className="px-8 py-2.5 bg-white text-black rounded font-bold text-sm shadow-xl flex items-center gap-2"><Play fill="black" size={14} /> Play</div>
+                  <div className="px-8 py-2.5 bg-gray-700 text-white rounded font-bold text-sm border border-white/10 flex items-center gap-2"><CheckCircle2 size={14} /> My List</div>
                 </div>
 
-                <div className="pt-4 text-[7px] font-bold text-white/40 uppercase tracking-[0.3em] flex items-center gap-3">
-                   <div>Escrito por: <span className="text-white/80">{writtenBy}</span></div>
+                <div className="pt-4 text-[7px] font-bold text-white/40 uppercase tracking-[0.2em] flex items-center gap-3">
+                   <div>Escritor: <span className="text-white/80">{writtenBy}</span></div>
                    <div className="w-0.5 h-0.5 bg-white/20 rounded-full"></div>
-                   <div>Para: <span className="text-white/80">{destinedTo}</span></div>
+                   <div>Protagonista: <span className="text-white/80">{destinedTo}</span></div>
                 </div>
             </div>
 
-            {/* GALLERÍA */}
-            <div className="absolute inset-x-10 bottom-6 z-40">
-               <h4 className="text-[9px] font-black mb-2 uppercase tracking-[0.2em] text-white/30">Episodios Recomendados</h4>
+            {/* GALLERY */}
+            <div className="absolute inset-x-10 bottom-6 z-40 bg-black/40 p-2 rounded">
+               <h4 className="text-[9px] font-black mb-2 uppercase tracking-[0.2em] text-white/40">Más Episodios</h4>
                <div className="grid grid-cols-5 gap-2.5">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-[2/2.5] bg-white/5 rounded-sm border border-white/10 overflow-hidden shadow-2xl">
-                       {photo ? <img src={photo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-20"><Camera size={16}/></div>}
+                    <div key={i} className="aspect-[2/2.5] bg-gray-900 rounded-sm overflow-hidden shadow-2xl border border-white/5">
+                       {photo && <img src={photo} className="w-full h-full object-cover" />}
                     </div>
                   ))}
                </div>
