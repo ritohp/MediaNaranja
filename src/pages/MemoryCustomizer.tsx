@@ -90,30 +90,34 @@ export default function MemoryCustomizer() {
   };
 
   const uploadBase64 = async (base64String: string, path: string) => {
-    if (base64String.startsWith('http')) return base64String;
-    const base64Data = base64String.split(',')[1];
-    const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
-    const { data, error } = await supabase.storage
-      .from('memories')
-      .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
-    if (error) throw error;
-    return supabase.storage.from('memories').getPublicUrl(path).data.publicUrl;
+    try {
+      if (base64String.startsWith('http')) return base64String;
+      const base64Data = base64String.split(',')[1];
+      const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
+      const { data, error } = await supabase.storage
+        .from('memories')
+        .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+      
+      if (error) throw error;
+      return supabase.storage.from('memories').getPublicUrl(path).data.publicUrl;
+    } catch (err: any) {
+        throw new Error(`Subida fallida: ${err.message || "Error de conexión"}`);
+    }
   };
 
   const saveMemory = async () => {
-    if (!user) { alert("Inicia sesión para guardar."); return; }
-    if (!mainPhoto) { alert("Súbe la foto principal."); return; }
+    if (!user) { alert("Sesión expirada. Por favor, vuelve a entrar."); return; }
+    if (!mainPhoto) { alert("Falta la foto principal."); return; }
 
     setIsSaving(true);
     const area = document.getElementById('capture-area');
     
     try {
-      // 1. Generar Captura Maestra del diseño completo
-      if (!area) throw new Error("No se pudo capturar el diseño.");
-      await new Promise(r => setTimeout(r, 800));
+      if (!area) throw new Error("No se encontró el diseño para capturar.");
+      await new Promise(r => setTimeout(r, 1000));
       
       const canvas = await html2canvas(area, { 
-        scale: 2, 
+        scale: 1.5, 
         useCORS: true,
         backgroundColor: '#000000',
         onclone: (clonedDoc) => {
@@ -121,9 +125,8 @@ export default function MemoryCustomizer() {
           if (el) { el.style.width = '550px'; el.style.height = '778px'; }
         }
       });
-      const masterShotBase64 = canvas.toDataURL('image/jpeg', 0.9);
+      const masterShotBase64 = canvas.toDataURL('image/jpeg', 0.85);
 
-      // 2. Subir Todo
       const timestamp = Date.now();
       const masterUrl = await uploadBase64(masterShotBase64, `${user.id}/${timestamp}_master.jpg`);
       const mainUrl = await uploadBase64(mainPhoto, `${user.id}/${timestamp}_main.jpg`);
@@ -153,11 +156,12 @@ export default function MemoryCustomizer() {
         : await supabase.from('memories').insert(memoryData).select();
 
       if (error) throw error;
-      alert("¡Producción guardada con éxito!");
-      if (!id && data?.[0]) navigate(`/personalizar-cuadro/${data[0].id}`);
+      alert("¡Recuerdo guardado con éxito!");
+      navigate('/mis-recuerdos');
 
     } catch (err: any) {
-      alert(`Error al guardar: ${err.message}`);
+      console.error("Critical Save Error:", err);
+      alert(`Error al guardar: ${err.message || "Problema técnico desconocido"}`);
     } finally {
       setIsSaving(false);
     }
