@@ -195,11 +195,12 @@ export default function MemoryCustomizer() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
-        .netflix-gradient { background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 65%); }
-        .header-gradient { background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%); }
+        .netflix-gradient { background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%); }
+        .header-gradient { background: linear-gradient(to bottom, #000000 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0) 100%); }
         .profile-avatar {
-          background: linear-gradient(135deg, #1db954 0%, #191414 100%);
+          background: linear-gradient(135deg, #E50914 0%, #b20710 100%);
           border-radius: 4px;
+          box-shadow: 0 0 15px rgba(229,9,20,0.4);
         }
       `}</style>
 
@@ -263,14 +264,14 @@ export default function MemoryCustomizer() {
                <div className="absolute top-0 inset-x-0 h-32 header-gradient"></div>
             </div>
 
-            <header className="absolute top-0 inset-x-0 h-20 flex items-center justify-between px-10 z-50">
+            <header className="absolute top-0 inset-x-0 h-20 flex items-center justify-between px-10 z-50 bg-black/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
                <div className="text-[#E50914] text-3xl font-black tracking-tighter drop-shadow-2xl">LOVEFLIX</div>
                <div className="flex gap-6 items-center text-white drop-shadow-lg">
-                  <Search size={22}/>
-                  <Bell size={22}/>
-                  <div className="w-9 h-9 profile-avatar flex items-center justify-center p-1 border border-white/20">
+                  <Search size={22} className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity" />
+                  <Bell size={22} className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity" />
+                  <div className="w-10 h-10 profile-avatar flex items-center justify-center p-0.5 border border-white/30 cursor-pointer">
                      <div className="w-full h-full bg-[#E50914] rounded-sm flex items-center justify-center">
-                        <User size={18} fill="white" className="text-white opacity-80" />
+                        <User size={20} fill="white" className="text-white" />
                      </div>
                   </div>
                </div>
