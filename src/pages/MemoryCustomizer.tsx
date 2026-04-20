@@ -114,23 +114,15 @@ export default function MemoryCustomizer() {
     try {
       if (!area) throw new Error("No se pudo encontrar el área de diseño.");
       
-      // 1. Generar Captura Maestra con html-to-image (FLUJO REFORZADO)
-      if (!area) throw new Error("No se pudo encontrar el área de diseño.");
-      
-      // Esperar a que todo (fotos y fuentes) esté 100% cargado
-      await new Promise(r => setTimeout(r, 2000));
+      // 1. Generar Captura Maestra (REFORZADA)
+      await new Promise(r => setTimeout(r, 2500)); // Más tiempo para renderizado total
       
       const masterShotDataUrl = await toJpeg(area, { 
         quality: 0.95,
         backgroundColor: '#000000',
-        width: 550,
-        height: 778,
         pixelRatio: 2,
-        cacheBust: true, // Evita que use versiones viejas de las fotos
-        style: {
-          transform: 'scale(1)',
-          transformOrigin: 'top left'
-        }
+        cacheBust: true,
+        skipFonts: false,
       });
 
       // 2. Subir Todo
@@ -179,7 +171,7 @@ export default function MemoryCustomizer() {
     if (!area) return;
     setIsExporting(true);
     try {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1500));
         const imgData = await toJpeg(area, { quality: 0.95, pixelRatio: 2 });
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
@@ -204,7 +196,12 @@ export default function MemoryCustomizer() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
-        .netflix-gradient { background: linear-gradient(to top, #000 0%, transparent 60%); }
+        .netflix-gradient { background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 60%); }
+        /* Evitar blur en la captura */
+        .glass-no-blur {
+          background-color: rgba(0, 0, 0, 0.4);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
       `}</style>
 
       <div className="max-w-[1500px] mx-auto px-6 grid grid-cols-1 xl:grid-cols-12 gap-10">
@@ -258,15 +255,15 @@ export default function MemoryCustomizer() {
           </div>
         </div>
 
-        {/* ÁREA DE PREVISUALIZACIÓN (CAPTURE AREA) */}
+        {/* ÁREA DE PREVISUALIZACIÓN */}
         <div className="xl:col-span-8 flex justify-center sticky top-24">
-          <div id="capture-area" className="w-full max-w-[550px] aspect-[1/1.414] bg-black shadow-2xl relative overflow-hidden">
+          <div id="capture-area" className="w-[550px] aspect-[1/1.414] bg-black shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 z-0">
                {mainPhoto ? <img src={mainPhoto} crossOrigin="anonymous" className="w-full h-full object-cover object-center" /> : <div className="w-full h-full bg-[#0a0a0a]"></div>}
                <div className="absolute inset-0 netflix-gradient"></div>
             </div>
 
-            <header className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-10 z-50 bg-black/40 backdrop-blur-md border-b border-white/5">
+            <header className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-10 z-50 glass-no-blur">
                <div className="text-[#E50914] text-lg font-black tracking-tighter">LOVEFLIX</div>
                <div className="flex gap-4 items-center opacity-60 scale-90 text-white"><Search size={18}/><Bell size={18}/><div className="w-8 h-8 bg-[#E50914] rounded-sm shadow-lg"></div></div>
             </header>
@@ -277,8 +274,8 @@ export default function MemoryCustomizer() {
                 <div className="flex items-center gap-4 text-[11px] font-bold text-white/90"><span className="text-[#46D369]">98% para ti</span><span>{date}</span><span className="border border-white/40 px-1.5 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-widest">HD 4K</span></div>
                 <p className="text-xs text-white/80 max-w-sm font-medium leading-relaxed italic drop-shadow-md">{synopsis}</p>
                 <div className="flex items-center gap-3 pt-2">
-                    <div className="px-10 py-2.5 bg-white text-black rounded font-black text-[10px] uppercase tracking-widest shadow-2xl transition-colors">Jugar</div>
-                    <div className="px-10 py-2.5 bg-gray-500/30 text-white rounded font-black text-[10px] uppercase tracking-widest border border-white/10 backdrop-blur-md transition-colors">+ Mi Lista</div>
+                    <div className="px-10 py-2.5 bg-white text-black rounded font-black text-[10px] uppercase tracking-widest shadow-2xl">Jugar</div>
+                    <div className="px-10 py-2.5 bg-gray-700/30 text-white rounded font-black text-[10px] uppercase tracking-widest border border-white/10">+ Mi Lista</div>
                 </div>
             </div>
 
@@ -286,7 +283,7 @@ export default function MemoryCustomizer() {
                <h4 className="text-[10px] font-black mb-3 uppercase tracking-[0.3em] text-white/20 italic">Sigue viendo tus momentos</h4>
                <div className="grid grid-cols-5 gap-3">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-transform group">{photo && <img src={photo} crossOrigin="anonymous" className="w-full h-full object-cover" />}</div>
+                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] group">{photo && <img src={photo} crossOrigin="anonymous" className="w-full h-full object-cover" />}</div>
                   ))}
                </div>
             </div>
