@@ -188,6 +188,3 @@ export default function MemoryCustomizer() {
   );
 }
 
-function ThumbsDown({ size, className }: { size: number, className: string }) {
-    return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.99-2.28l.83-5a2 2 0 0 1 2-1.72h12.83a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1.34l-5.65 6.13a1 1 0 0 1-1.85-.35l-.01-.01Z"/></svg>;
-}
