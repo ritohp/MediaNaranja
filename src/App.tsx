@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import CreateSong from './pages/CreateSong';
 import MySongs from './pages/MySongs';
+import MemoryGallery from './pages/MemoryGallery';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/crear-cancion" element={<CreateSong />} />
           <Route path="/mis-canciones" element={<MySongs />} />
+          <Route path="/galeria-recuerdos" element={<MemoryGallery />} />
         </Routes>
       </div>
     </Router>
