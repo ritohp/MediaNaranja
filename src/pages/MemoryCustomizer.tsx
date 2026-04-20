@@ -90,120 +90,163 @@ export default function MemoryCustomizer() {
     setIsExporting(true);
     
     try {
-        // 1. Configuración del Canvas (Relación A4: 210 x 297mm)
+        // 1. ESPERA ACTIVA DE FUENTES (Crítico para que el PDF no salga con letra normal)
+        await document.fonts.load('bold 110px "Dancing Script"');
+        await new Promise(r => setTimeout(r, 500)); // Margen extra de seguridad
+
+        // 2. Configuración del Canvas (Relación A4 exacta: 1:1.414)
         const canvas = document.createElement('canvas');
-        const dpr = 2; // Multiplicador de nitidez
-        canvas.width = 1000 * dpr;
-        canvas.height = 1414 * dpr;
+        const SCALE_FACTOR = 2.5; 
+        const PAGE_WIDTH = 1000;
+        const PAGE_HEIGHT = 1414;
+        
+        canvas.width = PAGE_WIDTH * SCALE_FACTOR;
+        canvas.height = PAGE_HEIGHT * SCALE_FACTOR;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        ctx.scale(dpr, dpr);
+        ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
 
-        // 2. Fondo Negro Base
+        // 3. Fondo Negro y Limpieza
         ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, 1000, 1414);
+        ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
 
-        // 3. Cargar Imagen Principal
+        // 4. Imagen Principal con Encuadre Cinematográfico (Evita estiramiento)
         if (mainPhoto) {
             const img = await loadImage(mainPhoto);
-            const scale = Math.max(1000 / img.width, 1414 / img.height);
-            const x = (1000 / 2) - (img.width / 2) * scale;
-            const y = (1414 / 2) - (img.height / 2) * scale;
-            ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+            const imgRatio = img.width / img.height;
+            const pageRatio = PAGE_WIDTH / PAGE_HEIGHT;
+            
+            let drawW, drawH, drawX, drawY;
+            
+            if (imgRatio > pageRatio) {
+                drawH = PAGE_HEIGHT;
+                drawW = PAGE_HEIGHT * imgRatio;
+                drawX = (PAGE_WIDTH - drawW) / 2;
+                drawY = 0;
+            } else {
+                drawW = PAGE_WIDTH;
+                drawH = PAGE_WIDTH / imgRatio;
+                drawX = 0;
+                drawY = (PAGE_HEIGHT - drawH) / 3; // Ligeramente arriba para centrar rostros
+            }
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
         }
 
-        // 4. Degradado Cinemático
-        const grad = ctx.createLinearGradient(0, 1414 * 0.3, 0, 1414);
+        // 5. Degradado de Protección (Más profundo para legibilidad)
+        const grad = ctx.createLinearGradient(0, PAGE_HEIGHT * 0.4, 0, PAGE_HEIGHT);
         grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(0.5, 'rgba(0,0,0,0.4)');
-        grad.addColorStop(0.8, 'rgba(0,0,0,0.9)');
+        grad.addColorStop(0.4, 'rgba(0,0,0,0.6)');
+        grad.addColorStop(0.7, 'rgba(0,0,0,0.9)');
         grad.addColorStop(1, 'rgba(0,0,0,1)');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1000, 1414);
+        ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
 
-        // 5. Logo "LOVEFLIX"
+        // 6. Branding LOVEFLIX (Ajustado con margen seguro)
+        const MARGIN_X = 60;
         ctx.fillStyle = '#E50914';
-        ctx.font = '900 40px Helvetica, Arial, sans-serif';
-        ctx.fillText('LOVEFLIX', 50, 80);
+        ctx.font = '900 45px "Helvetica Neue", Helvetica, Arial, sans-serif';
+        ctx.fillText('LOVEFLIX', MARGIN_X, 85);
 
-        // 6. Contenido Principal (Textos)
-        const contentY = 1000;
+        // 7. BLOQUE DE CONTENIDO (Auto-ajustable)
+        const contentY = 1050;
         
         // Etiqueta N
         ctx.fillStyle = '#E50914';
-        ctx.fillRect(50, contentY - 120, 25, 35);
+        ctx.fillRect(MARGIN_X, contentY - 145, 25, 40);
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = '900 24px Arial';
-        ctx.fillText('N', 54, contentY - 93);
+        ctx.font = '900 28px Arial';
+        ctx.fillText('N', MARGIN_X + 4, contentY - 114);
         
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText('SERIE ORIGINAL DE MEDIA NARANJA', 85, contentY - 96);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = 'bold 18px Arial';
+        // Simular letter-spacing eliminando el método nativo (no soportado en todos los canvas)
+        ctx.fillText('PELÍCULA ORIGINAL DE MEDIA NARANJA', MARGIN_X + 40, contentY - 117);
 
-        // NOMBRES (Dancing Script)
+        // TÍTULO: AUTO-ESCALADO (Si el nombre es largo, la letra se achica)
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 110px "Dancing Script", cursive';
-        ctx.fillText(names, 50, contentY);
+        let fontSize = 110;
+        ctx.font = `bold ${fontSize}px "Dancing Script", cursive`;
+        let textWidth = ctx.measureText(names).width;
+        const MAX_TEXT_WIDTH = PAGE_WIDTH - (MARGIN_X * 2);
+        
+        while (textWidth > MAX_TEXT_WIDTH && fontSize > 40) {
+            fontSize -= 5;
+            ctx.font = `bold ${fontSize}px "Dancing Script", cursive`;
+            textWidth = ctx.measureText(names).width;
+        }
+        ctx.fillText(names, MARGIN_X, contentY);
 
         // Metadatos
-        ctx.font = 'bold 20px Arial';
+        ctx.font = 'bold 22px Arial';
         ctx.fillStyle = '#46D369';
-        ctx.fillText('98% para ti', 50, contentY + 50);
+        ctx.fillText('98% para ti', MARGIN_X, contentY + 55);
         
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillText(`Lanzado en ${date}`, 180, contentY + 50);
+        ctx.fillText(`${date}`, MARGIN_X + 140, contentY + 55);
         
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-        ctx.strokeRect(350, contentY + 32, 45, 25);
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText('UHD', 356, contentY + 50);
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(MARGIN_X + 210, contentY + 33, 60, 30);
+        ctx.font = 'bold 18px Arial';
+        ctx.fillText('4K HDR', MARGIN_X + 216, contentY + 55);
 
-        // Sinopsis
-        ctx.font = 'normal 22px Arial';
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        drawWrappedText(ctx, synopsis, 50, contentY + 100, 900, 30);
+        // Sinopsis (Con word-wrap)
+        ctx.font = 'italic 24px Arial';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        drawWrappedText(ctx, synopsis, MARGIN_X, contentY + 110, MAX_TEXT_WIDTH, 35);
 
-        // 7. Botones Visuales
+        // 8. Botones (Estilo Netflix Premium)
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.roundRect(50, contentY + 180, 200, 50, 5);
+        ctx.roundRect(MARGIN_X, contentY + 210, 180, 55, 8);
         ctx.fill();
         ctx.fillStyle = '#000000';
-        ctx.font = 'bold 20px Arial';
-        ctx.fillText('▶ Reproducir', 70, contentY + 213);
+        ctx.font = '900 22px Arial';
+        ctx.fillText('▶ Jugar', MARGIN_X + 35, contentY + 246);
 
-        ctx.fillStyle = 'rgba(128,128,128,0.5)';
+        ctx.fillStyle = 'rgba(120,120,120,0.4)';
         ctx.beginPath();
-        ctx.roundRect(270, contentY + 180, 200, 50, 5);
+        ctx.roundRect(MARGIN_X + 200, contentY + 210, 180, 55, 8);
         ctx.fill();
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillText('✓ Mi Lista', 315, contentY + 213);
+        ctx.fillText('✓ Mi Lista', MARGIN_X + 235, contentY + 246);
 
-        // 8. Galería de Miniaturas
+        // 9. Galería de Miniaturas (Episodios)
         const thumbY = 1280;
-        const thumbW = 160;
-        const thumbH = 100;
+        const thumbW = 155;
+        const thumbH = 90;
         const gap = 20;
 
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.font = 'bold 16px Arial';
-        ctx.fillText('EPISODIOS RECOMENDADOS', 50, thumbY - 20);
+        ctx.fillText('MOMENTOS RECOMENDADOS', MARGIN_X, thumbY - 25);
 
         for (let i = 0; i < 5; i++) {
-            const tx = 50 + (thumbW + gap) * i;
+            const tx = MARGIN_X + (thumbW + gap) * i;
             if (galleryPhotos[i]) {
                 const thumbImg = await loadImage(galleryPhotos[i]!);
-                ctx.drawImage(thumbImg, tx, thumbY, thumbW, thumbH);
+                const tScale = Math.max(thumbW / thumbImg.width, thumbH / thumbImg.height);
+                const tw = thumbImg.width * tScale;
+                const th = thumbImg.height * tScale;
+                const txOff = (thumbW - tw) / 2;
+                const tyOff = (thumbH - th) / 2;
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(tx, thumbY, thumbW, thumbH);
+                ctx.clip();
+                ctx.drawImage(thumbImg, tx + txOff, thumbY + tyOff, tw, th);
+                ctx.restore();
             } else {
-                ctx.fillStyle = '#1a1a1a';
+                ctx.fillStyle = '#141414';
                 ctx.fillRect(tx, thumbY, thumbW, thumbH);
             }
             ctx.strokeStyle = 'rgba(255,255,255,0.1)';
             ctx.strokeRect(tx, thumbY, thumbW, thumbH);
         }
 
-        // 9. Generar PDF Final
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        // 10. Generar PDF Nítido
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'mm',
@@ -215,7 +258,7 @@ export default function MemoryCustomizer() {
 
     } catch (err: any) {
         console.error("Master Renderer Error:", err);
-        alert(`Error en el motor de dibujo: ${err.message}. Asegúrate de que las imágenes hayan cargado.`);
+        alert(`Error en el motor de diseño: ${err.message}. Intentaremos re-generar.`);
     } finally {
         setIsExporting(false);
     }
