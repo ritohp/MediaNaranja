@@ -114,14 +114,23 @@ export default function MemoryCustomizer() {
     try {
       if (!area) throw new Error("No se pudo encontrar el área de diseño.");
       
-      // 1. Generar Captura Maestra con html-to-image (MÁS MODERNO Y FIEL)
-      await new Promise(r => setTimeout(r, 1000));
+      // 1. Generar Captura Maestra con html-to-image (FLUJO REFORZADO)
+      if (!area) throw new Error("No se pudo encontrar el área de diseño.");
+      
+      // Esperar a que todo (fotos y fuentes) esté 100% cargado
+      await new Promise(r => setTimeout(r, 2000));
+      
       const masterShotDataUrl = await toJpeg(area, { 
         quality: 0.95,
         backgroundColor: '#000000',
         width: 550,
         height: 778,
-        pixelRatio: 2
+        pixelRatio: 2,
+        cacheBust: true, // Evita que use versiones viejas de las fotos
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left'
+        }
       });
 
       // 2. Subir Todo
@@ -253,7 +262,7 @@ export default function MemoryCustomizer() {
         <div className="xl:col-span-8 flex justify-center sticky top-24">
           <div id="capture-area" className="w-full max-w-[550px] aspect-[1/1.414] bg-black shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 z-0">
-               {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover object-center" /> : <div className="w-full h-full bg-[#0a0a0a]"></div>}
+               {mainPhoto ? <img src={mainPhoto} crossOrigin="anonymous" className="w-full h-full object-cover object-center" /> : <div className="w-full h-full bg-[#0a0a0a]"></div>}
                <div className="absolute inset-0 netflix-gradient"></div>
             </div>
 
@@ -277,7 +286,7 @@ export default function MemoryCustomizer() {
                <h4 className="text-[10px] font-black mb-3 uppercase tracking-[0.3em] text-white/20 italic">Sigue viendo tus momentos</h4>
                <div className="grid grid-cols-5 gap-3">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-transform group">{photo && <img src={photo} className="w-full h-full object-cover" />}</div>
+                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-transform group">{photo && <img src={photo} crossOrigin="anonymous" className="w-full h-full object-cover" />}</div>
                   ))}
                </div>
             </div>

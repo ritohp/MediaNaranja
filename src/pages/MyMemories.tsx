@@ -15,56 +15,69 @@ export default function MyMemories() {
   }, []);
 
   const fetchMemories = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/');
-      return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('memories')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setMemories(data || []);
+    } catch (err) {
+      console.error("Error fetching memories:", err);
+    } finally {
+      setLoading(false);
     }
-
-    const { data, error } = await supabase
-      .from('memories')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (!error) setMemories(data || []);
-    setLoading(false);
   };
 
   const deleteMemory = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (!confirm('¿Seguro que quieres eliminar este recuerdo?')) return;
-    const { error } = await supabase.from('memories').delete().eq('id', id);
-    if (!error) setMemories(prev => prev.filter(m => m.id !== id));
+    try {
+      const { error } = await supabase.from('memories').delete().eq('id', id);
+      if (error) throw error;
+      setMemories(prev => prev.filter(m => m.id !== id));
+    } catch (err) {
+      alert("Error al eliminar el recuerdo.");
+    }
   };
 
   const downloadMasterPDF = async (memory: any, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     
-    if (!memory.full_design_url) {
-      alert("Este diseño antiguo no tiene Captura Maestra. Por favor, ábrelo en el editor y dale a 'Guardar' para generarla.");
+    if (!memory || !memory.full_design_url) {
+      alert("Este diseño requiere una captura maestra. Ábrelo y dale a 'Guardar'.");
       return;
     }
 
     setDownloadingId(memory.id);
     try {
       const response = await fetch(memory.full_design_url);
+      if (!response.ok) throw new Error("No se pudo descargar la imagen maestra.");
       const blob = await response.blob();
       const reader = new FileReader();
       
       reader.onloadend = () => {
         const base64data = reader.result as string;
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-        // La imagen maestra ya tiene la proporción correcta (1:1.414)
         pdf.addImage(base64data, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
-        pdf.save(`ProductoraNaranja_${memory.names.split(' ')[0]}.pdf`);
+        const fileName = memory.names ? memory.names.split(' ')[0] : 'Recuerdo';
+        pdf.save(`MediaNaranja_${fileName}.pdf`);
         setDownloadingId(null);
       };
       reader.readAsDataURL(blob);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Download Error:", err);
-      alert("Error al descargar el PDF.");
+      alert(`Error: ${err.message}`);
       setDownloadingId(null);
     }
   };
@@ -72,7 +85,10 @@ export default function MyMemories() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FDF7F8] flex items-center justify-center">
-        <Loader2 className="animate-spin text-[#FF6B6B]" size={40} />
+        <div className="flex flex-col items-center gap-4">
+           <Loader2 className="animate-spin text-[#FF6B6B]" size={40} />
+           <p className="text-[#FF6B6B] font-bold animate-pulse">Cargando tu cartelera...</p>
+        </div>
       </div>
     );
   }
@@ -83,7 +99,7 @@ export default function MyMemories() {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-serif italic text-[#4A4A4A] mb-2 uppercase tracking-tight">Estudio <span className="text-[#E50914] font-black non-italic">Loveflix</span></h1>
-            <p className="text-gray-400 font-medium">Tus producciones originales guardadas en alta fidelidad</p>
+            <p className="text-gray-400 font-medium tracking-wide">Tus producciones originales guardadas en alta fidelidad</p>
           </div>
           <Link 
             to="/personalizar-cuadro" 
@@ -105,10 +121,10 @@ export default function MyMemories() {
             {memories.map((memory) => (
               <div 
                 key={memory.id} 
-                className="group bg-[#0a0a0a] rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(229,9,20,0.2)] transition-all duration-500 flex flex-col"
+                onClick={() => navigate(`/personalizar-cuadro/${memory.id}`)}
+                className="group bg-[#0a0a0a] rounded-[2rem] overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(229,9,20,0.2)] transition-all duration-500 flex flex-col cursor-pointer"
               >
-                {/* Thumbnail (Usa la Captura Maestra si existe, si no la foto principal) */}
-                <div onClick={() => navigate(`/personalizar-cuadro/${memory.id}`)} className="aspect-[16/9] relative cursor-pointer overflow-hidden">
+                <div className="aspect-[16/9] relative overflow-hidden">
                    <img src={memory.full_design_url || memory.main_photo_url} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
                    
@@ -122,10 +138,10 @@ export default function MyMemories() {
                 <div className="p-8 flex-1 flex flex-col">
                   <div className="flex items-center gap-2 mb-4">
                      <span className="bg-[#E50914] text-white font-black text-[10px] px-1.5 py-0.5 rounded-[2px]">N</span>
-                     <h3 className="text-white font-black text-sm tracking-widest truncate uppercase italic">{memory.names}</h3>
+                     <h3 className="text-white font-black text-sm tracking-widest truncate uppercase italic">{memory.names || 'Sin nombre'}</h3>
                   </div>
                   
-                  <p className="text-xs text-gray-500 italic line-clamp-2 mb-6">"{memory.synopsis}"</p>
+                  <p className="text-xs text-gray-500 italic line-clamp-2 mb-6">"{memory.synopsis || 'Sin sinopsis'}"</p>
 
                   <div className="mt-auto flex gap-3">
                     <button 
@@ -138,7 +154,7 @@ export default function MyMemories() {
                       }`}
                     >
                       {downloadingId === memory.id ? <Loader2 className="animate-spin" size={16}/> : <Download size={16}/>}
-                      {downloadingId === memory.id ? 'PROCESANDO...' : 'DESCARGAR PDF'}
+                      {downloadingId === memory.id ? 'GENERANDO...' : 'DESCARGAR PDF'}
                     </button>
                     
                     <button 
@@ -152,7 +168,7 @@ export default function MyMemories() {
                   {!memory.full_design_url && (
                     <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                        <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest leading-relaxed">
-                          ⚠️ Falta captura maestra. Haz clic en el póster para abrir el editor y dale a "Guardar".
+                          ⚠️ Requiere actualización. Toca el póster y dale a "Guardar".
                        </p>
                     </div>
                   )}
