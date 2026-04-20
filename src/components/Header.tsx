@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, User as UserIcon, LogOut, Coins } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, LogOut, Coins, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
@@ -67,7 +67,9 @@ export default function Header() {
       <div className="flex items-center justify-between">
         <ul className="flex items-center space-x-8 text-sm font-medium text-blush-600">
           <li><Link to="/" className="hover:text-naranja-500 transition-colors">Inicio</Link></li>
-          <li><a href="#" className="hover:text-naranja-500 transition-colors">Nosotros</a></li>
+          {user && (
+            <li><Link to="/mis-recuerdos" className="hover:text-naranja-500 transition-colors">Mis Recuerdos</Link></li>
+          )}
         </ul>
         
         <Link to="/" className="flex flex-col items-center cursor-pointer group">
