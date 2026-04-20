@@ -35,18 +35,28 @@ export default function MemoryCustomizer() {
     setIsExporting(true);
     
     try {
-        // Pequeña espera para asegurar que todo el DOM esté listo
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Intervalo para asegurar carga total
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         const canvas = await html2canvas(previewRef.current, { 
-            scale: 2, 
+            scale: 1.5, // Bajamos un poco para estabilidad
             useCORS: true,
+            allowTaint: false,
             backgroundColor: '#141414',
-            logging: false,
-            // Importante: Eliminar allowTaint para evitar problemas de seguridad en el canvas
+            logging: true, // Activamos logs para debug
+            onclone: (clonedDoc) => {
+                // Forzamos visibilidad en el clon
+                const area = clonedDoc.getElementById('pdf-area');
+                if (area) {
+                    area.style.transform = 'none';
+                    area.style.position = 'relative';
+                    area.style.left = '0';
+                    area.style.top = '0';
+                }
+            }
         });
         
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
         const pdf = new jsPDF({
             orientation: 'p',
             unit: 'mm',
@@ -57,10 +67,11 @@ export default function MemoryCustomizer() {
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`MediaNaranja_Serie_${names.replace(/\s+/g, '_')}.pdf`);
-    } catch (err) {
+        pdf.save(`Recuerdo_Media_Naranja_${names.replace(/\s+/g, '_')}.pdf`);
+    } catch (err: any) {
         console.error("PDF Export Error:", err);
-        alert("Error al generar PDF. Prueba refrescando la página o revisando que las fotos hayan cargado bien.");
+        // El alert ahora nos dirá el error técnico real
+        alert(`Error técnico: ${err.message || "Error desconocido"}. Por favor intenta con fotos más pequeñas o refresca la página.`);
     } finally {
         setIsExporting(false);
     }
@@ -71,7 +82,6 @@ export default function MemoryCustomizer() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
 
       <div className="max-w-[1700px] mx-auto px-6 grid grid-cols-1 xl:grid-cols-12 gap-12">
@@ -85,11 +95,11 @@ export default function MemoryCustomizer() {
           <div className="bg-[#111] p-8 rounded-[2.5rem] border border-white/5 space-y-8">
             <header>
                 <h1 className="text-3xl font-serif mb-2 italic">Estudio <span className="text-[#E50914]">Loveflix</span></h1>
-                <p className="text-gray-500 text-xs uppercase tracking-widest">Diseño Naranja Original</p>
+                <p className="text-gray-500 text-xs uppercase tracking-widest">Personalizador Pro</p>
             </header>
 
             <section className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E50914]">Portada de Serie</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E50914]">Fondo de Serie</h3>
               <div 
                 onClick={() => document.getElementById('main-upload')?.click()}
                 className="w-full aspect-video bg-[#1a1a1a] rounded-2xl border-2 border-dashed border-gray-700 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden"
@@ -100,7 +110,7 @@ export default function MemoryCustomizer() {
             </section>
 
             <section className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E50914]">Miniaturas de Capítulos</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#E50914]">Galería de Capítulos</h3>
               <div className="grid grid-cols-5 gap-2">
                 {galleryPhotos.map((photo, i) => (
                   <div key={i} onClick={() => document.getElementById(`gallery-${i}`)?.click()} className="aspect-square bg-[#1a1a1a] rounded-lg border border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden">
@@ -127,7 +137,7 @@ export default function MemoryCustomizer() {
                 className={`w-full py-5 bg-[#E50914] text-white rounded-2xl font-black tracking-widest hover:brightness-110 shadow-xl transition-all flex items-center justify-center gap-3 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isExporting ? (
-                <> <Loader2 className="animate-spin" size={20} /> Generando...</>
+                <> <Loader2 className="animate-spin" size={20} /> Capturando...</>
               ) : (
                 <> <Download size={20} /> DESCARGAR PDF </>
               )}
@@ -135,12 +145,12 @@ export default function MemoryCustomizer() {
           </div>
         </div>
 
-        {/* PREVIEW FINAL */}
+        {/* PREVIEW AREA */}
         <div className="xl:col-span-8 sticky top-24">
           <div 
             ref={previewRef}
-            className="w-full aspect-[3/4.2] bg-[#141414] shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative overflow-hidden"
             id="pdf-area"
+            className="w-full aspect-[3/4.2] bg-[#141414] shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative overflow-hidden"
           >
             {/* PORTADA */}
             <div className="absolute inset-0 z-0">
@@ -154,16 +164,16 @@ export default function MemoryCustomizer() {
             </div>
 
             {/* NAV BAR */}
-            <header className="absolute top-0 inset-x-0 h-16 flex items-center justify-between px-10 z-50 bg-black/60 backdrop-blur-md border-b border-white/5">
+            <header className="absolute top-0 inset-x-0 h-14 flex items-center justify-between px-10 z-50 bg-black/60 backdrop-blur-md">
                <div className="flex items-center gap-6">
-                  <div className="text-[#E50914] text-xl font-black tracking-tighter">LOVEFLIX</div>
-                  <nav className="flex gap-4 text-[9px] font-bold text-white/50 uppercase tracking-widest">
+                  <div className="text-[#E50914] text-lg font-black tracking-tighter">LOVEFLIX</div>
+                  <nav className="hidden md:flex gap-4 text-[8px] font-bold text-white/50 uppercase tracking-widest">
                      <span>Inicio</span>
                      <span>Series</span>
                      <span>Películas</span>
                   </nav>
                </div>
-               <div className="flex items-center gap-4 text-white/80 scale-90">
+               <div className="flex items-center gap-4 text-white/80 scale-75">
                   <Search size={16} /> <Gift size={16} /> <Bell size={16} />
                   <div className="w-8 h-8 rounded bg-[#E50914] overflow-hidden">
                      <img src="https://wallpapers.com/images/hd/netflix-profile-pictures-1000-x-1000-qo9h82134t9nv0j0.jpg" className="w-full h-full object-cover" />
@@ -171,61 +181,54 @@ export default function MemoryCustomizer() {
                </div>
             </header>
 
-            {/* INFO TEXTO */}
-            <div className="absolute inset-x-10 bottom-48 z-40 space-y-4">
+            {/* INFO */}
+            <div className="absolute inset-x-10 bottom-44 z-40 space-y-4">
                 <div className="flex items-center gap-2">
-                  <span className="bg-[#E50914] text-white text-[10px] font-black px-1.5 py-0.5 rounded-sm">N</span>
-                  <span className="text-white/80 font-bold tracking-[0.3em] text-[8px] uppercase">Parejas</span>
+                  <span className="bg-[#E50914] text-white text-[9px] font-black px-1.2 py-0.5 rounded-sm">N</span>
+                  <span className="text-white/80 font-bold tracking-[0.3em] text-[7px] uppercase underline decoration-[#E50914] underline-offset-4">Parejas</span>
                 </div>
                 
-                <h2 className="text-6xl md:text-8xl font-script text-white leading-none drop-shadow-[0_5px_20px_rgba(0,0,0,0.8)]">
+                <h2 className="text-5xl md:text-8xl font-script text-white leading-none drop-shadow-[0_5px_20px_rgba(0,0,0,0.8)]">
                     {names}
                 </h2>
 
-                <div className="flex items-center gap-3 text-[10px] font-bold text-white">
+                <div className="flex items-center gap-3 text-[9px] font-bold text-white/90">
                     <span className="text-[#46d369]">98% para ti</span>
-                    <span className="text-white/40">●</span>
                     <span>Juntos Desde {date}</span>
-                    <span className="text-white/40">●</span>
-                    <span className="border border-white/50 px-1 rounded-sm text-[8px]">13+</span>
+                    <span className="border border-white/40 px-1 rounded-sm text-[7px]">HD</span>
                     <span>1º Gran Amor</span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-[#E50914] rounded-sm flex flex-col items-center justify-center font-black leading-none">
-                        <span className="text-[5px] opacity-70 italic font-sans uppercase">TOP</span>
-                        <span className="text-sm">10</span>
+                    <div className="w-7 h-7 bg-[#E50914] rounded-sm flex flex-col items-center justify-center font-black leading-none">
+                        <span className="text-[5px] opacity-70 italic font-sans">TOP</span>
+                        <span className="text-[11px]">10</span>
                     </div>
-                    <span className="text-sm font-bold italic tracking-tight border-b border-white/10 pb-0.5">Mejores Parejas Del Mundo</span>
                 </div>
 
-                <p className="text-xs md:text-sm text-white/90 max-w-xl font-medium leading-relaxed drop-shadow-md pb-4">
+                <p className="text-xs md:text-sm text-white/80 max-w-lg font-medium leading-relaxed drop-shadow-md pb-2">
                    {synopsis}
                 </p>
 
                 <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-2 px-8 py-3 bg-white text-black rounded font-bold text-sm md:text-lg shadow-xl"><Play fill="black" size={20} /> Play</button>
-                  <button className="flex items-center gap-2 px-8 py-3 bg-gray-500/50 backdrop-blur-md text-white rounded font-bold text-lg border border-white/20"><CheckCircle2 size={20} /> Favorito</button>
-                  <div className="flex gap-2 pl-2">
-                    <div className="w-9 h-9 rounded-full border border-white/30 flex items-center justify-center opacity-70"><ThumbsUp size={14}/></div>
-                    <div className="w-9 h-9 rounded-full border border-white/30 flex items-center justify-center opacity-70"><ThumbsDown size={14}/></div>
-                  </div>
+                  <div className="px-6 py-2 bg-white text-black rounded font-bold text-sm shadow-xl flex items-center gap-2"><Play fill="black" size={14} /> Play</div>
+                  <div className="px-6 py-2 bg-gray-500/40 backdrop-blur-md text-white rounded font-bold text-sm border border-white/10 flex items-center gap-2"><CheckCircle2 size={14} /> My List</div>
                 </div>
 
-                <div className="pt-6 text-[8px] font-bold text-white/50 uppercase tracking-[0.3em] flex items-center gap-4">
-                   <div>Escrito por: <span className="text-white/90">{writtenBy}</span></div>
-                   <div className="w-1 h-1 bg-white/20 rounded-full"></div>
-                   <div>Para: <span className="text-white/90">{destinedTo}</span></div>
+                <div className="pt-4 text-[7px] font-bold text-white/40 uppercase tracking-[0.3em] flex items-center gap-3">
+                   <div>Escrito por: <span className="text-white/80">{writtenBy}</span></div>
+                   <div className="w-0.5 h-0.5 bg-white/20 rounded-full"></div>
+                   <div>Para: <span className="text-white/80">{destinedTo}</span></div>
                 </div>
             </div>
 
-            {/* GALERÍA */}
-            <div className="absolute inset-x-10 bottom-6 z-40 bg-gradient-to-t from-black to-transparent pt-4">
-               <h4 className="text-[10px] font-black mb-3 uppercase tracking-[0.2em] text-white/40">Momentos Inolvidables</h4>
-               <div className="grid grid-cols-5 gap-3">
+            {/* GALLERÍA */}
+            <div className="absolute inset-x-10 bottom-6 z-40">
+               <h4 className="text-[9px] font-black mb-2 uppercase tracking-[0.2em] text-white/30">Episodios Recomendados</h4>
+               <div className="grid grid-cols-5 gap-2.5">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-square bg-white/5 rounded shadow-2xl border border-white/10 overflow-hidden">
-                       {photo && <img src={photo} className="w-full h-full object-cover" />}
+                    <div key={i} className="aspect-[2/2.5] bg-white/5 rounded-sm border border-white/10 overflow-hidden shadow-2xl">
+                       {photo ? <img src={photo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-20"><Camera size={16}/></div>}
                     </div>
                   ))}
                </div>
