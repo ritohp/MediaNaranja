@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import CreateSong from './pages/CreateSong';
 import MySongs from './pages/MySongs';
 import MemoryGallery from './pages/MemoryGallery';
+import MemoryCustomizer from './pages/MemoryCustomizer';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/crear-cancion" element={<CreateSong />} />
           <Route path="/mis-canciones" element={<MySongs />} />
           <Route path="/galeria-recuerdos" element={<MemoryGallery />} />
+          <Route path="/personalizar-cuadro" element={<MemoryCustomizer />} />
         </Routes>
       </div>
     </Router>

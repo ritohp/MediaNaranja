@@ -1,184 +1,125 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, ShoppingCart, Star, Heart, ArrowRight, Expand } from 'lucide-react';
+import { Search, Play, Plus, ThumbsUp, Heart, ArrowRight, Camera, Monitor, Image as ImageIcon, Info } from 'lucide-react';
 
-const PRODUCTS = [
+const CATALOG_STYLES = [
   {
-    id: 1,
-    name: "Cuadro Eternidad Minimalista",
-    category: "Moderno",
-    price: 890,
-    image: "/cuadro_recuerdo_moderno_lujo_1776643644757.png",
-    rating: 5,
-    tag: "Más Vendido"
+    id: 'amorflix',
+    title: "Amorflix Original",
+    subtitle: "Sobre los mejores momentos de nuestra historia",
+    category: "Cinema Style",
+    price: 1290,
+    primaryColor: "#E50914",
+    image: "/media__1776644053916.png",
+    badge: "TOP 1",
+    description: "Diseño clásico de plataforma de streaming con cuadrícula de momentos favoritos."
   },
   {
-    id: 2,
-    name: "Collage Historias de Amor",
-    category: "Romántico",
-    price: 1250,
-    image: "/cuadro_recuerdo_collage_romantic_1776643659226.png",
-    rating: 5,
-    tag: "Premium"
+    id: 'namorix',
+    title: "Namorix Cinema",
+    subtitle: "Historias de Amor",
+    category: "Player Style",
+    price: 1150,
+    primaryColor: "#E50914",
+    image: "/media__1776644053676.png",
+    badge: "VORTEX",
+    description: "Estilo reproductor de video con barra de tiempo y controles de reproducción."
   },
   {
-    id: 3,
-    name: "Marco Clásico 'Nuestra Fecha'",
-    category: "Clásico",
-    price: 750,
-    image: "https://images.unsplash.com/photo-1544450610-ad587c6a946e?q=80&w=2670&auto=format&fit=crop",
-    rating: 4,
-    tag: "Nuevo"
-  },
-  {
-    id: 4,
-    name: "Cuadro Abstracto Familiar",
-    category: "Contemporáneo",
-    price: 1100,
-    image: "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?q=80&w=2680&auto=format&fit=crop",
-    rating: 5,
-    tag: ""
+    id: 'netflix-gold',
+    title: "Netflix Moments",
+    subtitle: "Mejores Parejas del Mundo",
+    category: "Premium Dashboard",
+    price: 1450,
+    primaryColor: "#E50914",
+    image: "/media__1776644053702.png",
+    badge: "SPECIAL",
+    description: "Interfaz completa con héroe de impacto y secciones de 'Populares' y 'Tendencias'."
   }
 ];
 
 export default function MemoryGallery() {
-  const [activeCategory, setActiveCategory] = useState("Todos");
-  const categories = ["Todos", "Moderno", "Romántico", "Clásico", "Contemporáneo"];
-
-  const filteredProducts = activeCategory === "Todos" 
-    ? PRODUCTS 
-    : PRODUCTS.filter(p => p.category === activeCategory);
-
   return (
-    <div className="min-h-screen bg-blush-50 pb-20">
-      {/* Hero Section Corto */}
-      <div className="relative h-[40vh] overflow-hidden bg-ink-950 flex items-center justify-center">
-        <img 
-          src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=2670&auto=format&fit=crop" 
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
-          alt="Galería de arte"
-        />
-        <div className="relative text-center z-10 px-6">
-          <span className="text-naranja-400 font-bold tracking-[0.3em] uppercase text-xs mb-4 block animate-slide-up">Catálogo Exclusivo</span>
-          <h1 className="text-5xl md:text-7xl text-white font-serif mb-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>Galería de <span className="italic text-blush-200">Recuerdos</span></h1>
-          <p className="text-blush-100/70 max-w-xl mx-auto font-light animate-slide-up" style={{ animationDelay: '0.2s' }}>Inmortaliza tus momentos más valiosos en lienzos y marcos diseñados para durar toda la vida.</p>
+    <div className="min-h-screen bg-[#141414] text-white font-sans pb-20">
+      {/* 🎬 HERO CINEMATOGRÁFICO */}
+      <div className="relative h-[85vh] w-full flex items-end pb-24 px-6 md:px-16 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=2670&auto=format&fit=crop" 
+            className="w-full h-full object-cover opacity-60"
+            alt="Hero Background"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#141414] via-transparent to-transparent"></div>
+        </div>
+
+        <div className="relative z-10 max-w-2xl animate-slide-up">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="bg-[#E50914] text-white text-[10px] font-black px-1.5 py-0.5 rounded-sm">N</span>
+            <span className="text-gray-400 font-bold tracking-[0.3em] text-[10px] uppercase">Original de Media Naranja</span>
+          </div>
+          <h1 className="text-6xl md:text-8xl font-black mb-6 tracking-tighter uppercase italic leading-none">
+            Nuestra <br/><span className="text-[#E50914]">Historia</span>
+          </h1>
+          <p className="text-lg text-gray-300 mb-8 font-medium leading-relaxed">
+            Convierte tus fotos en la mejor serie de la historia. El regalo perfecto para quienes protagonizan tu vida cada día.
+          </p>
+          
+          <div className="flex flex-wrap gap-4">
+            <Link to="/personalizar-cuadro?style=amorflix" className="flex items-center gap-3 px-8 py-3 bg-white text-black rounded-md font-bold hover:bg-white/90 transition-all scale-105">
+              <Play fill="black" size={20} /> Empezar Ahora
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 -mt-12 relative z-20">
-        {/* Barra de Filtros y Búsqueda */}
-        <div className="bg-white/80 backdrop-blur-xl p-4 md:p-6 rounded-[2.5rem] shadow-2xl border border-white/50 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${
-                  activeCategory === cat 
-                  ? 'bg-naranja-500 text-white shadow-lg shadow-naranja-200' 
-                  : 'bg-blush-50 text-blush-600 hover:bg-blush-100'
-                }`}
-              >
-                {cat}
-              </button>
+      <div className="px-6 md:px-16 -mt-20 relative z-20 space-y-16">
+        <div>
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+            Explorar Estilos "Cinema" <ArrowRight className="text-[#E50914]" size={20} />
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {CATALOG_STYLES.map((style) => (
+              <div key={style.id} className="group relative bg-[#181818] rounded-lg overflow-hidden transition-all duration-500 hover:scale-105 hover:z-30 shadow-2xl">
+                <div className="aspect-video relative overflow-hidden">
+                  <img src={style.image} alt={style.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#181818] to-transparent opacity-60"></div>
+                  <div className="absolute top-4 left-4 w-10 h-10 bg-red-600 flex flex-col items-center justify-center font-black rounded-sm shadow-lg text-[10px]">
+                    <span className="text-[8px] opacity-70">TOP</span>
+                    <span className="text-lg">10</span>
+                  </div>
+                </div>
+
+                <div className="p-6 text-left">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex gap-2">
+                       <Link to={`/personalizar-cuadro?style=${style.id}`} className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black hover:bg-gray-200 transition-all"><Play size={18} fill="black"/></Link>
+                       <button className="w-10 h-10 border-2 border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-all"><Plus size={18}/></button>
+                       <button className="w-10 h-10 border-2 border-gray-500 rounded-full flex items-center justify-center text-white hover:border-white transition-all"><ThumbsUp size={18}/></button>
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold mb-1">{style.title}</h3>
+                  <p className="text-gray-400 text-sm mb-4 line-clamp-2">{style.description}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-xs font-bold">
+                        <span className="text-green-500">98% para ti</span>
+                        <span className="text-gray-400">Desde ${style.price} MXN</span>
+                    </div>
+                  </div>
+                  <Link to={`/personalizar-cuadro?style=${style.id}`} className="w-full mt-6 py-4 bg-[#E50914] text-white rounded-md font-black tracking-widest hover:brightness-110 transition-all uppercase inline-block text-center text-xs">
+                    Personalizar mi Serie
+                  </Link>
+                </div>
+              </div>
             ))}
-          </div>
-
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-blush-300" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar cuadro..." 
-              className="w-full bg-blush-50 border border-blush-100 rounded-full py-3 pl-12 pr-6 outline-none focus:ring-2 focus:ring-naranja-400 transition-all text-sm font-medium"
-            />
-          </div>
-        </div>
-
-        {/* Grid de Productos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mt-16 px-2">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="group relative flex flex-col animate-slide-up" style={{ animationDelay: `${product.id * 0.1}s` }}>
-              {/* Contenedor de Imagen */}
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-white shadow-xl hover:shadow-2xl transition-all duration-700">
-                <img 
-                  src={product.image} 
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                />
-                
-                {/* Overlay de acciones hover */}
-                <div className="absolute inset-0 bg-ink-950/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center gap-3">
-                  <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-ink-900 hover:bg-naranja-500 hover:text-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-500 shadow-lg">
-                    <Expand size={20} />
-                  </button>
-                  <button className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-ink-900 hover:bg-naranja-500 hover:text-white transition-all transform translate-y-4 group-hover:translate-y-0 duration-500 delay-75 shadow-lg">
-                    <Heart size={20} />
-                  </button>
-                </div>
-
-                {/* Badge de Tag */}
-                {product.tag && (
-                  <div className="absolute top-6 left-6 px-4 py-1.5 bg-naranja-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg">
-                    {product.tag}
-                  </div>
-                )}
-              </div>
-
-              {/* Info del Producto */}
-              <div className="mt-6 px-2">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="text-xs font-bold text-naranja-600 uppercase tracking-widest mb-1">{product.category}</p>
-                    <h3 className="text-2xl font-serif text-blush-800 group-hover:text-naranja-600 transition-colors">{product.name}</h3>
-                  </div>
-                  <div className="flex items-center gap-1 text-amber-500">
-                    <Star size={14} fill="currentColor" />
-                    <span className="text-xs font-bold">{product.rating}.0</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-ink-400 font-bold uppercase tracking-wider">Desde</span>
-                    <span className="text-2xl font-bold text-ink-900">${product.price} <span className="text-xs text-ink-400">MXN</span></span>
-                  </div>
-                  <button className="flex items-center gap-2 px-6 py-3 bg-blush-800 text-white rounded-2xl font-bold text-sm hover:bg-naranja-600 transition-all shadow-lg hover:shadow-naranja-200/50">
-                    Personalizar <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Banner de Calidad */}
-      <div className="max-w-7xl mx-auto px-6 mt-32">
-        <div className="bg-blush-800 rounded-[3rem] p-12 md:p-20 relative overflow-hidden flex flex-col md:flex-row items-center gap-12">
-          <div className="relative z-10 md:w-1/2">
-            <h2 className="text-4xl md:text-5xl text-white font-serif mb-6">Calidad de <span className="italic text-blush-200">Museo</span> en tu Hogar</h2>
-            <p className="text-blush-100/70 mb-8 leading-relaxed">Cada recuerdo es impreso en papel fine-art y enmarcado a mano por artesanos expertos. Utilizamos vidrios con máxima protección UV para que tus momentos no pierdan brillo.</p>
-            <div className="flex gap-10">
-              <div className="text-white">
-                <p className="text-3xl font-bold mb-1">100%</p>
-                <p className="text-xs text-blush-300 font-bold uppercase tracking-widest">Artesanal</p>
-              </div>
-              <div className="text-white">
-                <p className="text-3xl font-bold mb-1">50+</p>
-                <p className="text-xs text-blush-300 font-bold uppercase tracking-widest">Estilos</p>
-              </div>
-            </div>
-          </div>
-          <div className="md:w-1/2 relative">
-            <div className="absolute inset-0 bg-naranja-500 rounded-full blur-[100px] opacity-20"></div>
-            <img 
-              src="https://images.unsplash.com/photo-1544450610-ad587c6a946e?q=80&w=2670&auto=format&fit=crop" 
-              className="relative z-10 w-full h-80 object-cover rounded-3xl shadow-2xl"
-              alt="Detalle de enmarcado"
-            />
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+function ArrowRight({ size, className }: { size: number, className: string }) {
+    return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
 }
