@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Camera, Upload, ArrowLeft, Search, Bell, ThumbsUp, ThumbsDown, Download, Loader2, Save, Trash2, User } from 'lucide-react';
-import { toJpeg } from 'html-to-image';
+import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabase';
 
@@ -59,7 +59,7 @@ export default function MemoryCustomizer() {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const MAX = 1400; // Un poco más de calidad para evitar distorsión
+          const MAX = 1200; 
           if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
           else if (height > MAX) { width *= MAX / height; height = MAX; }
           canvas.width = width;
@@ -67,7 +67,7 @@ export default function MemoryCustomizer() {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.9));
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
           }
         };
         img.src = e.target?.result as string;
@@ -91,12 +91,14 @@ export default function MemoryCustomizer() {
 
   const uploadBase64 = async (base64String: string, path: string) => {
     try {
+      if (!base64String || base64String.length < 100) throw new Error("Imagen inválida o vacía");
       if (base64String.startsWith('http')) return base64String;
+      
       const base64Data = base64String.split(',')[1];
-      const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(res => res.blob());
+      const blob = await fetch(`data:image/png;base64,${base64Data}`).then(res => res.blob());
       const { data, error } = await supabase.storage
         .from('memories')
-        .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+        .upload(path, blob, { contentType: 'image/png', upsert: true });
       if (error) throw error;
       return supabase.storage.from('memories').getPublicUrl(path).data.publicUrl;
     } catch (err: any) {
@@ -105,28 +107,31 @@ export default function MemoryCustomizer() {
   };
 
   const saveMemory = async () => {
-    if (!user) { alert("Sesión expirada. Por favor, vuelve a entrar."); return; }
+    if (!user) { alert("Inicia sesión de nuevo."); return; }
     if (!mainPhoto) { alert("Sube la foto principal."); return; }
 
     setIsSaving(true);
     const area = document.getElementById('capture-area');
     
     try {
-      if (!area) throw new Error("No se pudo encontrar el área de diseño.");
+      if (!area) throw new Error("No se detectó el área de diseño.");
       
-      // 1. Generar Captura Maestra (PROPORCIÓN A4 PERFECTA)
-      await new Promise(r => setTimeout(r, 2500));
+      // 1. Generar Captura Maestra (VERSION ESTABLE PNG)
+      await new Promise(r => setTimeout(r, 2000));
       
-      const masterShotDataUrl = await toJpeg(area, { 
-        quality: 0.98,
-        backgroundColor: '#000000',
-        pixelRatio: 3, // Máxima nitidez para impresión
+      const masterShotDataUrl = await toPng(area, { 
+        pixelRatio: 2,
         cacheBust: true,
+        backgroundColor: '#000000',
       });
+
+      if (!masterShotDataUrl || masterShotDataUrl.length < 500) {
+        throw new Error("La captura falló. Inténtalo de nuevo.");
+      }
 
       // 2. Subir Todo
       const timestamp = Date.now();
-      const masterUrl = await uploadBase64(masterShotDataUrl, `${user.id}/${timestamp}_master.jpg`);
+      const masterUrl = await uploadBase64(masterShotDataUrl, `${user.id}/${timestamp}_master.png`);
       const mainUrl = await uploadBase64(mainPhoto, `${user.id}/${timestamp}_main.jpg`);
       
       const galleryUrls = [];
@@ -154,12 +159,12 @@ export default function MemoryCustomizer() {
         : await supabase.from('memories').insert(memoryData).select();
 
       if (error) throw error;
-      alert("¡Producción guardada con éxito!");
+      alert("¡Recuerdo guardado con éxito!");
       navigate('/mis-recuerdos');
 
     } catch (err: any) {
       console.error("Critical Save Error:", err);
-      alert(`Error al guardar: ${err.message || "Problema técnico"}`);
+      alert(`Error: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -170,13 +175,13 @@ export default function MemoryCustomizer() {
     if (!area) return;
     setIsExporting(true);
     try {
-        await new Promise(r => setTimeout(r, 1500));
-        const imgData = await toJpeg(area, { quality: 1, pixelRatio: 3 });
+        await new Promise(r => setTimeout(r, 1000));
+        const imgData = await toPng(area, { pixelRatio: 2 });
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-        pdf.save(`Serie_MediaNaranja_${names.split(' ')[0]}.pdf`);
+        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+        pdf.save(`MediaNaranja_${names.split(' ')[0]}.pdf`);
     } catch (err: any) {
-        alert(`Error al generar PDF: ${err.message}`);
+        alert(`Error: ${err.message}`);
     } finally {
         setIsExporting(false);
     }
@@ -195,12 +200,11 @@ export default function MemoryCustomizer() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
-        .netflix-gradient { background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%); }
-        .header-gradient { background: linear-gradient(to bottom, #000000 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0) 100%); }
+        .netflix-gradient { background: linear-gradient(to top, #000 0%, transparent 70%); }
+        .header-gradient { background: linear-gradient(to bottom, #000 0%, transparent 100%); }
         .profile-avatar {
           background: linear-gradient(135deg, #E50914 0%, #b20710 100%);
           border-radius: 4px;
-          box-shadow: 0 0 15px rgba(229,9,20,0.4);
         }
       `}</style>
 
@@ -214,13 +218,13 @@ export default function MemoryCustomizer() {
                    <h1 className="text-2xl font-serif italic text-white leading-tight">Estudio <span className="text-[#E50914]">Loveflix</span></h1>
                    {id && <button onClick={() => navigate('/mis-recuerdos')} className="text-[10px] text-gray-500 hover:text-white uppercase tracking-widest font-bold">Mis Series</button>}
                 </div>
-                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2 italic font-bold">Maestría en Alta Resolución</p>
+                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2 italic font-bold">Procesado de Máxima Fidelidad</p>
             </header>
 
             <section className="space-y-4">
               <h3 className="text-[10px] font-black uppercase text-[#E50914] tracking-widest">1. Portada del Recuerdo</h3>
-              <div onClick={() => document.getElementById('main-upload')?.click()} className="w-full aspect-video bg-[#0a0a0a] rounded-2xl border-2 border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden group transition-all">
-                {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover" /> : <Upload className="text-gray-700 font-bold group-hover:scale-110 transition-transform" />}
+              <div onClick={() => document.getElementById('main-upload')?.click()} className="w-full aspect-video bg-[#0a0a0a] rounded-2xl border-2 border-dashed border-gray-800 flex items-center justify-center cursor-pointer hover:border-[#E50914] overflow-hidden group">
+                {mainPhoto ? <img src={mainPhoto} className="w-full h-full object-cover" /> : <Upload className="text-gray-700 group-hover:scale-110 transition-transform" />}
                 <input type="file" id="main-upload" hidden onChange={(e) => handlePhotoUpload(e)} />
               </div>
             </section>
@@ -245,39 +249,39 @@ export default function MemoryCustomizer() {
 
             <div className="space-y-3 pt-4">
               <button onClick={saveMemory} disabled={isSaving} className={`w-full py-6 bg-[#E50914] text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-[0_10px_40px_rgba(229,9,20,0.3)] ${isSaving ? 'opacity-50 cursor-wait' : 'hover:bg-[#ff1f2d] active:scale-95'}`}>
-                {isSaving ? <><Loader2 className="animate-spin" size={20} /> PROCESANDO MASTER...</> : <><Save size={20} /> GUARDAR PRODUCCIÓN </>}
+                {isSaving ? <><Loader2 className="animate-spin" size={20} /> GENERANDO MASTER...</> : <><Save size={20} /> GUARDAR RECUERDO </>}
               </button>
               
-              <button onClick={exportPDF} disabled={isExporting} className="w-full py-6 border border-white/5 text-gray-400 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all active:scale-95">
+              <button onClick={exportPDF} disabled={isExporting} className="w-full py-6 border border-white/5 text-gray-400 rounded-full font-black text-xs uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all">
                 {isExporting ? <Loader2 className="animate-spin mx-auto" /> : "Descargar PDF Prueba"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ÁREA DE PREVISUALIZACIÓN - PROPORCIÓN A4 PERFECTA */}
+        {/* ÁREA DE PREVISUALIZACIÓN */}
         <div className="xl:col-span-8 flex justify-center sticky top-24">
-          <div id="capture-area" className="w-[595px] h-[842px] bg-black shadow-2xl relative overflow-hidden flex flex-col">
+          <div id="capture-area" className="w-[550px] aspect-[1/1.414] bg-black shadow-2xl relative overflow-hidden flex flex-col">
             <div className="absolute inset-0 z-0">
-               {mainPhoto ? <img src={mainPhoto} crossOrigin="anonymous" className="w-full h-full object-cover object-center" /> : <div className="w-full h-full bg-[#0a0a0a]"></div>}
+               {mainPhoto ? <img src={mainPhoto} crossOrigin="anonymous" className="w-full h-full object-cover object-center" /> : <div className="w-full h-full bg-[#111]"></div>}
                <div className="absolute inset-0 netflix-gradient"></div>
                <div className="absolute top-0 inset-x-0 h-32 header-gradient"></div>
             </div>
 
-            <header className="absolute top-0 inset-x-0 h-20 flex items-center justify-between px-10 z-50 bg-black/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+            <header className="absolute top-0 inset-x-0 h-20 flex items-center justify-between px-10 z-50">
                <div className="text-[#E50914] text-3xl font-black tracking-tighter drop-shadow-2xl">LOVEFLIX</div>
                <div className="flex gap-6 items-center text-white drop-shadow-lg">
-                  <Search size={22} className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity" />
-                  <Bell size={22} className="opacity-80 hover:opacity-100 cursor-pointer transition-opacity" />
-                  <div className="w-10 h-10 profile-avatar flex items-center justify-center p-0.5 border border-white/30 cursor-pointer">
+                  <Search size={22}/>
+                  <Bell size={22}/>
+                  <div className="w-9 h-9 profile-avatar flex items-center justify-center p-1 border border-white/20">
                      <div className="w-full h-full bg-[#E50914] rounded-sm flex items-center justify-center">
-                        <User size={20} fill="white" className="text-white" />
+                        <User size={18} fill="white" className="text-white opacity-80" />
                      </div>
                   </div>
                </div>
             </header>
 
-            <div className="absolute inset-x-12 bottom-48 z-40 space-y-5">
+            <div className="absolute inset-x-12 bottom-48 z-40 space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="bg-[#E50914] text-white text-[10px] font-black px-2 py-0.5 rounded-sm shadow-lg">N</span>
                   <span className="text-white/90 font-bold tracking-[0.5em] text-[9px] uppercase italic underline decoration-[#E50914] underline-offset-4 drop-shadow-lg">Producción Media Naranja</span>
@@ -291,7 +295,7 @@ export default function MemoryCustomizer() {
                 <p className="text-[14px] text-white/90 max-w-md font-medium leading-relaxed italic drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">{synopsis}</p>
                 <div className="flex items-center gap-4 pt-3">
                     <div className="px-12 py-3.5 bg-white text-black rounded font-black text-xs uppercase tracking-widest shadow-2xl">Jugar</div>
-                    <div className="px-12 py-3.5 bg-zinc-800/80 text-white rounded font-black text-xs uppercase tracking-widest border border-white/10 backdrop-blur-md">+ Mi Lista</div>
+                    <div className="px-12 py-3.5 bg-zinc-800/80 text-white rounded font-black text-xs uppercase tracking-widest border border-white/10">+ Mi Lista</div>
                 </div>
             </div>
 
@@ -299,7 +303,7 @@ export default function MemoryCustomizer() {
                <h4 className="text-[11px] font-black mb-4 uppercase tracking-[0.4em] text-white/40 italic drop-shadow-lg">Sigue viendo tus momentos</h4>
                <div className="grid grid-cols-5 gap-4">
                   {galleryPhotos.map((photo, i) => (
-                    <div key={i} className="aspect-[3/4.2] bg-[#050505] rounded-sm border border-white/5 overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.8)]">
+                    <div key={i} className="aspect-[3/4.2] bg-[#0a0a0a] rounded-sm border border-white/5 overflow-hidden shadow-[0_15px_40px_rgba(0,0,0,0.8)]">
                       {photo && <img src={photo} crossOrigin="anonymous" className="w-full h-full object-cover" />}
                     </div>
                   ))}
