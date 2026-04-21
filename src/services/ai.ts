@@ -20,8 +20,8 @@ export async function generateLyrics(prompt: string) {
     return data.text;
   } catch (error: any) {
     console.error("Critical AI Services Error:", error);
-    // Intentar dar un mensaje más amigable pero detallado
-    const detailedMessage = error.context?.statusText || error.message || "Error de conexión con la IA";
+    // Usar una forma segura de acceder a propiedades dinámicas para evitar errores de Build
+    const detailedMessage = error?.message || "Error de conexión con la IA";
     throw new Error(`Detalle técnico: ${detailedMessage}`);
   }
 }
