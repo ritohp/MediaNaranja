@@ -19,7 +19,12 @@ import {
   ArrowRight,
   Database,
   FileText,
-  Play
+  Play,
+  Download,
+  Eye,
+  CheckCircle2,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -27,7 +32,8 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('panel'); // 'panel', 'clientes', 'producciones'
+  const [activeTab, setActiveTab] = useState('panel'); // 'panel', 'seguimiento'
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -37,9 +43,7 @@ export default function AdminDashboard() {
     activeCreations: 0
   });
 
-  const [allSongs, setAllSongs] = useState<any[]>([]);
-  const [allProfiles, setAllProfiles] = useState<any[]>([]);
-  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+  const [masterData, setMasterData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,44 +55,48 @@ export default function AdminDashboard() {
       setChecking(false);
 
       try {
-        // 1. Traer Perfiles
+        // 1. Traer Perfiles y Canciones
         const { data: profiles } = await supabase.from('mn_profiles').select('*').order('created_at', { ascending: false });
-        
-        // 2. Traer Canciones
         const { data: songs } = await supabase.from('mn_songs').select('*').order('created_at', { ascending: false });
 
-        setAllProfiles(profiles || []);
-        setAllSongs(songs || []);
+        // 2. Unificar Datos (Master Joint)
+        const unified = profiles?.map((profile: any) => {
+          const userSongs = songs?.filter(s => s.user_id === profile.id) || [];
+          
+          // Lógica de estado de embudo
+          let funnelStatus = '🏷️ Solo Registro';
+          let statusColor = 'bg-gray-100 text-gray-500';
+          
+          if (userSongs.some(s => s.status === 'complete')) {
+            funnelStatus = '✅ ¡Venta Exitosa!';
+            statusColor = 'bg-emerald-100 text-emerald-600';
+          } else if (userSongs.length > 0) {
+            funnelStatus = '✍️ Diseñando Canción';
+            statusColor = 'bg-orange-100 text-orange-600';
+          }
 
-        const profileMap = profiles?.reduce((acc: any, p: any) => {
-          acc[p.id] = p.email;
-          return acc;
-        }, {});
+          return {
+            ...profile,
+            songs: userSongs,
+            funnelStatus,
+            statusColor
+          };
+        }) || [];
 
-        // 3. Procesar Actividad Reciente (basado en canciones)
-        const processedActivity = songs?.slice(0, 5).map((song: any) => ({
-          id: song.id,
-          name: profileMap?.[song.user_id]?.split('@')[0] || 'Anónimo',
-          email: profileMap?.[song.user_id] || 'N/A',
-          status: song.status === 'complete' ? 'Pagado' : 'Diseñando',
-          progress: song.status === 'complete' ? 100 : 45,
-          lastActive: new Date(song.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
-        })) || [];
+        setMasterData(unified);
 
-        setRecentUsers(processedActivity);
-
-        // 4. Calcular Estadísticas (usamos el length del array para ser precisos)
+        // 3. Calcular Estadísticas
         const totalU = profiles?.length || 0;
         const totalS = songs?.length || 0;
-        const active = songs?.filter(s => s.status !== 'complete').length || 0;
+        const activeS = songs?.filter(s => s.status !== 'complete').length || 0;
         const conv = totalU > 0 ? (totalS / totalU) * 100 : 0;
         
         setStats({
           totalUsers: totalU,
           totalSongs: totalS,
           conversionRate: parseFloat(conv.toFixed(1)),
-          revenue: (totalS - active) * 49,
-          activeCreations: active
+          revenue: (totalS - activeS) * 49,
+          activeCreations: activeS
         });
 
       } catch (error) {
@@ -101,12 +109,19 @@ export default function AdminDashboard() {
     fetchData();
   }, [navigate]);
 
+  const filteredData = masterData.filter(user => 
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (checking || loading) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF6B00]"></div>
-           <p className="text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Sincronizando Boutique de Media Naranja...</p>
+        <div className="flex flex-col items-center gap-6">
+           <div className="relative">
+              <div className="w-20 h-20 border-4 border-orange-100 rounded-full animate-pulse"></div>
+              <Loader2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#FF6B00] animate-spin" size={40} />
+           </div>
+           <p className="text-xs font-black uppercase tracking-[0.4em] text-gray-400 animate-pulse italic">Media Naranja • Sincronizando Boutique</p>
         </div>
       </div>
     );
@@ -128,92 +143,77 @@ export default function AdminDashboard() {
                onClick={() => setActiveTab('panel')}
                className={`text-[10px] font-black uppercase tracking-widest pb-1 transition-all ${activeTab === 'panel' ? 'border-b-2 border-[#FF6B00]' : 'text-gray-400 hover:text-gray-600'}`}
              >
-               Panel
+               Panel General
              </button>
              <button 
-               onClick={() => setActiveTab('clientes')}
-               className={`text-[10px] font-black uppercase tracking-widest pb-1 transition-all ${activeTab === 'clientes' ? 'border-b-2 border-[#FF6B00]' : 'text-gray-400 hover:text-gray-600'}`}
+               onClick={() => setActiveTab('seguimiento')}
+               className={`text-[10px] font-black uppercase tracking-widest pb-1 transition-all ${activeTab === 'seguimiento' ? 'border-b-2 border-[#FF6B00]' : 'text-gray-400 hover:text-gray-600'}`}
              >
-               Clientes
-             </button>
-             <button 
-               onClick={() => setActiveTab('producciones')}
-               className={`text-[10px] font-black uppercase tracking-widest pb-1 transition-all ${activeTab === 'producciones' ? 'border-b-2 border-[#FF6B00]' : 'text-gray-400 hover:text-gray-600'}`}
-             >
-               Producciones
+               Seguimiento Maestro
              </button>
           </div>
         </div>
         <div className="flex items-center gap-4">
-           <div className="hidden sm:block text-right">
-              <p className="text-[9px] font-black uppercase text-gray-300">Administrator</p>
-              <p className="text-xs font-bold font-outfit">ritohp@gmail.com</p>
-           </div>
            <div className="w-10 h-10 bg-brand-gradient text-white rounded-2xl flex items-center justify-center shadow-lg">
               <User size={18} />
            </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10 focus:outline-none">
+      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
         
-        {/* --- VISTA: PANEL (PRINCIPAL) --- */}
+        {/* --- VISTA: PANEL (OVERVIEW) --- */}
         {activeTab === 'panel' && (
           <>
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-1">
-                 <h1 className="text-4xl font-black font-outfit tracking-tight">Control de Mando</h1>
-                 <p className="text-gray-400 text-sm italic">Datos de la boutique sincronizados en tiempo real.</p>
+              <div className="space-y-1 text-center md:text-left">
+                 <h1 className="text-4xl font-black font-outfit tracking-tight">Estadísticas Boutique</h1>
+                 <p className="text-gray-400 text-sm italic italic">Resumen en vivo de tu plataforma de melodías.</p>
               </div>
-              <button 
-                onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-[#1A1A1A] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#FF6B00] transition-all shadow-xl"
-              >
-                 Recargar Datos
-              </button>
+              <div className="flex gap-4 h-fit">
+                <button 
+                  onClick={() => setActiveTab('seguimiento')}
+                  className="px-8 py-4 bg-[#1A1A1A] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-[#FF6B00] transition-all shadow-xl flex items-center gap-3"
+                >
+                  Ir al Seguimiento <ArrowRight size={14}/>
+                </button>
+              </div>
             </header>
 
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                {[
-                 { label: 'Usuarios Reales', value: stats.totalUsers, status: 'Total', icon: <Users className="text-blue-500" /> },
-                 { label: 'Historias Iniciadas', value: stats.totalSongs, status: 'Vivas', icon: <Music className="text-pink-500" /> },
-                 { label: 'Ingresos Est. (USD)', value: `$${stats.revenue}`, status: 'Boutique', icon: <DollarSign className="text-emerald-500" /> },
-                 { label: 'Tasa Conversión', value: `${stats.conversionRate}%`, status: 'Embudo', icon: <TrendingUp className="text-orange-500" /> }
+                 { label: 'Usuarios Reales', value: stats.totalUsers, icon: <Users className="text-blue-500" /> },
+                 { label: 'Historias Creadas', value: stats.totalSongs, icon: <Music className="text-pink-500" /> },
+                 { label: 'Ingresos Est. (USD)', value: `$${stats.revenue}`, icon: <DollarSign className="text-emerald-500" /> },
+                 { label: 'Conversión', value: `${stats.conversionRate}%`, icon: <TrendingUp className="text-orange-500" /> }
                ].map((metric, i) => (
-                 <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-5">
-                    <div className="flex items-center justify-between">
-                       <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center">
-                          {metric.icon}
-                       </div>
-                       <div className="text-[9px] font-black px-3 py-1 rounded-full bg-orange-50 text-[#FF6B00] uppercase tracking-widest">
-                          {metric.status}
-                       </div>
+                 <div key={i} className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm space-y-4 text-center items-center flex flex-col">
+                    <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-2">
+                       {metric.icon}
                     </div>
-                    <div>
-                       <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">{metric.label}</p>
-                       <p className="text-4xl font-black font-outfit mt-1">{metric.value}</p>
-                    </div>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">{metric.label}</p>
+                    <p className="text-4xl font-black font-outfit">{metric.value}</p>
                  </div>
                ))}
             </section>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-               <section className="lg:col-span-2 bg-white p-12 rounded-[3rem] border border-gray-100 shadow-sm space-y-10">
-                  <h3 className="text-xl font-black font-outfit flex items-center gap-3">
-                     <BarChart3 className="text-[#FF6B00]" /> Eficiencia de Producción
+               <section className="lg:col-span-2 bg-white p-12 rounded-[3.5rem] border border-gray-100 shadow-sm space-y-10">
+                  <h3 className="text-xl font-black font-outfit flex items-center gap-3 text-gray-800">
+                     <BarChart3 className="text-[#FF6B00]" /> Eficiencia del Embudo
                   </h3>
-                  <div className="space-y-8">
+                  <div className="space-y-10">
                      {[
-                       { label: 'Usuarios Registrados', value: stats.totalUsers, color: 'bg-emerald-400' },
-                       { label: 'Diseños Iniciados', value: stats.totalSongs, color: 'bg-orange-400' },
-                       { label: 'Producciones Finalizadas', value: stats.totalSongs - stats.activeCreations, color: 'bg-pink-400' }
+                       { label: 'Registro Base', value: stats.totalUsers, color: 'bg-emerald-400' },
+                       { label: 'Diseño Activo', value: stats.totalSongs, color: 'bg-orange-400' },
+                       { label: 'Completo / Pagado', value: stats.totalSongs - stats.activeCreations, color: 'bg-pink-400' }
                      ].map((step, i) => (
                         <div key={i} className="space-y-3">
-                           <div className="flex justify-between text-[10px] font-black uppercase tracking-widest px-1">
+                           <div className="flex justify-between text-[11px] font-black uppercase tracking-widest px-1">
                               <span className="text-gray-400">{step.label}</span>
-                              <span className="text-gray-900">{step.value}</span>
+                              <span className="text-gray-900 font-outfit">{step.value}</span>
                            </div>
-                           <div className="h-3 bg-gray-50 rounded-full overflow-hidden">
+                           <div className="h-4 bg-gray-50 rounded-full overflow-hidden shadow-inner">
                               <div 
                                 className={`h-full ${step.color} rounded-full transition-all duration-1000`}
                                 style={{ width: `${(step.value / (stats.totalUsers || 1)) * 100}%` }}
@@ -222,129 +222,149 @@ export default function AdminDashboard() {
                         </div>
                      ))}
                   </div>
-                  <div className="pt-8 border-t border-gray-50 flex justify-between">
-                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Borradores en curso: <span className="text-orange-500 font-black">{stats.activeCreations}</span></p>
-                     <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest">Sincronizado</p>
+                  <div className="pt-8 border-t border-gray-50 flex justify-between items-center">
+                     <div className="flex items-center gap-2 text-[10px] text-orange-500 font-black uppercase tracking-widest">
+                        <AlertCircle size={14} /> Borradores activos: {stats.activeCreations}
+                     </div>
+                     <p className="text-[10px] text-emerald-500 font-black uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircle2 size={14}/> Sincronizado con Supabase
+                     </p>
                   </div>
                </section>
 
-               <section className="bg-white p-12 rounded-[3rem] border border-gray-100 shadow-sm space-y-10">
-                  <h3 className="text-xl font-black font-outfit">Actividad Real</h3>
-                  <div className="space-y-8">
-                     {recentUsers.map((user) => (
-                        <div key={user.id} className="flex items-center gap-4 border-b border-gray-50 pb-4 last:border-0 last:pb-0">
-                           <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center font-black text-gray-300 text-sm uppercase">
-                              {user.name.charAt(0)}
-                           </div>
-                           <div className="flex-1 space-y-1">
-                              <div className="flex justify-between">
-                                 <p className="text-xs font-black font-outfit truncate max-w-[100px]">{user.name}</p>
-                                 <span className="text-[9px] text-[#FF6B00] font-black uppercase">{user.lastActive}</span>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                 <div className="flex-1 h-1 bg-gray-50 rounded-full overflow-hidden">
-                                    <div className={`h-full rounded-full ${user.status === 'Pagado' ? 'bg-emerald-500' : 'bg-[#FF6B00]'}`} style={{ width: `${user.progress}%` }}></div>
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
-                     ))}
+               <section className="bg-white p-10 rounded-[3.5rem] border border-gray-100 shadow-sm flex flex-col justify-center items-center text-center space-y-6">
+                  <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                     <TrendingUp size={40} />
                   </div>
+                  <div className="space-y-2">
+                     <h4 className="text-2xl font-black font-outfit">Siguiente Paso</h4>
+                     <p className="text-sm text-gray-400 font-medium">Revisa el seguimiento maestro para contactar a los usuarios que dejaron diseños a medias.</p>
+                  </div>
+                  <button onClick={() => setActiveTab('seguimiento')} className="w-full py-4 bg-[#1A1A1A] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">AUDITAR AHORA</button>
                </section>
             </div>
           </>
         )}
 
-        {/* --- VISTA: CLIENTES --- */}
-        {activeTab === 'clientes' && (
-          <section className="bg-white p-12 rounded-[3rem] border border-gray-100 shadow-sm space-y-8">
-            <div className="flex items-center justify-between mb-4">
+        {/* --- VISTA: SEGUIMIENTO MAESTRO (LA TABLA CORE) --- */}
+        {activeTab === 'seguimiento' && (
+          <section className="bg-white p-10 md:p-14 rounded-[4rem] border border-gray-100 shadow-xl space-y-12">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-8">
               <div>
-                <h2 className="text-3xl font-black font-outfit">Directorio de Clientes</h2>
-                <p className="text-gray-400 text-xs italic">Total: {allProfiles.length} usuarios registrados</p>
+                <h2 className="text-4xl font-black font-outfit tracking-tight">Seguimiento Maestro</h2>
+                <p className="text-gray-400 text-sm mt-1 italic">Cada fila representa a un usuario y su historia sonora.</p>
               </div>
-              <div className="flex gap-4">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
-                  <input type="text" placeholder="Buscar por email..." className="pl-12 pr-6 py-3 bg-gray-50 rounded-xl text-sm border-none focus:ring-2 focus:ring-orange-100 w-64" />
-                </div>
+              <div className="relative group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#FF6B00] transition-colors" size={20} />
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar por email..." 
+                  className="pl-14 pr-8 py-5 bg-gray-50/50 rounded-3xl text-sm border-2 border-transparent focus:border-[#FF6B00]/20 focus:bg-white w-full md:w-[400px] outline-none transition-all shadow-sm font-bold" 
+                />
               </div>
-            </div>
+            </header>
 
-            <div className="overflow-x-auto">
-               <table className="w-full text-left">
+            <div className="overflow-x-auto -mx-10 md:-mx-14 px-10 md:px-14">
+               <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                      <th className="pb-6 px-4">Usuario</th>
-                      <th className="pb-6 px-4 text-center">Tokens</th>
-                      <th className="pb-6 px-4 text-center">Desde</th>
-                      <th className="pb-6 px-4 text-right">Acciones</th>
+                    <tr className="border-b border-gray-50 text-[11px] font-black uppercase tracking-[0.2em] text-gray-300">
+                      <th className="pb-8 px-6 text-center">Identidad</th>
+                      <th className="pb-8 px-6 text-center">Estado Embudo</th>
+                      <th className="pb-8 px-6">Producciones / Historia Musical</th>
+                      <th className="pb-8 px-6 text-right">Desde</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {allProfiles.map((profile) => (
-                      <tr key={profile.id} className="hover:bg-gray-50 transition-all group">
-                        <td className="py-6 px-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF6B00] font-black">{profile.email?.[0].toUpperCase()}</div>
-                            <p className="font-bold text-sm">{profile.email}</p>
-                          </div>
+                  <tbody className="divide-y divide-gray-50 text-sm">
+                    {filteredData.length > 0 ? filteredData.map((client) => (
+                      <tr key={client.id} className="hover:bg-[#FFFBF7] transition-all group">
+                        <td className="py-10 px-6">
+                           <div className="flex flex-col gap-1 items-center">
+                              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#FF6B00] font-black text-xl shadow-md border border-gray-50">{client.email?.[0].toUpperCase()}</div>
+                              <p className="font-black font-outfit mt-2">{client.email}</p>
+                              <p className="text-[10px] text-gray-300 font-bold uppercase tracking-tighter">ID: {client.id.slice(0,8)}</p>
+                           </div>
                         </td>
-                        <td className="py-6 px-4 text-center">
-                          <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase">{profile.tokens_balance} Créditos</span>
+                        <td className="py-10 px-6">
+                           <div className="flex justify-center">
+                              <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-sm border border-white ${client.statusColor}`}>
+                                {client.funnelStatus}
+                              </span>
+                           </div>
                         </td>
-                        <td className="py-6 px-4 text-center text-xs text-gray-400">
-                          {new Date(profile.created_at).toLocaleDateString()}
+                        <td className="py-10 px-6 min-w-[400px]">
+                           <div className="space-y-4">
+                              {client.songs.length > 0 ? client.songs.map((song: any) => (
+                                <div key={song.id} className="p-6 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-6 group/song">
+                                   <div className="flex items-center gap-4 flex-1">
+                                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner ${song.status === 'complete' ? 'bg-pink-50 text-pink-500' : 'bg-gray-50 text-gray-300'}`}>
+                                         <Music size={18} />
+                                      </div>
+                                      <div>
+                                         <p className="font-black text-xs font-outfit truncate max-w-[200px]">{song.title || 'Sin Título'}</p>
+                                         <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">{song.status}</p>
+                                      </div>
+                                   </div>
+                                   <div className="flex gap-2">
+                                      {song.audio_url ? (
+                                        <>
+                                          <button 
+                                            onClick={() => window.open(song.audio_url, '_blank')}
+                                            className="w-10 h-10 bg-[#1A1A1A] text-white rounded-xl flex items-center justify-center hover:bg-emerald-500 transition-all shadow-lg"
+                                          >
+                                            <Play size={14} fill="currentColor" />
+                                          </button>
+                                          <a 
+                                            href={song.audio_url} 
+                                            download 
+                                            className="w-10 h-10 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-[#FF6B00] hover:text-white transition-all border border-transparent"
+                                          >
+                                            <Download size={14} />
+                                          </a>
+                                        </>
+                                      ) : (
+                                        <div className="text-[9px] font-black text-gray-300 uppercase italic">Sin audio</div>
+                                      )}
+                                      <button className="w-10 h-10 bg-white border border-gray-100 text-gray-300 rounded-xl flex items-center justify-center hover:text-[#FF6B00] transition-all">
+                                         <Eye size={14} />
+                                      </button>
+                                   </div>
+                                </div>
+                              )) : (
+                                <div className="text-[10px] text-gray-300 font-bold uppercase tracking-widest italic flex items-center gap-2">
+                                   <Database size={14} /> El usuario aún no ha iniciado un diseño
+                                </div>
+                              )}
+                           </div>
                         </td>
-                        <td className="py-6 px-4 text-right">
-                          <button className="p-2 text-gray-300 hover:text-[#FF6B00] transition-all"><MessageSquare size={18} /></button>
+                        <td className="py-10 px-6 text-right">
+                           <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{new Date(client.created_at).toLocaleDateString('es-MX')}</p>
                         </td>
                       </tr>
-                    ))}
+                    )) : (
+                      <tr>
+                        <td colSpan={4} className="py-20 text-center">
+                           <div className="flex flex-col items-center gap-4 text-gray-200">
+                              <Search size={64} />
+                              <p className="text-sm font-black uppercase tracking-widest">No se encontraron resultados para "{searchQuery}"</p>
+                           </div>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                </table>
             </div>
           </section>
         )}
 
-        {/* --- VISTA: PRODUCCIONES --- */}
-        {activeTab === 'producciones' && (
-          <section className="bg-white p-12 rounded-[3rem] border border-gray-100 shadow-sm space-y-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-3xl font-black font-outfit">Producciones Musicales</h2>
-                <p className="text-gray-400 text-xs italic">Total: {allSongs.length} canciones en base de datos</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allSongs.map((song) => (
-                <div key={song.id} className="p-8 bg-gray-50/50 border border-gray-100 rounded-[2rem] space-y-6 hover:shadow-xl transition-all">
-                  <div className="flex justify-between items-start">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-pink-500"><Music size={24}/></div>
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${song.status === 'complete' ? 'bg-emerald-100 text-emerald-600' : 'bg-orange-100 text-orange-600'}`}>
-                      {song.status === 'complete' ? 'Producción Finalizada' : 'En Diseño (Borrador)'}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-xl font-black font-outfit truncate">{song.title || 'Canción sin título'}</h4>
-                    <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mt-1">ID: {song.id?.slice(0,8) || '---'}...</p>
-                  </div>
-                  <div className="p-4 bg-white rounded-2xl h-32 overflow-hidden relative">
-                    <p className="text-[10px] text-gray-400 leading-relaxed italic line-clamp-4">{song.lyrics || 'Sin letra registrada aún.'}</p>
-                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent"></div>
-                  </div>
-                  <div className="flex gap-4">
-                    <button className="flex-1 py-3 bg-[#1A1A1A] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FF6B00] transition-all">Ver Letra</button>
-                    {song.audio_url && <button className="p-3 bg-white border border-gray-100 rounded-xl text-[#FF2D55] hover:scale-110 transition-all"><Play size={18} fill="currentColor" /></button>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
       </main>
+
+      <footer className="py-10 text-center">
+         <p className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-200 font-outfit">
+           MN Admin Studio • Master Tracking Pro v2.0
+         </p>
+      </footer>
     </div>
   );
 }
