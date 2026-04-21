@@ -105,6 +105,10 @@ export default function CreateSong() {
       contextSummary += `- Detalle ${index + 1}: ${a}\n`;
     });
 
+    if (data.detallePerfecto) {
+      contextSummary += `\nEstilo Específico Requerido: ${data.detallePerfecto}\n`;
+    }
+
     const basePrompt = `Eres un compositor experto para "Media Naranja". 
     Genera la letra completa de una canción siguiendo estos datos, estructurada con [Verse 1], [Chorus], [Verse 2], [Spoken Word], [Chorus], [Bridge], [Outro].
     
