@@ -44,6 +44,8 @@ export async function generateInterviewQuestions(context: string): Promise<strin
     if (error) throw error;
     
     const text = data.text;
+    if (!text) throw new Error(data?.error || "La IA no respondió correctamente.");
+
     const questions = JSON.parse(text.substring(text.indexOf('['), text.lastIndexOf(']') + 1));
     
     if (!Array.isArray(questions) || questions.length === 0) {
@@ -53,16 +55,14 @@ export async function generateInterviewQuestions(context: string): Promise<strin
     return questions.slice(0, 6);
   } catch (error: any) {
     console.error("Error generating questions:", error);
+    // PLAN B: Lista de emergencia de exactamente 6 preguntas
     return [
       "¿Cómo describirías su personalidad en 3 palabras?",
       "¿Cuál es el recuerdo más divertido que comparten?",
       "¿Qué es lo que más admiras de esta persona?",
       "¿Tienen algún lugar que sea 'suyo'?",
       "¿Hay alguna frase que siempre digan?",
-      "¿Cómo ha cambiado tu vida desde que le conoces?",
-      "¿Qué canción o artista les recuerda al otro?",
-      "¿Cuál ha sido el momento más feliz juntos?",
-      "¿Qué mensaje le darías si fuera vuestro último día?"
+      "¿Cómo ha cambiado tu vida desde que le conoces?"
     ];
   }
 }
