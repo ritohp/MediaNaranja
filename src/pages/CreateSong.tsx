@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Music, Sparkles, BookOpen, User, Mic, Target, CalendarDays, Lock, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { generateLyrics, generateInterviewQuestions, cleanStylePrompt } from '../services/ai';
+import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export default function CreateSong() {
@@ -24,6 +24,12 @@ export default function CreateSong() {
   // NUEVOS ESTADOS PARA ENTREVISTA DINÁMICA
   const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>('spark');
   const [initialContext, setInitialContext] = useState('');
+  const [isGeneratingDetailsPrompt, setIsGeneratingDetailsPrompt] = useState(false);
+  const [detailsPrompt, setDetailsPrompt] = useState({
+    title: "Nombres, lugares y la historia",
+    subtitle: "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que debemos mencionar en la canción?",
+    placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+  });
   const [aiQuestions, setAiQuestions] = useState<string[]>([]);
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>({});
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
@@ -145,11 +151,25 @@ INSTRUCCIONES:
     return basePrompt;
   };
 
-  const handleProceedToDetails = (e: React.FormEvent) => {
+  const handleProceedToDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!initialContext.trim()) return;
-    setFormPhase('details');
-    window.scrollTo(0, 0);
+    
+    setIsGeneratingDetailsPrompt(true);
+    try {
+      const prompt = await generateDetailsPrompt(initialContext);
+      setDetailsPrompt({
+        title: prompt.title || "Nombres, lugares y la historia",
+        subtitle: prompt.subtitle || "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que debemos mencionar?",
+        placeholder: prompt.placeholder || "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+      });
+    } catch (err) {
+      console.error("Error al generar detalle base", err);
+    } finally {
+      setIsGeneratingDetailsPrompt(false);
+      setFormPhase('details');
+      window.scrollTo(0, 0);
+    }
   };
 
   const handleStartInterview = async (e: React.FormEvent) => {
@@ -415,8 +435,9 @@ INSTRUCCIONES:
                     className="w-full h-40 bg-blush-50/50 border border-blush-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-lg font-medium resize-none transition-all"
                     required
                   ></textarea>
-                  <button type="submit" disabled={!initialContext.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
-                    <Sparkles /> SIGUIENTE PASO
+                  <button type="submit" disabled={isGeneratingDetailsPrompt || !initialContext.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                    {isGeneratingDetailsPrompt ? <RefreshCw className="animate-spin" /> : <Sparkles />}
+                    {isGeneratingDetailsPrompt ? "PREPARANDO..." : "SIGUIENTE PASO"}
                   </button>
                 </div>
               </form>
@@ -426,13 +447,13 @@ INSTRUCCIONES:
                 
                 <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-8">
                   <div>
-                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> Nombres, lugares y la historia</h3>
-                    <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo muy específico que debemos mencionar en la canción?</p>
+                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> {detailsPrompt.title}</h3>
+                    <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
                     <textarea 
                       name="specificDetails"
                       value={formData.specificDetails}
                       onChange={handleChange}
-                      placeholder="Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+                      placeholder={detailsPrompt.placeholder}
                       className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
                       required
                     ></textarea>

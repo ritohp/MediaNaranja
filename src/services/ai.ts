@@ -96,3 +96,41 @@ export async function cleanStylePrompt(rawStyle: string): Promise<string> {
     return "Pop acústico emocional";
   }
 }
+
+export async function generateDetailsPrompt(context: string): Promise<{title: string, subtitle: string, placeholder: string}> {
+  try {
+    const prompt = `Basado en la siguiente idea inicial para una canción: "${context}"
+    
+    Genera un título, un subtítulo descriptivo y un texto de ejemplo (placeholder) que inviten al usuario a escribir más detalles y anécdotas relevantes para este tipo específico de canción (ej. si es para un padre, un hijo, una mascota, una pareja, etc.)
+    
+    RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA (SIN TEXTO ANTES NI DESPUÉS):
+    {
+      "title": "Nombres y la historia...",
+      "subtitle": "¿Cómo se llama? ¿De dónde es? ¿Qué cosas específicas no pueden faltar en la canción?",
+      "placeholder": "Ej: Se llama Juan, creció en Veracruz, es muy trabajador..."
+    }`;
+
+    const { data, error } = await supabase.functions.invoke('generate-lyrics', {
+      body: { prompt }
+    });
+
+    if (error) throw error;
+    
+    const text = data.text;
+    const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    const parsed = JSON.parse(jsonStr);
+
+    return {
+      title: parsed.title || "Nombres, lugares y la historia",
+      subtitle: parsed.subtitle || "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que mencionar?",
+      placeholder: parsed.placeholder || "Ej: Tienen 3 hijos, se conocieron en la playa..."
+    };
+  } catch (error) {
+    console.error("Error generating details prompt:", error);
+    return {
+      title: "Nombres, lugares y la historia",
+      subtitle: "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que mencionar?",
+      placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+    };
+  }
+}
