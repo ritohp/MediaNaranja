@@ -7,21 +7,22 @@ export async function generateLyrics(prompt: string) {
     });
 
     if (error) {
-      console.error("Supabase Function Error:", error);
-      // Intentar extraer mensaje de error del cuerpo si existe
-      throw new Error(error.message || "Error desconocido en la IA");
+       console.error("Functions Invoke Error Details:", error);
+       // El error de Supabase para 400 es FunctionsHttpError
+       // Intentaremos decodificar el mensaje si viene en el error
+       throw new Error(error.message || "Error desconocido en la IA");
     }
 
-    if (!data || !data.text) {
-      // Si la IA respondió con un error estructurado
-      if (data?.error) throw new Error(data.error);
-      throw new Error("La IA no devolvió contenido válido.");
+    if (!data || data.error) {
+      throw new Error(data?.error || "La IA no devolvió contenido válido.");
     }
 
     return data.text;
   } catch (error: any) {
     console.error("Critical AI Services Error:", error);
-    throw error;
+    // Intentar dar un mensaje más amigable pero detallado
+    const detailedMessage = error.context?.statusText || error.message || "Error de conexión con la IA";
+    throw new Error(`Detalle técnico: ${detailedMessage}`);
   }
 }
 

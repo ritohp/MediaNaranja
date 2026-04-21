@@ -100,9 +100,9 @@ export default function CreateSong() {
   };
 
   const buildPrompt = (data: typeof formData, answers: Record<string, string>, context: string, feedbackText?: string, previousLyrics?: string) => {
-    let contextSummary = `Idea Inicial: ${context}\n\nDetalles de la Entrevista:\n`;
-    Object.entries(answers).forEach(([q, a]) => {
-      contextSummary += `- Pregunta: ${q}\n  Respuesta: ${a}\n`;
+    let contextSummary = `Idea Inicial: ${context}\n\nHechos y Detalles Extraídos de la Entrevista:\n`;
+    Object.values(answers).forEach((a, index) => {
+      contextSummary += `- Detalle ${index + 1}: ${a}\n`;
     });
 
     const basePrompt = `Eres un compositor experto para "Media Naranja". 
@@ -366,7 +366,7 @@ export default function CreateSong() {
         </div>
       )}
 
-      <div className="max-w-5xl w-full bg-white/90 backdrop-blur-md p-6 md:p-12 rounded-[2rem] shadow-2xl border border-blush-50 relative z-10">
+      <div className="max-w-5xl w-full bg-white md:bg-white/90 md:backdrop-blur-md p-4 md:p-12 rounded-3xl md:rounded-[2rem] shadow-2xl border border-blush-50 relative z-10">
         
         {step === 1 && (
           <div className="space-y-12">
@@ -378,8 +378,8 @@ export default function CreateSong() {
 
             {formPhase === 'spark' ? (
               <form onSubmit={handleStartInterview} className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
-                <div className="bg-white p-10 rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-6">
-                  <h3 className="text-2xl font-serif text-blush-800 flex items-center gap-3"><Sparkles className="text-naranja-500" /> ¿Cuál es la chispa inicial?</h3>
+                <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-6">
+                  <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Sparkles className="text-naranja-500" /> ¿Cuál es la chispa inicial?</h3>
                   <p className="text-ink-600/70 text-sm italic">Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".</p>
                   <textarea 
                     value={initialContext}
@@ -403,9 +403,9 @@ export default function CreateSong() {
                   <p className="text-ink-600/70 mt-2">La IA ha preparado estas 6 preguntas clave para profundizar en tus sentimientos.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {aiQuestions.map((q, i) => (
-                    <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-blush-100 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                  {aiQuestions && aiQuestions.length > 0 && aiQuestions.map((q, i) => (
+                    <div key={i} className="bg-white p-6 md:p-8 rounded-3xl md:rounded-[2.5rem] border border-blush-100 shadow-sm hover:shadow-md transition-shadow space-y-4">
                       <div className="flex items-center gap-3">
                          <span className="w-8 h-8 rounded-full bg-naranja-50 text-naranja-500 flex items-center justify-center text-xs font-black">{i + 1}</span>
                          <label className="text-sm font-bold text-blush-800 leading-tight">{q}</label>
@@ -421,7 +421,7 @@ export default function CreateSong() {
                   ))}
 
                   {/* CAMPO DE MENSAJE HABLADO */}
-                  <div className="md:col-span-2 bg-gradient-to-br from-naranja-50 to-pink-50 p-10 rounded-[3rem] border border-naranja-100 shadow-sm space-y-6">
+                  <div className="md:col-span-2 bg-gradient-to-br from-naranja-50 to-pink-50 p-6 md:p-10 rounded-3xl md:rounded-[3rem] border border-naranja-100 shadow-sm space-y-6">
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-white rounded-full text-naranja-500 shadow-sm"><Mic size={24} /></div>
                       <div>
@@ -439,8 +439,8 @@ export default function CreateSong() {
                   </div>
 
                   {/* ESTILO MUSICAL */}
-                  <div className="md:col-span-2 bg-blush-50/20 p-8 rounded-[3rem] border border-blush-100/50">
-                    <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><Target size={24} className="text-naranja-500"/> Personalización Final</h3>
+                  <div className="md:col-span-2 bg-blush-50/20 p-6 md:p-8 rounded-3xl md:rounded-[3rem] border border-blush-100/50">
+                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><Target size={24} className="text-naranja-500"/> Personalización Final</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Género</label>
@@ -468,8 +468,8 @@ export default function CreateSong() {
                   </div>
                 </div>
 
-                <div className="pt-10">
-                  <button type="submit" disabled={isGenerating} className="w-full flex items-center justify-center gap-3 px-8 py-6 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2.5xl font-bold text-xl tracking-widest hover:brightness-110 transition-all shadow-xl disabled:opacity-50">
+                <div className="pt-6 md:pt-10 text-center">
+                  <button type="submit" disabled={isGenerating} className="w-full flex items-center justify-center gap-3 px-6 md:px-8 py-5 md:py-6 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl md:rounded-2.5xl font-bold text-lg md:text-xl tracking-widest hover:brightness-110 transition-all shadow-xl disabled:opacity-50">
                     {isGenerating ? <RefreshCw className="animate-spin" /> : <Sparkles />}
                     <span>{isGenerating ? "ESCRIBIENDO LETRA..." : "COMPONER LETRA AHORA"}</span>
                   </button>
