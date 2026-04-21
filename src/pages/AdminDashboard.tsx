@@ -22,47 +22,94 @@ import { supabase } from '../lib/supabase';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalUsers: 142,
-    totalSongs: 56,
-    conversionRate: 12.5,
-    revenue: 2840,
-    activeCreations: 8
+    totalUsers: 0,
+    totalSongs: 0,
+    conversionRate: 0,
+    revenue: 0,
+    activeCreations: 0
   });
 
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+
   useEffect(() => {
-    const checkAdmin = async () => {
+    const fetchData = async () => {
+      // 1. Verificar Admin
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || user.email !== 'ritohp@gmail.com') {
         navigate('/');
-      } else {
-        setChecking(false);
+        return;
+      }
+      setChecking(false);
+
+      try {
+        // 2. Traer Usuarios
+        const { count: usersCount } = await supabase
+          .from('mn_profiles')
+          .select('*', { count: 'exact', head: true });
+
+        // 3. Traer Canciones
+        const { data: songs, count: songsCount } = await supabase
+          .from('mn_songs')
+          .select('*, user_id')
+          .order('created_at', { ascending: false });
+
+        // 4. Traer correos para la actividad reciente (Join manual simple)
+        const { data: profiles } = await supabase
+          .from('mn_profiles')
+          .select('id, email');
+
+        const profileMap = profiles?.reduce((acc: any, p: any) => {
+          acc[p.id] = p.email;
+          return acc;
+        }, {});
+
+        // 5. Procesar Actividad Reciente
+        const processedActivity = songs?.slice(0, 5).map((song: any) => ({
+          id: song.id,
+          name: profileMap?.[song.user_id]?.split('@')[0] || 'Usuario Anónimo',
+          email: profileMap?.[song.user_id] || 'N/A',
+          status: song.status === 'complete' ? 'Pagado' : 'Diseñando',
+          progress: song.status === 'complete' ? 100 : 60,
+          lastActive: new Date(song.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+        })) || [];
+
+        setRecentUsers(processedActivity);
+
+        // 6. Calcular Estadísticas
+        const finalUsers = usersCount || 0;
+        const finalSongs = songsCount || 0;
+        const conv = finalUsers > 0 ? (finalSongs / finalUsers) * 100 : 0;
+        
+        setStats({
+          totalUsers: finalUsers,
+          totalSongs: finalSongs,
+          conversionRate: parseFloat(conv.toFixed(1)),
+          revenue: finalSongs * 49, // Estimación: $49 USD por canción
+          activeCreations: songs?.filter(s => s.status === 'draft').length || 0
+        });
+
+      } catch (error) {
+        console.error("Error fetching admin stats:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    checkAdmin();
+
+    fetchData();
   }, [navigate]);
 
-  if (checking) {
+  if (checking || loading) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF6B00]"></div>
+        <div className="flex flex-col items-center gap-4">
+           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF6B00]"></div>
+           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest animate-pulse">Sincronizando Boutique...</p>
+        </div>
       </div>
     );
   }
-
-  const funnelSteps = [
-    { label: 'Visitas Landing', value: 1200, color: 'bg-blue-500' },
-    { label: 'Click Crear Canción', value: 450, color: 'bg-emerald-500' },
-    { label: 'Completó Diseño', value: 180, color: 'bg-orange-500' },
-    { label: 'Pago Exitoso', value: 56, color: 'bg-pink-500' }
-  ];
-
-  const recentUsers = [
-    { id: 1, name: 'Valentina', status: 'Diseñando', progress: 60, lastActive: 'Hace 5 min' },
-    { id: 2, name: 'Alejandro', status: 'Pagado', progress: 100, lastActive: 'Hace 12 min' },
-    { id: 3, name: 'María José', status: 'Visitante', progress: 10, lastActive: 'Hace 1 hr' },
-    { id: 4, name: 'Roberto F.', status: 'Carrito Abandonado', progress: 90, lastActive: 'Hace 3 hr' }
-  ];
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans pb-20">
