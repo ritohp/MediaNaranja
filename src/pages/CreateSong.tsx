@@ -451,7 +451,7 @@ INSTRUCCIONES:
                     <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
                     <textarea 
                       name="specificDetails"
-                      value={formData.specificDetails}
+                      value={formData.specificDetails || ''}
                       onChange={handleChange}
                       placeholder={detailsPrompt.placeholder}
                       className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
@@ -464,7 +464,7 @@ INSTRUCCIONES:
                     <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo quieres que suene? (Con humor, cómica, poética, corrido bragado, o estilo Banda MS)</p>
                     <textarea 
                       name="moodAndStyle"
-                      value={formData.moodAndStyle}
+                      value={formData.moodAndStyle || ''}
                       onChange={handleChange}
                       placeholder="Ej: Quiero una cumbia rápida y alegre con un toque de humor, estilo Los Ángeles Azules..."
                       className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
@@ -472,7 +472,7 @@ INSTRUCCIONES:
                     ></textarea>
                   </div>
 
-                  <button type="submit" disabled={isGeneratingQuestions || !formData.specificDetails.trim() || !formData.moodAndStyle.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                  <button type="submit" disabled={isGeneratingQuestions || !formData.specificDetails?.trim() || !formData.moodAndStyle?.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
                     {isGeneratingQuestions ? <RefreshCw className="animate-spin" /> : <Sparkles />}
                     {isGeneratingQuestions ? "DISEÑANDO ENTREVISTA..." : "CONTINUAR"}
                   </button>
