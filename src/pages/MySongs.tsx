@@ -199,8 +199,11 @@ export default function MySongs() {
                   {song.audio_url || song.demo_url ? (
                     <div className="bg-naranja-50/30 rounded-2xl p-4 border border-naranja-100">
                       <audio 
+                        key={song.audio_url || song.id}
+                        src={song.audio_url || ''}
                         controls 
                         controlsList="nodownload"
+                        referrerPolicy="no-referrer"
                         onContextMenu={(e) => e.preventDefault()}
                         onTimeUpdate={(e) => {
                           if (e.currentTarget.currentTime >= 60) {
@@ -211,7 +214,7 @@ export default function MySongs() {
                         }}
                         className="w-full h-10 accent-naranja-500"
                       >
-                        <source src={song.demo_url || song.audio_url || ''} type="audio/mpeg" />
+                        Tu navegador no soporta el reproductor de audio.
                       </audio>
                       <div className="mt-3 text-center">
                         <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">

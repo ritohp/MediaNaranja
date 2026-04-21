@@ -238,7 +238,7 @@ export default function CreateSong() {
     try {
       const { error: tokenError } = await supabase
         .from('mn_profiles')
-        .update({ tokens_balance: tokens! - 1 })
+        .update({ tokens_balance: (tokens || 0) - 1 })
         .eq('id', user?.id);
       
       if (tokenError) throw new Error("Error al procesar el token.");
@@ -270,6 +270,9 @@ export default function CreateSong() {
           try {
             response = await checkMusicStatus(taskId);
           } catch (e) {
+            console.error("Polling error detected:", e);
+            clearInterval(pollInterval);
+            setGenerationStatus('error');
             return;
           }
         }
@@ -598,8 +601,11 @@ export default function CreateSong() {
                     <Music size={120} />
                   </div>
                   <audio 
+                    key={audioUrl}
+                    src={audioUrl}
                     controls 
                     controlsList="nodownload" 
+                    referrerPolicy="no-referrer"
                     onContextMenu={(e) => e.preventDefault()}
                     onTimeUpdate={(e) => {
                       if (e.currentTarget.currentTime >= 60) {
@@ -610,7 +616,6 @@ export default function CreateSong() {
                     }}
                     className="w-full mb-8 custom-audio-player"
                   >
-                    <source src={audioUrl} type="audio/mpeg" />
                     Tu navegador no soporta el reproductor de audio.
                   </audio>
                   <div className="space-y-4 relative z-10">

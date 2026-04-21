@@ -22,13 +22,22 @@ export async function checkMusicStatus(taskId: string) {
     const { data, error } = await supabase.functions.invoke(`generate-music?action=status&taskId=${taskId}`);
 
     if (error) {
-      console.error("Status check error:", error);
-      return null;
+      console.error("Supabase Function Invoke Error (Status):", error);
+      throw error;
+    }
+
+    // Kie.ai suele retornar un campo data o response
+    const responseData = data?.data || data?.response || data;
+    
+    // Si Kie reporta error interno en la tarea
+    if (responseData.code === 500 || responseData.status === 'error') {
+      console.error("Kie AI Internal Task Error:", responseData);
+      throw new Error("Kie AI failed to generate this song.");
     }
 
     return data; 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Music Service Error (Status):", error);
-    return null;
+    throw error;
   }
 }
