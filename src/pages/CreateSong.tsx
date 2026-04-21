@@ -129,7 +129,18 @@ export default function CreateSong() {
     3. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
-      return `${basePrompt}\n\nLETRA ACTUAL:\n${previousLyrics}\n\nPETICIÓN DE CAMBIO DEL USUARIO:\n${feedbackText}\n\nPor favor, genera una nueva versión mejorada siguiendo estas instrucciones.`;
+      return `Eres un compositor experto. REESCRIBE la siguiente canción basándote exclusivamente en el AJUSTE solicitado.
+      
+LETRA ACTUAL:
+${previousLyrics}
+
+AJUSTE SOLICITADO:
+"${feedbackText}"
+
+INSTRUCCIONES:
+1. Mantén la estructura [Verse 1], [Chorus], etc.
+2. Incorpora el ajuste de forma natural.
+3. Responde ÚNICAMENTE con la nueva letra.`;
     }
     return basePrompt;
   };
@@ -228,7 +239,7 @@ export default function CreateSong() {
       }
     } catch (error: any) {
       console.error("DEBUG REWRITE ERROR:", error);
-      alert(`Error al reescribir con IA: ${error.message || "Error desconocido"}.`);
+      alert(`[DEBUG REWRITE]: ${error.message || "Error desconocido"}.`);
     } finally {
       setIsGenerating(false);
     }
