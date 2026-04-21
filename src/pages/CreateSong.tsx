@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Music, Sparkles, BookOpen, User, Mic, Target, CalendarDays, Lock, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { generateLyrics, generateInterviewQuestions } from '../services/ai';
+import { generateLyrics, generateInterviewQuestions, cleanStylePrompt } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export default function CreateSong() {
@@ -22,7 +22,7 @@ export default function CreateSong() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
   // NUEVOS ESTADOS PARA ENTREVISTA DINÁMICA
-  const [formPhase, setFormPhase] = useState<'spark' | 'interview'>('spark');
+  const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>('spark');
   const [initialContext, setInitialContext] = useState('');
   const [aiQuestions, setAiQuestions] = useState<string[]>([]);
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>({});
@@ -30,11 +30,12 @@ export default function CreateSong() {
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem('mn_draft_song');
-    return saved ? JSON.parse(saved) : {
-      genero: 'romantica',
-      idioma: 'espanol',
-      mensajeHablado: '',
-      detallePerfecto: ''
+    const parsed = saved ? JSON.parse(saved) : {};
+    return {
+      mensajeHablado: parsed.mensajeHablado || '',
+      specificDetails: parsed.specificDetails || '',
+      moodAndStyle: parsed.moodAndStyle || '',
+      finalStylePrompt: parsed.finalStylePrompt || ''
     };
   });
 
@@ -100,14 +101,14 @@ export default function CreateSong() {
   };
 
   const buildPrompt = (data: typeof formData, answers: Record<string, string>, context: string, feedbackText?: string, previousLyrics?: string) => {
-    let contextSummary = `Idea Inicial: ${context}\n\nHechos y Detalles Extraídos de la Entrevista:\n`;
+    let contextSummary = `Idea Inicial: ${context}\n`;
+    if (data.specificDetails) {
+      contextSummary += `Detalles Específicos Adicionales: ${data.specificDetails}\n`;
+    }
+    contextSummary += `\nHechos y Detalles Extraídos de la Entrevista:\n`;
     Object.values(answers).forEach((a, index) => {
       contextSummary += `- Detalle ${index + 1}: ${a}\n`;
     });
-
-    if (data.detallePerfecto) {
-      contextSummary += `\nEstilo Específico Requerido: ${data.detallePerfecto}\n`;
-    }
 
     const basePrompt = `Eres un compositor experto para "Media Naranja". 
     Genera la letra completa de una canción siguiendo estos datos, estructurada con [Verse 1], [Chorus], [Verse 2], [Spoken Word], [Chorus], [Bridge], [Outro].
@@ -118,15 +119,14 @@ export default function CreateSong() {
     MENSAJE HABLADO (Para la sección [Spoken Word]):
     "${data.mensajeHablado}"
     
-    ESTILO Y FORMATO:
-    - Estilo Musical deseado: ${data.genero}
-    - Idioma: ${data.idioma}
-    - Toque final: ${data.detallePerfecto}
+    ESTILO DE LA CANCIÓN DESEADO:
+    ${data.moodAndStyle}
     
     INSTRUCCIÓN CRÍTICA:
     1. Incorpora los detalles de las respuestas en la lírica de forma fluida y natural, no los copies literalmente.
     2. La sección [Spoken Word] debe contener el mensaje hablado proporcionado, ajustado para que suene natural si es necesario.
-    3. Responde ÚNICAMENTE con la letra estructurada.`;
+    3. Asegura que el ritmo y tono coincida con el ESTILO DE LA CANCIÓN DESEADO.
+    4. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
       return `Eres un compositor experto. REESCRIBE la siguiente canción basándote exclusivamente en el AJUSTE solicitado.
@@ -145,13 +145,21 @@ INSTRUCCIONES:
     return basePrompt;
   };
 
-  const handleStartInterview = async (e: React.FormEvent) => {
+  const handleProceedToDetails = (e: React.FormEvent) => {
     e.preventDefault();
     if (!initialContext.trim()) return;
+    setFormPhase('details');
+    window.scrollTo(0, 0);
+  };
+
+  const handleStartInterview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initialContext.trim() || !formData.specificDetails.trim() || !formData.moodAndStyle.trim()) return;
     
     setIsGeneratingQuestions(true);
     try {
-      const questions = await generateInterviewQuestions(initialContext);
+      const combinedContext = `Idea base: ${initialContext}. Detalles: ${formData.specificDetails}. Estilo deseado: ${formData.moodAndStyle}`;
+      const questions = await generateInterviewQuestions(combinedContext);
       setAiQuestions(questions);
       setFormPhase('interview');
       window.scrollTo(0, 0);
@@ -204,7 +212,7 @@ INSTRUCCIONES:
           user_id: user?.id,
           form_data: formData,
           lyrics: generatedLyrics,
-          style_prompt: formData.genero,
+          style_prompt: formData.moodAndStyle,
           status: 'draft'
         }])
         .select()
@@ -263,6 +271,9 @@ INSTRUCCIONES:
       
       if (tokenError) throw new Error("Error al procesar el token.");
 
+      const cleanedStyle = await cleanStylePrompt(formData.moodAndStyle);
+      setFormData(prev => ({...prev, finalStylePrompt: cleanedStyle}));
+
       const isTestMode = false;
       const { generateMusicTask, checkMusicStatus } = await import('../services/music');
       
@@ -270,7 +281,7 @@ INSTRUCCIONES:
       if (isTestMode) {
         taskId = "mock-task-id-" + Date.now();
       } else {
-        taskId = await generateMusicTask(lyrics, formData.genero, `Canción para ${formData.nombreDestinatario}`);
+        taskId = await generateMusicTask(lyrics, cleanedStyle, 'Canción Original Media Naranja');
       }
 
       if (currentSongId) {
@@ -393,7 +404,7 @@ INSTRUCCIONES:
             </div>
 
             {formPhase === 'spark' ? (
-              <form onSubmit={handleStartInterview} className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
+              <form onSubmit={handleProceedToDetails} className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
                 <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-6">
                   <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Sparkles className="text-naranja-500" /> ¿Cuál es la chispa inicial?</h3>
                   <p className="text-ink-600/70 text-sm italic">Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".</p>
@@ -404,15 +415,51 @@ INSTRUCCIONES:
                     className="w-full h-40 bg-blush-50/50 border border-blush-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-lg font-medium resize-none transition-all"
                     required
                   ></textarea>
-                  <button type="submit" disabled={isGeneratingQuestions || !initialContext.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                  <button type="submit" disabled={!initialContext.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                    <Sparkles /> SIGUIENTE PASO
+                  </button>
+                </div>
+              </form>
+            ) : formPhase === 'details' ? (
+              <form onSubmit={handleStartInterview} className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-right-8 duration-700">
+                <button onClick={() => setFormPhase('spark')} type="button" className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-2"><ArrowLeft size={16} /> Volver a chispa inicial</button>
+                
+                <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-8">
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> Nombres, lugares y la historia</h3>
+                    <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo muy específico que debemos mencionar en la canción?</p>
+                    <textarea 
+                      name="specificDetails"
+                      value={formData.specificDetails}
+                      onChange={handleChange}
+                      placeholder="Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+                      className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
+                      required
+                    ></textarea>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Music className="text-naranja-500" /> Género, tono y emoción</h3>
+                    <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo quieres que suene? (Con humor, cómica, poética, corrido bragado, o estilo Banda MS)</p>
+                    <textarea 
+                      name="moodAndStyle"
+                      value={formData.moodAndStyle}
+                      onChange={handleChange}
+                      placeholder="Ej: Quiero una cumbia rápida y alegre con un toque de humor, estilo Los Ángeles Azules..."
+                      className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
+                      required
+                    ></textarea>
+                  </div>
+
+                  <button type="submit" disabled={isGeneratingQuestions || !formData.specificDetails.trim() || !formData.moodAndStyle.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
                     {isGeneratingQuestions ? <RefreshCw className="animate-spin" /> : <Sparkles />}
-                    {isGeneratingQuestions ? "DISEÑANDO ENTREVISTA..." : "SIGUIENTE PASO"}
+                    {isGeneratingQuestions ? "DISEÑANDO ENTREVISTA..." : "CONTINUAR"}
                   </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleStartLyrics} className="space-y-10 animate-in slide-in-from-right-8 duration-700">
-                <button onClick={() => setFormPhase('spark')} className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-4"><ArrowLeft size={16} /> Cambiar idea inicial</button>
+                <button onClick={() => setFormPhase('details')} type="button" className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-4"><ArrowLeft size={16} /> Volver a detalles</button>
                 
                 <div className="text-center pb-6">
                   <h2 className="text-3xl font-serif text-blush-800">El Corazón de tu Historia</h2>
@@ -452,35 +499,6 @@ INSTRUCCIONES:
                       placeholder="Escribe las palabras exactas que quieres que se escuchen (ej: 'Te amo con todo mi ser, nunca lo olvides...')"
                       className="w-full h-32 bg-white/80 border border-naranja-100 rounded-2xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-base font-medium resize-none shadow-inner"
                     ></textarea>
-                  </div>
-
-                  {/* ESTILO MUSICAL */}
-                  <div className="md:col-span-2 bg-blush-50/20 p-6 md:p-8 rounded-3xl md:rounded-[3rem] border border-blush-100/50">
-                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><Target size={24} className="text-naranja-500"/> Personalización Final</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Género</label>
-                        <select name="genero" value={formData.genero} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none">
-                          <option value="romantica">Romántica</option>
-                          <option value="pop">Pop</option>
-                          <option value="regional">Regional Mexicano</option>
-                          <option value="acustico">Acústico / Guitarra</option>
-                          <option value="bachata">Bachata</option>
-                          <option value="urbano">Urbano / Reggaetón</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Idioma</label>
-                        <select name="idioma" value={formData.idioma} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none">
-                          <option value="espanol">Español</option>
-                          <option value="ingles">Inglés</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Visión Perfecta</label>
-                        <input type="text" name="detallePerfecto" value={formData.detallePerfecto} onChange={handleChange} placeholder="Ej. Que sea muy lenta..." className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" />
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -531,7 +549,7 @@ INSTRUCCIONES:
                 </div>
 
                 <div className="bg-blush-50 p-6 rounded-3xl border border-blush-100 text-[10px] text-blush-500/80 uppercase font-bold tracking-widest space-y-3">
-                  <p>• Género: {formData.genero}</p>
+                  <p>• Estilo solicitado: {formData.moodAndStyle.substring(0, 50)}...</p>
                   <p>• Tokens: {tokens} disponibles</p>
                 </div>
 

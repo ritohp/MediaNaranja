@@ -66,3 +66,33 @@ export async function generateInterviewQuestions(context: string): Promise<strin
     ];
   }
 }
+
+export async function cleanStylePrompt(rawStyle: string): Promise<string> {
+  try {
+    const prompt = `El usuario ha descrito el estilo musical que desea para su canción: "${rawStyle}".
+    Extrae y describe el género musical de forma concisa (ej. 'Banda sinaloense alegre', 'Balada pop romántica acústica').
+    
+    INSTRUCCIÓN CRÍTICA: Si el usuario menciona nombres de artistas, cantantes o bandas reales con copyright (ej. Banda MS, Luis Miguel, Ed Sheeran), ELIMÍNALOS por completo. Solo describe el estilo musical genérico que los representa.
+    
+    RESPONDE ÚNICAMENTE CON EL ESTILO RESULTANTE, SIN NINGÚN OTRO TEXTO NI COMILLAS.`;
+
+    const { data, error } = await supabase.functions.invoke('generate-lyrics', {
+      body: { prompt }
+    });
+
+    if (error || !data || !data.text) {
+      // Si falla, regresamos el string crudo o algo muy genérico para no romper el flujo
+      console.warn("Fallo el filtro de estilo, usando estilo por defecto");
+      return "Pop romántico";
+    }
+
+    // Limpiamos de comillas si la IA no hizo caso
+    let cleanText = data.text.trim();
+    cleanText = cleanText.replace(/^["']|["']$/g, '');
+    
+    return cleanText;
+  } catch (error) {
+    console.error("Error in cleanStylePrompt:", error);
+    return "Pop acústico emocional";
+  }
+}
