@@ -400,7 +400,7 @@ export default function CreateSong() {
                 
                 <div className="text-center pb-6">
                   <h2 className="text-3xl font-serif text-blush-800">El Corazón de tu Historia</h2>
-                  <p className="text-ink-600/70 mt-2">La IA ha preparado estas preguntas para profundizar en tus sentimientos.</p>
+                  <p className="text-ink-600/70 mt-2">La IA ha preparado estas 6 preguntas clave para profundizar en tus sentimientos.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

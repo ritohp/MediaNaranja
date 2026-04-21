@@ -8,10 +8,13 @@ export async function generateLyrics(prompt: string) {
 
     if (error) {
       console.error("Supabase Function Error:", error);
-      throw new Error(`Error en la función de borde: ${error.message}`);
+      // Intentar extraer mensaje de error del cuerpo si existe
+      throw new Error(error.message || "Error desconocido en la IA");
     }
 
     if (!data || !data.text) {
+      // Si la IA respondió con un error estructurado
+      if (data?.error) throw new Error(data.error);
       throw new Error("La IA no devolvió contenido válido.");
     }
 
@@ -27,7 +30,7 @@ export async function generateInterviewQuestions(context: string): Promise<strin
     const prompt = `Eres un experto entrevistador para "Media Naranja", una plataforma que crea canciones personalizadas ultra-sentimentales.
     A partir de la siguiente idea inicial del usuario: "${context}"
     
-    Genera exactamente 9 preguntas abiertas y profundas que nos ayuden a extraer los mejores detalles para una canción inolvidable.
+    Genera exactamente 6 preguntas abiertas y profundas que nos ayuden a extraer los mejores detalles para una canción inolvidable.
     Las preguntas deben enfocarse en: anécdotas, rasgos físicos/personales, palabras clave entre ellos, apodos, momentos difíciles superados, y el sentimiento exacto.
     
     RESPONDE ÚNICAMENTE CON UN ARRAY JSON DE STRINGS, SIN TEXTO ADICIONAL.
@@ -46,7 +49,7 @@ export async function generateInterviewQuestions(context: string): Promise<strin
       throw new Error("Formato de preguntas inválido");
     }
 
-    return questions.slice(0, 9);
+    return questions.slice(0, 6);
   } catch (error: any) {
     console.error("Error generating questions:", error);
     return [
