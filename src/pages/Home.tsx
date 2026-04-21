@@ -120,6 +120,15 @@ export default function Home() {
         /* Hide scrollbar for category list */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .mask-fade {
+          mask-image: linear-gradient(to right, black 85%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+        }
+        
+        @media (min-width: 1024px) {
+          .mask-fade { mask-image: none; -webkit-mask-image: none; }
+        }
       `}</style>
 
       {/* --- HERO SECTION --- */}
@@ -174,18 +183,20 @@ export default function Home() {
             <p className="text-gray-400 font-outfit max-w-xl mx-auto italic">Selecciona a quién quieres sorprender y descubre la magia.</p>
           </div>
 
-          {/* Nav de Tags (Scroll horizontal en móvil, grid en desktop) */}
-          <div className="flex lg:grid lg:grid-cols-6 gap-3 mb-10 overflow-x-auto no-scrollbar pb-4 px-2">
+          {/* Nav de Tags (Scroll horizontal intuitivo con recorte visual) */}
+          <div className="flex lg:grid lg:grid-cols-6 gap-4 mb-10 overflow-x-auto no-scrollbar pb-6 px-1 mask-fade">
             {tags.map((tag) => (
               <button
                 key={tag.id}
                 onClick={() => setActiveTag(tag.id)}
-                className={`flex-shrink-0 lg:flex-shrink lg:w-full flex items-center justify-center lg:flex-col gap-3 p-4 lg:p-6 rounded-2xl transition-all font-outfit font-bold text-xs uppercase tracking-widest ${activeTag === tag.id ? 'bg-[#1A1A1A] text-white shadow-xl scale-105' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                className={`flex-shrink-0 lg:flex-shrink lg:w-full flex items-center justify-center lg:flex-col gap-3 p-5 lg:p-7 rounded-[2rem] transition-all font-outfit font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeTag === tag.id ? 'bg-brand-gradient text-white shadow-xl shadow-orange-500/20 border-transparent scale-105' : 'bg-white text-gray-400 border-gray-100 hover:border-[#FF6B00] hover:text-[#FF6B00] shadow-sm'}`}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${tag.color}`}>{tag.icon}</div>
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg ${tag.color} ${activeTag === tag.id ? 'bg-white !text-[#FF6B00]' : ''}`}>{tag.icon}</div>
                 {tag.label}
               </button>
             ))}
+            {/* Espaciador invisible para forzar el recorte visual en móvil */}
+            <div className="flex-shrink-0 w-8 lg:hidden"></div>
           </div>
 
           {/* Contenido Dinámico (Unificado para móvil) */}

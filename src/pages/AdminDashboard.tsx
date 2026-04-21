@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Music, 
@@ -18,6 +19,8 @@ import {
 import { supabase } from '../lib/supabase';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 142,
     totalSongs: 56,
@@ -26,7 +29,25 @@ export default function AdminDashboard() {
     activeCreations: 8
   });
 
-  const [activeTab, setActiveTab] = useState('overview');
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || user.email !== 'ritohp@gmail.com') {
+        navigate('/');
+      } else {
+        setChecking(false);
+      }
+    };
+    checkAdmin();
+  }, [navigate]);
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF6B00]"></div>
+      </div>
+    );
+  }
 
   const funnelSteps = [
     { label: 'Visitas Landing', value: 1200, color: 'bg-blue-500' },

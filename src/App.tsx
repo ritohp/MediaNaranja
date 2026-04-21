@@ -6,6 +6,7 @@ import MySongs from './pages/MySongs';
 import MyMemories from './pages/MyMemories';
 import MemoryGallery from './pages/MemoryGallery';
 import MemoryCustomizer from './pages/MemoryCustomizer';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/crear-cancion" element={<CreateSong />} />
           <Route path="/mis-canciones" element={<MySongs />} />
           <Route path="/mis-recuerdos" element={<MyMemories />} />
