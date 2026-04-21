@@ -18,7 +18,8 @@ import {
   ExternalLink,
   ArrowRight,
   Database,
-  FileText
+  FileText,
+  Play
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -327,7 +328,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <h4 className="text-xl font-black font-outfit truncate">{song.title || 'Canción sin título'}</h4>
-                    <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mt-1">ID: {song.id.slice(0,8)}...</p>
+                    <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mt-1">ID: {song.id?.slice(0,8) || '---'}...</p>
                   </div>
                   <div className="p-4 bg-white rounded-2xl h-32 overflow-hidden relative">
                     <p className="text-[10px] text-gray-400 leading-relaxed italic line-clamp-4">{song.lyrics || 'Sin letra registrada aún.'}</p>
