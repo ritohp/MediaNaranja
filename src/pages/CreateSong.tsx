@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Music, Sparkles, BookOpen, User, Mic, Target, CalendarDays, Lock, ArrowLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { generateLyrics } from '../services/ai';
+import { generateLyrics, generateInterviewQuestions } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export default function CreateSong() {
@@ -21,37 +21,18 @@ export default function CreateSong() {
   const [password, setPassword] = useState('');
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
-  // ESTADO DEL FORMULARIO CON CARGA DESDE LOCALSTORAGE
+  // NUEVOS ESTADOS PARA ENTREVISTA DINÁMICA
+  const [formPhase, setFormPhase] = useState<'spark' | 'interview'>('spark');
+  const [initialContext, setInitialContext] = useState('');
+  const [aiQuestions, setAiQuestions] = useState<string[]>([]);
+  const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>({});
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem('mn_draft_song');
     return saved ? JSON.parse(saved) : {
-      nombreDestinatario: '',
-      edad: '',
-      relacion: '',
-      relacionOtro: '',
-      apodos: '',
-      ocasion: '',
-      ocasionOtro: '',
-      fechaEntrega: '',
-      fechaEspecial: '',
-      comoSeConocieron: '',
-      momentosImportantes: '',
-      queAdmiras: '',
-      queSientes: '',
-      anecdota: '',
-      algoQueDecirle: '',
-      tresPalabrasPersona: '',
-      tresPalabrasRelacion: '',
-      queHagaSentir: '',
-      queHagaSentirOtro: '',
-      genero: '',
-      generoOtro: '',
-      cancionReferencia: '',
-      frasesEspecificas: '',
-      palabrasNo: '',
+      genero: 'romantica',
       idioma: 'espanol',
-      nombreInicioFinal: '',
-      narracionOMusical: 'musical',
       mensajeHablado: '',
       detallePerfecto: ''
     };
@@ -118,29 +99,52 @@ export default function CreateSong() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const buildPrompt = (data: typeof formData, feedbackText?: string, previousLyrics?: string) => {
+  const buildPrompt = (data: typeof formData, answers: Record<string, string>, context: string, feedbackText?: string, previousLyrics?: string) => {
+    let contextSummary = `Idea Inicial: ${context}\n\nDetalles de la Entrevista:\n`;
+    Object.entries(answers).forEach(([q, a]) => {
+      contextSummary += `- Pregunta: ${q}\n  Respuesta: ${a}\n`;
+    });
+
     const basePrompt = `Eres un compositor experto para "Media Naranja". 
-    Genera la letra completa de una canción siguiendo estos datos, estructurada con [Verse], [Chorus], [Bridge], [Outro].
+    Genera la letra completa de una canción siguiendo estos datos, estructurada con [Verse 1], [Chorus], [Verse 2], [Spoken Word], [Chorus], [Bridge], [Outro].
     
-    CONTEXTO:
-    - Para: ${data.nombreDestinatario} (${data.relacion})
-    - Motivo: ${data.ocasion}
-    - Historia: ${data.comoSeConocieron}
-    - Momentos Clave: ${data.momentosImportantes}
-    - Admiración y Sentimientos: ${data.queAdmiras}, ${data.queSientes}
-    - Anécdota: ${data.anecdota}
-    - Estilo Musical deseado: ${data.genero} (Parecido a: ${data.cancionReferencia})
+    CONTEXTO Y DETALLES EMOCIONALES:
+    ${contextSummary}
+    
+    MENSAJE HABLADO (Para la sección [Spoken Word]):
+    "${data.mensajeHablado}"
+    
+    ESTILO Y FORMATO:
+    - Estilo Musical deseado: ${data.genero}
     - Idioma: ${data.idioma}
-    - Frases requeridas: ${data.frasesEspecificas}
-    - Lo que NO debe decir: ${data.palabrasNo}
     - Toque final: ${data.detallePerfecto}
     
-    IMPORTANTE: Responde ÚNICAMENTE con la letra en el formato estructurado.`;
+    INSTRUCCIÓN CRÍTICA:
+    1. Incorpora los detalles de las respuestas en la lírica de forma fluida y natural, no los copies literalmente.
+    2. La sección [Spoken Word] debe contener el mensaje hablado proporcionado, ajustado para que suene natural si es necesario.
+    3. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
       return `${basePrompt}\n\nLETRA ACTUAL:\n${previousLyrics}\n\nPETICIÓN DE CAMBIO DEL USUARIO:\n${feedbackText}\n\nPor favor, genera una nueva versión mejorada siguiendo estas instrucciones.`;
     }
     return basePrompt;
+  };
+
+  const handleStartInterview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initialContext.trim()) return;
+    
+    setIsGeneratingQuestions(true);
+    try {
+      const questions = await generateInterviewQuestions(initialContext);
+      setAiQuestions(questions);
+      setFormPhase('interview');
+      window.scrollTo(0, 0);
+    } catch (error) {
+      alert("Error al generar las preguntas. Por favor intenta de nuevo.");
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -175,7 +179,7 @@ export default function CreateSong() {
 
     setIsGenerating(true);
     try {
-      const prompt = buildPrompt(formData);
+      const prompt = buildPrompt(formData, interviewAnswers, initialContext);
       const generatedLyrics = await generateLyrics(prompt);
       setLyrics(generatedLyrics);
       
@@ -210,9 +214,9 @@ export default function CreateSong() {
     if (!feedback.trim()) return;
     setIsGenerating(true);
     try {
-      const prompt = buildPrompt(formData, feedback, lyrics);
-      const newLyrics = await generateLyrics(prompt);
-      setLyrics(newLyrics);
+      const prompt = buildPrompt(formData, interviewAnswers, initialContext, feedback, lyrics);
+      const generatedLyrics = await generateLyrics(prompt);
+      setLyrics(generatedLyrics);
       setFeedback('');
       
       if (currentSongId) {
@@ -365,117 +369,114 @@ export default function CreateSong() {
       <div className="max-w-5xl w-full bg-white/90 backdrop-blur-md p-6 md:p-12 rounded-[2rem] shadow-2xl border border-blush-50 relative z-10">
         
         {step === 1 && (
-          <form onSubmit={handleStartLyrics} className="space-y-12">
+          <div className="space-y-12">
             <div className="text-center mb-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-naranja-50 text-naranja-500 mb-6 border border-naranja-100"><Music size={32} /></div>
               <h1 className="text-4xl md:text-5xl mb-4 font-serif text-blush-800">Crea tu <span className="text-naranja-500 italic">Obra Maestra</span></h1>
-              <p className="text-ink-600/70 text-lg font-light max-w-2xl mx-auto">Cuéntanos cada detalle. Entre más información, más mágica será la letra.</p>
+              <p className="text-ink-600/70 text-lg font-light max-w-2xl mx-auto">Cuéntanos tu historia y deja que nuestra IA diseñe la entrevista perfecta para tu canción.</p>
             </div>
 
-            <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
-              <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><User size={24} className="text-naranja-500"/> 💝 ¿Para quién es la canción?</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Nombre de la persona</label>
-                  <input type="text" name="nombreDestinatario" value={formData.nombreDestinatario} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-naranja-400 outline-none" required />
+            {formPhase === 'spark' ? (
+              <form onSubmit={handleStartInterview} className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
+                <div className="bg-white p-10 rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-6">
+                  <h3 className="text-2xl font-serif text-blush-800 flex items-center gap-3"><Sparkles className="text-naranja-500" /> ¿Cuál es la chispa inicial?</h3>
+                  <p className="text-ink-600/70 text-sm italic">Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".</p>
+                  <textarea 
+                    value={initialContext}
+                    onChange={(e) => setInitialContext(e.target.value)}
+                    placeholder="Escribe aquí de qué se trata la canción y para quién es..."
+                    className="w-full h-40 bg-blush-50/50 border border-blush-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-lg font-medium resize-none transition-all"
+                    required
+                  ></textarea>
+                  <button type="submit" disabled={isGeneratingQuestions || !initialContext.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                    {isGeneratingQuestions ? <RefreshCw className="animate-spin" /> : <Sparkles />}
+                    {isGeneratingQuestions ? "DISEÑANDO ENTREVISTA..." : "SIGUIENTE PASO"}
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">¿Cómo le dices de cariño? (Apodos)</label>
-                  <input type="text" name="apodos" value={formData.apodos} onChange={handleChange} placeholder="Ej. Osito, Mi vida..." className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-naranja-400 outline-none" />
+              </form>
+            ) : (
+              <form onSubmit={handleStartLyrics} className="space-y-10 animate-in slide-in-from-right-8 duration-700">
+                <button onClick={() => setFormPhase('spark')} className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-4"><ArrowLeft size={16} /> Cambiar idea inicial</button>
+                
+                <div className="text-center pb-6">
+                  <h2 className="text-3xl font-serif text-blush-800">El Corazón de tu Historia</h2>
+                  <p className="text-ink-600/70 mt-2">La IA ha preparado estas preguntas para profundizar en tus sentimientos.</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Relación Contigo</label>
-                  <select name="relacion" value={formData.relacion} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-naranja-400 outline-none" required>
-                    <option value="" disabled>Selecciona la relación</option>
-                    <option value="pareja">Pareja</option>
-                    <option value="amigo">Amigo/a</option>
-                    <option value="familiar">Familiar</option>
-                    <option value="otro">Otro</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Edad (Opcional)</label>
-                  <input type="number" name="edad" value={formData.edad} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-naranja-400 outline-none" />
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
-              <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><CalendarDays size={24} className="text-naranja-500"/> 🎯 Motivo</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">¿Para qué ocasión es?</label>
-                  <select name="ocasion" value={formData.ocasion} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" required>
-                    <option value="" disabled>Selecciona motivo</option>
-                    <option value="cumpleanos">Cumpleaños</option>
-                    <option value="aniversario">Aniversario</option>
-                    <option value="declaracion">Declaración de amor</option>
-                    <option value="perdon">Perdón</option>
-                    <option value="otro">Otro</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">¿Mencionar fecha especial?</label>
-                  <input type="text" name="fechaEspecial" value={formData.fechaEspecial} onChange={handleChange} placeholder="Ej. Nuestro 14 de febrero" className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" />
-                </div>
-              </div>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {aiQuestions.map((q, i) => (
+                    <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-blush-100 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                      <div className="flex items-center gap-3">
+                         <span className="w-8 h-8 rounded-full bg-naranja-50 text-naranja-500 flex items-center justify-center text-xs font-black">{i + 1}</span>
+                         <label className="text-sm font-bold text-blush-800 leading-tight">{q}</label>
+                      </div>
+                      <textarea 
+                        value={interviewAnswers[q] || ''}
+                        onChange={(e) => setInterviewAnswers({...interviewAnswers, [q]: e.target.value})}
+                        className="w-full bg-blush-50/30 border border-blush-100 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-naranja-400 h-24 resize-none"
+                        required
+                        placeholder="Tu respuesta aquí..."
+                      ></textarea>
+                    </div>
+                  ))}
 
-            <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
-              <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><BookOpen size={24} className="text-naranja-500"/> 💭 La Historia (Clave)</h3>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">¿Cómo se conocieron?</label>
-                  <textarea name="comoSeConocieron" value={formData.comoSeConocieron} onChange={handleChange} rows={2} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" required></textarea>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Momentos importantes juntas/os</label>
-                  <textarea name="momentosImportantes" value={formData.momentosImportantes} onChange={handleChange} rows={2} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" required></textarea>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">¿Qué sientes por esa persona?</label>
-                    <textarea name="queSientes" value={formData.queSientes} onChange={handleChange} rows={2} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" required></textarea>
+                  {/* CAMPO DE MENSAJE HABLADO */}
+                  <div className="md:col-span-2 bg-gradient-to-br from-naranja-50 to-pink-50 p-10 rounded-[3rem] border border-naranja-100 shadow-sm space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-white rounded-full text-naranja-500 shadow-sm"><Mic size={24} /></div>
+                      <div>
+                        <h4 className="text-xl font-serif text-blush-800 leading-none">Mensaje Hablado Especial</h4>
+                        <p className="text-ink-600/70 text-xs mt-1 italic">Este texto se incluirá como una narración emotiva en medio de la canción.</p>
+                      </div>
+                    </div>
+                    <textarea 
+                      name="mensajeHablado"
+                      value={formData.mensajeHablado}
+                      onChange={handleChange}
+                      placeholder="Escribe las palabras exactas que quieres que se escuchen (ej: 'Te amo con todo mi ser, nunca lo olvides...')"
+                      className="w-full h-32 bg-white/80 border border-naranja-100 rounded-2xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-base font-medium resize-none shadow-inner"
+                    ></textarea>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">¿Alguna anécdota especial?</label>
-                    <textarea name="anecdota" value={formData.anecdota} onChange={handleChange} rows={2} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none"></textarea>
+
+                  {/* ESTILO MUSICAL */}
+                  <div className="md:col-span-2 bg-blush-50/20 p-8 rounded-[3rem] border border-blush-100/50">
+                    <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><Target size={24} className="text-naranja-500"/> Personalización Final</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Género</label>
+                        <select name="genero" value={formData.genero} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none">
+                          <option value="romantica">Romántica</option>
+                          <option value="pop">Pop</option>
+                          <option value="regional">Regional Mexicano</option>
+                          <option value="acustico">Acústico / Guitarra</option>
+                          <option value="bachata">Bachata</option>
+                          <option value="urbano">Urbano / Reggaetón</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Idioma</label>
+                        <select name="idioma" value={formData.idioma} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none">
+                          <option value="espanol">Español</option>
+                          <option value="ingles">Inglés</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Visión Perfecta</label>
+                        <input type="text" name="detallePerfecto" value={formData.detallePerfecto} onChange={handleChange} placeholder="Ej. Que sea muy lenta..." className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="bg-blush-50/20 p-6 md:p-8 rounded-3xl border border-blush-100/50">
-              <h3 className="text-2xl font-serif text-blush-800 mb-6 flex items-center gap-3"><Target size={24} className="text-naranja-500"/> 🎶 Estilo Musical</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Género</label>
-                  <select name="genero" value={formData.genero} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none">
-                    <option value="romantica">Romántica</option>
-                    <option value="pop">Pop</option>
-                    <option value="regional">Regional Mexicano</option>
-                    <option value="acustico">Acústico / Guitarra</option>
-                  </select>
+                <div className="pt-10">
+                  <button type="submit" disabled={isGenerating} className="w-full flex items-center justify-center gap-3 px-8 py-6 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2.5xl font-bold text-xl tracking-widest hover:brightness-110 transition-all shadow-xl disabled:opacity-50">
+                    {isGenerating ? <RefreshCw className="animate-spin" /> : <Sparkles />}
+                    <span>{isGenerating ? "ESCRIBIENDO LETRA..." : "COMPONER LETRA AHORA"}</span>
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Idioma</label>
-                  <select name="idioma" value={formData.idioma} onChange={handleChange} className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none">
-                    <option value="espanol">Español</option>
-                    <option value="ingles">Inglés</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-blush-600 uppercase tracking-wider">Visión Perfecta</label>
-                  <input type="text" name="detallePerfecto" value={formData.detallePerfecto} onChange={handleChange} placeholder="Ej. Que sea muy lenta..." className="w-full bg-white border border-blush-200 rounded-xl px-4 py-3 outline-none" />
-                </div>
-              </div>
-            </div>
-
-            <button type="submit" disabled={isGenerating} className="w-full flex items-center justify-center gap-3 px-8 py-6 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2.5xl font-bold text-xl tracking-widest hover:brightness-110 transition-all shadow-xl disabled:opacity-50">
-              {isGenerating ? <RefreshCw className="animate-spin" /> : <Sparkles />}
-              <span>{isGenerating ? "ESCRIBIENDO LETRA..." : "COMPONER LETRA AHORA"}</span>
-            </button>
-          </form>
+              </form>
+            )}
+          </div>
         )}
 
         {step === 2 && (
