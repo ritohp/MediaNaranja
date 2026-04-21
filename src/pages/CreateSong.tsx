@@ -64,26 +64,47 @@ export default function CreateSong() {
     localStorage.setItem('mn_draft_song', JSON.stringify(formData));
   }, [formData]);
 
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
+  const ensureProfile = async (userId: string, userEmail?: string) => {
+    // Intentar traer el perfil
+    const { data: profile, error } = await supabase
       .from('mn_profiles')
       .select('tokens_balance')
       .eq('id', userId)
       .single();
-    if (!error && data) setTokens(data.tokens_balance);
+
+    if (error && error.code === 'PGRST116') {
+      // SI NO EXISTE EL PERFIL, CREARLO
+      const { data: newProfile, error: createError } = await supabase
+        .from('mn_profiles')
+        .insert([{ 
+           id: userId, 
+           email: userEmail,
+           tokens_balance: 3 // Regalo inicial
+        }])
+        .select()
+        .single();
+      
+      if (!createError && newProfile) {
+        setTokens(newProfile.tokens_balance);
+      }
+    } else if (!error && profile) {
+      setTokens(profile.tokens_balance);
+    }
   };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) ensureProfile(currentUser.id, currentUser.email);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        ensureProfile(currentUser.id, currentUser.email);
         setShowLoginModal(false);
       } else {
         setTokens(null);
