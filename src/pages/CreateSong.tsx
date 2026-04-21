@@ -224,10 +224,11 @@ export default function CreateSong() {
       setFeedback('');
       
       if (currentSongId) {
-        await supabase.from('mn_songs').update({ lyrics: newLyrics }).eq('id', currentSongId);
+        await supabase.from('mn_songs').update({ lyrics: generatedLyrics }).eq('id', currentSongId);
       }
-    } catch (error) {
-      alert("Error reescribiendo la letra.");
+    } catch (error: any) {
+      console.error("DEBUG REWRITE ERROR:", error);
+      alert(`Error al reescribir con IA: ${error.message || "Error desconocido"}.`);
     } finally {
       setIsGenerating(false);
     }
