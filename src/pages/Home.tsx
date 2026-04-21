@@ -16,7 +16,9 @@ import {
   GraduationCap,
   Baby,
   Trophy,
-  Coffee
+  Coffee,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -34,68 +36,62 @@ export default function Home() {
   const tags = [
     { 
       id: 'papá', 
-      label: 'Para Papá', 
+      label: 'Papá', 
       icon: <User size={18}/>,
-      title: 'Un Corrido a su Valentía',
-      desc: 'Él que nos enseñó a ser fuertes merece que su historia se cante con orgullo. Un corrido o una balada que honre su esfuerzo y su legado para siempre.',
+      title: 'Su valentía hecha canción',
+      desc: 'Para el hombre que lo dio todo sin pedir nada. Un corrido o una balada que guarde para siempre el orgullo de ser su hijo.',
       color: 'bg-orange-500'
     },
     { 
       id: 'mamá', 
-      label: 'Para Mamá', 
+      label: 'Mamá', 
       icon: <Heart size={18}/>,
-      title: 'Lo que nunca sabemos decir',
-      desc: 'A veces las palabras se quedan cortas. Una canción que le diga lo valiosa que es, agradeciendo cada sacrificio y cada abrazo que nos trajo hasta aquí.',
+      title: 'Gracias en cada nota',
+      desc: 'Lo que las palabras no alcanzan a decir, la música lo hace eterno. Un regalo que ella escuchará una y mil veces con lágrimas de felicidad.',
       color: 'bg-pink-500'
     },
     { 
       id: 'hijo', 
-      label: 'Para mis Hijos', 
+      label: 'Hijos', 
       icon: <Baby size={18}/>,
-      title: 'Su primera gran lección',
-      desc: 'Un mensaje de aliento que puedan escuchar cuando duden, una canción que les recuerde que siempre seremos su refugio y su mayor fan.',
+      title: 'Un legado sonoro',
+      desc: 'Un mensaje de aliento para que escuchen cuando crezcan, recordándoles que siempre creerás en ellos.',
       color: 'bg-blue-500'
     },
     { 
       id: 'pareja', 
-      label: 'Para mi Pareja', 
+      label: 'Pareja', 
       icon: <Users size={18}/>,
-      title: 'Nuestra Serie Favorita',
-      desc: 'Aniversarios, bodas o simplemente porque sí. Celebra vuestra historia única con los detalles que solo vosotros conocéis.',
+      title: 'Nuestra historia favorita',
+      desc: 'Celebra ese momento mágico donde vuestras vidas se cruzaron. Un detalle que redefine lo que significa amar.',
       color: 'bg-red-500'
     },
     { 
       id: 'maestro', 
-      label: 'Maestros y Guías', 
+      label: 'Maestros', 
       icon: <GraduationCap size={18}/>,
-      title: 'Gracias por el camino',
-      desc: 'A esos mentores que cambiaron nuestro rumbo. Un regalo grupal o personal que les demuestre que su enseñanza dejó huella eterna.',
+      title: 'Huella eterna',
+      desc: 'Para quienes nos guiaron con paciencia. Un tributo musical que les demuestra que su dedicación valió la pena.',
       color: 'bg-emerald-500'
     },
     { 
       id: 'superacion', 
-      label: 'Mí canción', 
+      label: 'Motivación', 
       icon: <Trophy size={18}/>,
-      title: 'Un himno a mi victoria',
-      desc: 'Para esos momentos de superación personal. Una canción que te recuerde de donde vienes y hacia donde vas. Eres tu propio héroe.',
+      title: 'Mi propia victoria',
+      desc: 'Una melodía que celebre tu camino, tus retos vencidos y la fuerza que te trajo hasta hoy.',
       color: 'bg-amber-500'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFFBF7] text-[#2D2D2D] font-sans selection:bg-[#FF6B00]/20">
+    <div className="min-h-screen bg-[#FFFBF7] text-[#2D2D2D] font-sans selection:bg-[#FF6B00]/20 pb-20">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
         
         .font-outfit { font-family: 'Outfit', sans-serif; }
         .font-playfair { font-family: 'Playfair Display', serif; }
         
-        .text-brand-gradient {
-          background: linear-gradient(135deg, #FF6B00 0%, #FF2D55 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
         .bg-brand-gradient {
           background: linear-gradient(135deg, #FF6B00 0%, #FF2D55 100%);
         }
@@ -116,32 +112,32 @@ export default function Home() {
           50% { transform: translateY(-20px); }
         }
 
-        .category-transition {
-          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
         .bg-silk {
            background: radial-gradient(circle at top right, rgba(255, 107, 0, 0.05), transparent),
                        radial-gradient(circle at bottom left, rgba(255, 45, 85, 0.05), transparent);
         }
+
+        /* Hide scrollbar for category list */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* --- HERO: EMOCIÓN PURA Y LUZ --- */}
+      {/* --- HERO SECTION --- */}
       <section className="relative min-h-[90vh] flex items-center justify-center pt-24 px-6 bg-silk overflow-hidden">
         <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
           <div className="space-y-10">
             <div className="inline-flex items-center gap-3 px-5 py-2 bg-white rounded-full shadow-sm border border-orange-100">
               <Sparkles className="w-4 h-4 text-[#FF6B00]" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF6B00] font-outfit">Boutique de Historias Musicales</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF6B00] font-outfit text-center">Boutique de Historias Musicales</span>
             </div>
             
             <h1 className="text-6xl md:text-8xl font-playfair leading-[1] text-[#1A1A1A]">
-              Dile lo que <br /> sientes, <span className="italic text-[#FF2D55]">convertido</span> <br /> 
-              en una <span className="text-[#FF6B00] font-bold">canción.</span>
+               Su historia <span className="italic text-[#FF2D55]">hecha</span> <br /> 
+               <span className="text-[#FF6B00] font-bold">canción.</span>
             </h1>
             
             <p className="text-xl text-gray-500 font-outfit max-w-lg leading-relaxed">
-              No es solo música. Es capturar ese sentimiento que las palabras no alcanzan, en un <span className="font-bold text-[#1A1A1A]">himno eterno</span> creado para honrar su vida.
+              Convierte los recuerdos más profundos en una <span className="font-bold text-[#1A1A1A]">melodía eterna</span>. Un regalo que no solo se escucha, se siente para siempre.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-5 pt-4">
@@ -151,26 +147,18 @@ export default function Home() {
               >
                 Crear canción inolvidable <ArrowRight size={18} />
               </button>
-              <button 
-                onClick={() => document.getElementById('tags')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-12 py-6 bg-white text-gray-700 rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] border border-gray-100 shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-3"
-              >
-                ¿Para quién es?
-              </button>
             </div>
           </div>
 
-          <div className="relative group">
+          <div className="relative group hidden lg:block">
             <div className="absolute inset-0 bg-brand-gradient opacity-10 blur-[100px] rounded-full animate-pulse"></div>
             <div className="relative z-10 animate-float">
                <img 
                 src="file:///C:/Users/LAPTOP-HP/.gemini/antigravity/brain/e46d2668-bc05-44e5-bd76-d803b3a84a54/mama_llorando_felicidad_cancion_1776729215826.png" 
                 alt="Madre emocionada" 
-                className="w-full h-auto rounded-[3rem] shadow-2xl skew-y-1 group-hover:skew-y-0 transition-transform duration-700"
+                className="w-full h-auto rounded-[3rem] shadow-2xl"
                />
                <div className="absolute -bottom-8 -right-8 glass-premium p-8 rounded-3xl space-y-2 max-w-[280px]">
-                  <Music className="text-[#FF2D55] mb-2" />
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Lo que sienten</p>
                   <p className="text-lg font-playfair italic">"Es el regalo más hermoso que me han dado jamás..."</p>
                </div>
             </div>
@@ -178,145 +166,99 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- SECCIÓN TAGS: PARA CADA ALMA --- */}
-      <section id="tags" className="py-32 px-6 bg-white border-y border-gray-50">
+      {/* --- SECCIÓN CATEGORÍAS (REDISEÑADA PARA MÓVIL) --- */}
+      <section className="py-24 px-6 bg-white overflow-hidden" id="tags">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center space-y-4 mb-20">
-            <h2 className="text-4xl md:text-6xl font-playfair text-[#1A1A1A]">Honra su historia, <span className="italic">sea cual sea.</span></h2>
-            <p className="text-gray-400 font-outfit max-w-xl mx-auto">Selecciona a quién quieres sorprender y descubre por qué una canción es el tributo perfecto.</p>
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-4xl md:text-6xl font-playfair text-[#1A1A1A]">Dile lo que sientes</h2>
+            <p className="text-gray-400 font-outfit max-w-xl mx-auto italic">Selecciona a quién quieres sorprender y descubre la magia.</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            {/* Nav de Tags */}
-            <div className="lg:col-span-4 space-y-3">
-              {tags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => setActiveTag(tag.id)}
-                  className={`w-full flex items-center gap-4 p-6 rounded-2xl transition-all font-outfit font-bold text-sm ${activeTag === tag.id ? 'bg-white shadow-xl border-l-[6px] border-[#FF6B00] translate-x-3 text-[#1A1A1A]' : 'text-gray-400 hover:text-gray-600 grayscale opacity-60'}`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${tag.color}`}>{tag.icon}</div>
-                  {tag.label}
-                </button>
-              ))}
-            </div>
+          {/* Nav de Tags (Scroll horizontal en móvil, grid en desktop) */}
+          <div className="flex lg:grid lg:grid-cols-6 gap-3 mb-10 overflow-x-auto no-scrollbar pb-4 px-2">
+            {tags.map((tag) => (
+              <button
+                key={tag.id}
+                onClick={() => setActiveTag(tag.id)}
+                className={`flex-shrink-0 lg:flex-shrink lg:w-full flex items-center justify-center lg:flex-col gap-3 p-4 lg:p-6 rounded-2xl transition-all font-outfit font-bold text-xs uppercase tracking-widest ${activeTag === tag.id ? 'bg-[#1A1A1A] text-white shadow-xl scale-105' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white ${tag.color}`}>{tag.icon}</div>
+                {tag.label}
+              </button>
+            ))}
+          </div>
 
-            {/* Contenido Dinámico */}
-            <div className="lg:col-span-8">
-              {tags.map((tag) => (
-                <div key={tag.id} className={`glass-premium p-12 md:p-16 rounded-[3rem] space-y-8 category-transition ${activeTag === tag.id ? 'opacity-100 scale-100' : 'hidden opacity-0 scale-95'}`}>
-                   <div className="flex items-center gap-4">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white ${tag.color}`}>{tag.icon}</div>
-                      <h3 className="text-3xl md:text-5xl font-playfair italic">{tag.title}</h3>
-                   </div>
-                   <p className="text-xl text-gray-500 leading-relaxed font-outfit">{tag.desc}</p>
-                   <div className="pt-6">
-                      <button 
+          {/* Contenido Dinámico (Unificado para móvil) */}
+          <div className="relative">
+            {tags.map((tag) => (
+               <div key={tag.id} className={`transition-all duration-700 ${activeTag === tag.id ? 'opacity-100 translate-y-0 relative z-10' : 'opacity-0 translate-y-10 absolute inset-0 pointer-events-none'}`}>
+                 <div className="glass-premium p-10 md:p-14 rounded-[3rem] text-center md:text-left grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                    <div className="space-y-6">
+                       <h3 className="text-3xl md:text-5xl font-playfair italic leading-tight">{tag.title}</h3>
+                       <p className="text-lg text-gray-500 font-outfit leading-relaxed">{tag.desc}</p>
+                       <button 
                         onClick={() => navigate('/crear-cancion')}
-                        className="flex items-center gap-3 text-[#FF6B00] font-black text-xs uppercase tracking-[0.3em] group"
-                      >
-                        Comenzar tributo <ArrowRight className="group-hover:translate-x-2 transition-transform" />
-                      </button>
-                   </div>
-                </div>
-              ))}
-            </div>
+                        className="flex items-center gap-3 text-[#FF6B00] font-black text-[10px] uppercase tracking-[0.4em] group mx-auto md:mx-0"
+                       >
+                        Hacer historia hecha canción <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
+                       </button>
+                    </div>
+                    <div className="hidden md:block">
+                       <div className="w-full h-64 bg-gray-50 rounded-3xl flex items-center justify-center">
+                          <Music className="text-gray-200 animate-pulse" size={64} />
+                       </div>
+                    </div>
+                 </div>
+               </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* --- SECCIÓN EMOCIONES: FOTOS GENERADAS --- */}
-      <section className="py-32 px-6 bg-silk">
-        <div className="max-w-6xl mx-auto space-y-32">
+      <section className="py-24 px-6 bg-silk">
+        <div className="max-w-6xl mx-auto space-y-40">
            {/* FOTO PADRE */}
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div className="order-2 lg:order-1">
+              <div className="relative">
+                <div className="absolute inset-x-0 -bottom-10 h-40 bg-gradient-to-t from-[#FFFBF7] to-transparent z-10"></div>
                 <img 
                   src="file:///C:/Users/LAPTOP-HP/.gemini/antigravity/brain/e46d2668-bc05-44e5-bd76-d803b3a84a54/padre_escuchando_corrido_emocionado_1776729202451.png" 
                   alt="Padre orgulloso" 
-                  className="w-full h-auto rounded-[3.5rem] shadow-2xl" 
+                  className="w-full h-auto rounded-[3.5rem] shadow-2xl relative z-0" 
                 />
               </div>
-              <div className="space-y-8 order-1 lg:order-2">
-                 <h3 className="text-5xl font-playfair italic leading-tight">Dile que es tu <br /><span className="text-[#FF6B00] font-bold">héroe</span>, sin decir una palabra.</h3>
-                 <p className="text-lg text-gray-500 font-outfit">
-                    Un padre no olvida el momento en que sus hijos le honran por su valentía. Imagina su rostro escuchando un corrido o una balada dedicada a cada sacrificio que hizo por ti. Ese orgullo durará para siempre.
-                 </p>
-                 <div className="p-6 bg-white/50 rounded-2xl border border-white flex items-center gap-4 italic italic text-gray-600 font-playfair text-lg">
-                    "Nunca antes me habían dado algo que realmente hablara de mi vida."
-                 </div>
-              </div>
-           </div>
-
-           {/* FOTO SUPERACIÓN */}
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
               <div className="space-y-8">
-                 <h3 className="text-5xl font-playfair italic leading-tight">Tu propio <span className="text-emerald-500 font-bold">himno</span> de victoria.</h3>
-                 <p className="text-lg text-gray-500 font-outfit">
-                    A veces el regalo es para ti. Para recordar esa batalla que ganaste, ese sueño que alcanzaste o simplemente para recordarte que puedes con todo. Una canción de superación es combustible para tu alma.
+                 <h3 className="text-5xl font-playfair italic leading-tight text-center md:text-left">Dile que es tu <br /><span className="text-[#FF6B00] font-bold">héroe.</span></h3>
+                 <p className="text-lg text-gray-500 font-outfit text-center md:text-left">
+                    Un regalo que habla de su valentía y esfuerzo. Imagina su rostro al escuchar su vida cantada con honor.
                  </p>
-                 <button onClick={() => navigate('/crear-cancion')} className="px-10 py-4 bg-emerald-500 text-white rounded-full font-outfit font-black text-xs uppercase tracking-widest shadow-xl">Crear mi himno</button>
-              </div>
-              <div>
-                <img 
-                  src="file:///C:/Users/LAPTOP-HP/.gemini/antigravity/brain/e46d2668-bc05-44e5-bd76-d803b3a84a54/joven_inspirada_cancion_superacion_1776729230296.png" 
-                  alt="Superación personal" 
-                  className="w-full h-auto rounded-[3.5rem] shadow-2xl" 
-                />
+                 <div className="p-8 bg-white rounded-3xl shadow-sm border border-orange-50 italic text-gray-600 font-playfair text-xl text-center">
+                    "Es la primera vez que siento que mi vida se convirtió en arte."
+                 </div>
               </div>
            </div>
         </div>
       </section>
 
-      {/* --- EL REGALO PERFECTO (SIN TECNOLOGÍA) --- */}
-      <section className="py-32 px-6 bg-[#1A1A1A] text-white rounded-[4rem] mx-6 mb-20 overflow-hidden relative">
-         <div className="absolute inset-0 bg-brand-gradient opacity-10"></div>
-         <div className="max-w-4xl mx-auto text-center space-y-12 relative z-10">
-            <h2 className="text-5xl md:text-7xl font-playfair leading-tight italic">No es un regalo común, <br /> es <span className="text-orange-gradient">magia sonora.</span></h2>
-            <p className="text-xl text-white/50 font-outfit max-w-2xl mx-auto">
-              Cada canción es una pieza artesanal única. Desde la composición de la letra hasta el arreglo final, cuidamos cada nota para que sea indistinguible de un éxito mundial grabado en estudio.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-               <div className="p-8 bg-white/5 rounded-3xl border border-white/5">
-                  <Star className="text-[#FF6B00] mb-4" size={32} />
-                  <h4 className="font-bold font-outfit mb-2">Inspiración Pura</h4>
-                  <p className="text-xs text-white/40 leading-relaxed font-outfit">Nuestros poetas dan forma a tus emociones de manera sublime.</p>
-               </div>
-               <div className="p-8 bg-white/5 rounded-3xl border border-white/5">
-                  <Mic2 className="text-[#FF2D55] mb-4" size={32} />
-                  <h4 className="font-bold font-outfit mb-2">Voz con Alma</h4>
-                  <p className="text-xs text-white/40 leading-relaxed font-outfit">Voces humanas, cálidas y profesionales que transmiten el mensaje real.</p>
-               </div>
-               <div className="p-8 bg-white/5 rounded-3xl border border-white/5">
-                  <CloudLightning className="text-blue-400 mb-4" size={32} />
-                  <h4 className="font-bold font-outfit mb-2">Eternidad Digital</h4>
-                  <p className="text-xs text-white/40 leading-relaxed font-outfit">Un archivo para toda la vida, listo para ser escuchado siempre.</p>
-               </div>
-            </div>
-         </div>
-      </section>
-
       {/* --- CTA FINAL --- */}
-      <section className="py-40 px-6 text-center">
+      <section className="py-20 px-6 text-center">
          <div className="max-w-4xl mx-auto space-y-12">
             <h2 className="text-6xl md:text-8xl font-playfair italic leading-[1] text-[#1A1A1A]">
-              Haz que hoy <br /> <span className="text-brand-gradient">nunca se olvide.</span>
+              Tu vida <br /> <span className="text-brand-gradient">hecha canción.</span>
             </h2>
-            <p className="text-xl text-gray-400 font-outfit max-w-xl mx-auto">
-              Solo toma 5 minutos. Los resultados durarán toda una vida.
-            </p>
             <button 
               onClick={() => navigate('/crear-cancion')}
-              className="px-16 py-8 bg-brand-gradient text-white rounded-[2rem] font-outfit font-black text-sm uppercase tracking-[0.4em] shadow-[0_30px_60px_rgba(255,107,0,0.3)] hover:scale-105 transition-all flex items-center justify-center gap-4 mx-auto"
+              className="px-16 py-8 bg-brand-gradient text-white rounded-full font-outfit font-black text-sm uppercase tracking-[0.4em] shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-4 mx-auto"
             >
               Comenzar mi canción <ArrowRight />
             </button>
          </div>
       </section>
 
-      <footer className="py-16 border-t border-gray-100 text-center">
+      <footer className="py-16 text-center">
          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-300 font-outfit">
-           © 2026 Media Naranja • Masterpiece Studio • Made with Heart
+           © 2026 Media Naranja • Masterpiece Studio
          </p>
       </footer>
     </div>
