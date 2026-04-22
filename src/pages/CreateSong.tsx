@@ -646,7 +646,7 @@ INSTRUCCIONES:
                       <button 
                         onClick={() => {
                           setShowDemoModal(false);
-                          alert("Llevándote a finalizar pedido...");
+                          window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${currentSongId}`;
                         }}
                         className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:scale-105 transition-all"
                       >
@@ -698,7 +698,7 @@ INSTRUCCIONES:
                   </audio>
                   <div className="space-y-4 relative z-10">
                     <button 
-                      onClick={() => alert("¡Llevándote a la pasarela de pago para desbloquear!")}
+                      onClick={() => window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${currentSongId}`}
                       className="w-full px-8 py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg tracking-widest hover:scale-105 transition-all shadow-xl shadow-naranja-200 flex items-center justify-center gap-3"
                     >
                       DESBLOQUEAR CANCIÓN COMPLETA <Sparkles size={20} />

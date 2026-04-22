@@ -13,13 +13,14 @@ interface Song {
   created_at: string;
   form_data: any;
   style_prompt: string;
+  is_paid: boolean;
 }
 
 export default function MySongs() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showDemoModal, setShowDemoModal] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -147,7 +148,7 @@ export default function MySongs() {
       {/* Modal Premium de Final de Demo */}
       {showDemoModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
-          <div className="absolute inset-0 bg-ink-950/40 backdrop-blur-md" onClick={() => setShowDemoModal(false)}></div>
+          <div className="absolute inset-0 bg-ink-950/40 backdrop-blur-md" onClick={() => setShowDemoModal(null)}></div>
           <div className="bg-white rounded-[3rem] p-10 md:p-14 max-w-lg w-full shadow-2xl relative z-10 border border-naranja-100 text-center space-y-6">
             <div className="bg-naranja-50 text-naranja-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-2">
               <Music2 size={40} />
@@ -158,15 +159,16 @@ export default function MySongs() {
             </p>
             <button 
               onClick={() => {
-                setShowDemoModal(false);
-                alert("Llevándote a finalizar pedido...");
+                if (showDemoModal) {
+                  window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${showDemoModal}`;
+                }
               }}
               className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:scale-105 transition-all"
             >
               DESBLOQUEAR CANCIÓN
             </button>
             <button 
-              onClick={() => setShowDemoModal(false)}
+              onClick={() => setShowDemoModal(null)}
               className="text-ink-400 text-xs font-bold uppercase tracking-widest hover:text-naranja-500 transition-all"
             >
               CERRAR
@@ -227,20 +229,32 @@ export default function MySongs() {
                           referrerPolicy="no-referrer"
                           onContextMenu={(e) => e.preventDefault()}
                           onTimeUpdate={(e) => {
-                            if (e.currentTarget.currentTime >= 60) {
+                            if (!song.is_paid && e.currentTarget.currentTime >= 60) {
                               e.currentTarget.pause();
                               e.currentTarget.currentTime = 0;
-                              setShowDemoModal(true);
+                              setShowDemoModal(song.id);
                             }
                           }}
                           className="w-full h-10 accent-naranja-500 mt-2"
                         >
                           Tu navegador no soporta el reproductor de audio.
                         </audio>
-                        <div className="mt-3 text-center">
-                          <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">
-                            Muestra de 60s
-                          </span>
+                        <div className="mt-3 flex items-center justify-between">
+                          {!song.is_paid ? (
+                            <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">
+                              Muestra de 60s
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                              ✓ Pista Completa
+                            </span>
+                          )}
+                          
+                          {song.is_paid && (
+                            <a href={song.audio_url || ''} target="_blank" rel="noreferrer" download className="text-[10px] flex items-center gap-1 font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 hover:bg-naranja-50 transition">
+                              <Download size={12} /> Descargar
+                            </a>
+                          )}
                         </div>
                       </div>
 
@@ -255,20 +269,32 @@ export default function MySongs() {
                             referrerPolicy="no-referrer"
                             onContextMenu={(e) => e.preventDefault()}
                             onTimeUpdate={(e) => {
-                              if (e.currentTarget.currentTime >= 60) {
+                              if (!song.is_paid && e.currentTarget.currentTime >= 60) {
                                 e.currentTarget.pause();
                                 e.currentTarget.currentTime = 0;
-                                setShowDemoModal(true);
+                                setShowDemoModal(song.id);
                               }
                             }}
                             className="w-full h-10 accent-blush-500 mt-2"
                           >
                             Tu navegador no soporta el reproductor de audio.
                           </audio>
-                          <div className="mt-3 text-center">
-                            <span className="text-[10px] font-bold text-blush-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-blush-100 italic">
-                              Muestra Alternativa
-                            </span>
+                          <div className="mt-3 flex items-center justify-between">
+                            {!song.is_paid ? (
+                              <span className="text-[10px] font-bold text-blush-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-blush-100 italic">
+                                Muestra Alternativa (60s)
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                                ✓ Pista Alternativa
+                              </span>
+                            )}
+
+                            {song.is_paid && (
+                              <a href={song.form_data.version2.audio_url || ''} target="_blank" rel="noreferrer" download className="text-[10px] flex items-center gap-1 font-bold text-blush-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-blush-100 hover:bg-blush-50 transition">
+                                <Download size={12} /> Descargar
+                              </a>
+                            )}
                           </div>
                         </div>
                       )}
@@ -282,15 +308,23 @@ export default function MySongs() {
                 </div>
               </div>
 
-              <div className="px-8 pb-8 pt-2">
+              <div className="px-8 pb-8 pt-2 flex flex-col gap-3">
+                {!song.is_paid && (song.audio_url || song.demo_url) && (
+                  <button 
+                    onClick={() => window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`}
+                    className="w-full py-3 md:py-4 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Lock size={14} /> DESBLOQUEAR CANCIÓN
+                  </button>
+                )}
+                
                 <button 
                   onClick={() => {
-                    // Aquí podríamos abrir un modal con la letra completa
                     alert(`Letra de la canción:\n\n${song.lyrics}`);
                   }}
                   className="w-full py-3 bg-blush-50 text-blush-600 rounded-xl font-bold text-xs hover:bg-naranja-50 hover:text-naranja-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
                 >
-                  <ExternalLink size={14} /> Ver Letra Completa
+                  <ExternalLink size={14} /> Ver Letra
                 </button>
               </div>
             </div>

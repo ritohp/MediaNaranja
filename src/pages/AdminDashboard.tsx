@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('panel');
+  const [activeTab, setActiveTab] = useState('panel'); // panel, seguimiento, e-commerce, marketing
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -71,11 +71,15 @@ export default function AdminDashboard() {
       const activeS = (songs || []).filter(s => s.status !== 'complete').length || 0;
       const conv = totalU > 0 ? (totalS / totalU) * 100 : 0;
       
+      const { data: payments } = await supabase.from('mn_payments').select('*');
+      
+      const realRevenue = (payments || []).filter(p => p.status === 'completed').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
       setStats({
         totalUsers: totalU,
         totalSongs: totalS,
         conversionRate: parseFloat(conv.toFixed(1)),
-        revenue: (totalS - activeS) * 49,
+        revenue: realRevenue,
         activeCreations: activeS
       });
 
@@ -170,6 +174,7 @@ export default function AdminDashboard() {
           <div className="hidden md:flex gap-8">
              <button onClick={() => setActiveTab('panel')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'panel' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Panel</button>
              <button onClick={() => setActiveTab('seguimiento')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'seguimiento' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Seguimiento</button>
+             <button onClick={() => setActiveTab('marketing')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'marketing' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Marketing (Emails)</button>
           </div>
         </div>
       </nav>
@@ -181,7 +186,7 @@ export default function AdminDashboard() {
              {[
                { label: 'Usuarios', value: stats.totalUsers, icon: <Users /> },
                { label: 'Historias', value: stats.totalSongs, icon: <Music /> },
-               { label: 'Ventas USD', value: `$${stats.revenue}`, icon: <DollarSign /> },
+               { label: 'Ingresos MXN', value: `$${stats.revenue.toLocaleString()}`, icon: <DollarSign /> },
                { label: 'Conversión', value: `${stats.conversionRate}%`, icon: <TrendingUp /> }
              ].map((m, i) => (
                <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-orange-50 shadow-sm">
@@ -270,6 +275,36 @@ export default function AdminDashboard() {
                </table>
             </div>
           </div>
+        )}
+
+        {activeTab === 'marketing' && (
+           <div className="animate-in slide-in-from-bottom-5 duration-500 space-y-6">
+              <header className="flex justify-between items-center gap-6">
+                 <h2 className="text-3xl font-black font-outfit">Embudos de Retargeting Automatizados (Próximamente)</h2>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-orange-50 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full blur-3xl opacity-50"></div>
+                    <div className="relative z-10">
+                       <div className="inline-block px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-4">Día 1</div>
+                       <h3 className="text-xl font-black font-outfit mb-2">Recordatorio Amistoso</h3>
+                       <p className="text-xs text-gray-400 mb-6 font-medium leading-relaxed">Se enviará a las 24 horas a los clientes que hicieron una canción pero no la pagaron.</p>
+                       <button className="w-full py-3 bg-gray-50 text-gray-400 font-bold text-xs uppercase tracking-widest rounded-xl cursor-not-allowed">Configurar Plantilla</button>
+                    </div>
+                 </div>
+
+                 <div className="bg-white p-8 rounded-[2.5rem] border border-orange-50 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 rounded-full blur-3xl opacity-50"></div>
+                    <div className="relative z-10">
+                       <div className="inline-block px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full mb-4">Día 3</div>
+                       <h3 className="text-xl font-black font-outfit mb-2">Oferta Relámpago</h3>
+                       <p className="text-xs text-gray-400 mb-6 font-medium leading-relaxed">Se enviará a las 72 horas ofreciendo un motivo fuerte (ej. descuento temporal) para cerrar la venta.</p>
+                       <button className="w-full py-3 bg-gray-50 text-gray-400 font-bold text-xs uppercase tracking-widest rounded-xl cursor-not-allowed">Configurar Plantilla</button>
+                    </div>
+                 </div>
+              </div>
+           </div>
         )}
       </main>
     </div>
