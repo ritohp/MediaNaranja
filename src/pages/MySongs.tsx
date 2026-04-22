@@ -221,7 +221,7 @@ export default function MySongs() {
                         <div className="absolute -left-2 -top-2 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest shadow-sm">Opción 1</div>
                         <audio 
                           key={song.audio_url || song.id}
-                          src={song.demo_url || song.audio_url || ''}
+                          src={song.audio_url || song.demo_url || ''}
                           controls 
                           controlsList="nodownload"
                           referrerPolicy="no-referrer"
@@ -249,7 +249,7 @@ export default function MySongs() {
                           <div className="absolute -left-2 -top-2 bg-gradient-to-r from-blush-400 to-blush-500 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest shadow-sm">Opción 2</div>
                           <audio 
                             key={`v2-${song.id}`}
-                            src={song.form_data.version2.demo_url || song.form_data.version2.audio_url || ''}
+                            src={song.form_data.version2.audio_url || song.form_data.version2.demo_url || ''}
                             controls 
                             controlsList="nodownload"
                             referrerPolicy="no-referrer"
