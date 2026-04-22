@@ -331,26 +331,48 @@ INSTRUCCIONES:
         const sunoData = response?.data?.response?.sunoData || response?.response?.sunoData;
         
         if (sunoData && sunoData.length > 0) {
-          const song = sunoData[0];
-          if (song.audioUrl) {
+          const song1 = sunoData[0];
+          const song2 = sunoData.length > 1 ? sunoData[1] : null;
+
+          if (song1.audioUrl) {
             clearInterval(pollInterval);
             try {
-              let finalUrl = song.audioUrl;
-              const { data: treatmentData } = await supabase.functions.invoke('process-audio', {
-                body: { originalUrl: song.audioUrl, songId: currentSongId, taskId }
+              let finalUrl1 = song1.audioUrl;
+              const { data: treatmentData1 } = await supabase.functions.invoke('process-audio', {
+                body: { originalUrl: song1.audioUrl, songId: currentSongId, taskId }
               });
-              finalUrl = treatmentData?.demoUrl || song.audioUrl;
-              setAudioUrl(finalUrl);
+              finalUrl1 = treatmentData1?.demoUrl || song1.audioUrl;
+
+              let finalUrl2 = null;
+              if (song2 && song2.audioUrl) {
+                try {
+                  const { data: treatmentData2 } = await supabase.functions.invoke('process-audio', {
+                    body: { originalUrl: song2.audioUrl, songId: currentSongId, taskId }
+                  });
+                  finalUrl2 = treatmentData2?.demoUrl || song2.audioUrl;
+                } catch (e) {
+                  finalUrl2 = song2.audioUrl;
+                }
+              }
+
+              setAudioUrl(finalUrl1);
               setGenerationStatus('completed');
               if (currentSongId) {
+                const updatedFormData = {
+                  ...formData,
+                  finalStylePrompt: formData.finalStylePrompt || cleanedStyle,
+                  version2: (song2 && song2.audioUrl) ? { audio_url: song2.audioUrl, demo_url: finalUrl2 } : null
+                };
+
                 await supabase.from('mn_songs').update({ 
-                  audio_url: song.audioUrl,
-                  demo_url: finalUrl,
+                  audio_url: song1.audioUrl,
+                  demo_url: finalUrl1,
+                  form_data: updatedFormData,
                   status: 'completed'
                 }).eq('id', currentSongId);
               }
             } catch (err) {
-              setAudioUrl(song.audioUrl);
+              setAudioUrl(song1.audioUrl);
               setGenerationStatus('completed');
             }
             fetchProfile(user!.id);
@@ -697,8 +719,14 @@ INSTRUCCIONES:
                 <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
                   <RefreshCw size={40} />
                 </div>
-                <h2 className="text-3xl font-serif text-blush-800 mb-4">Algo no salió como esperábamos</h2>
-                <p className="text-ink-600/70 mb-8 max-w-md mx-auto">Tuvimos un problema técnico en el estudio. No te preocupes, tus tokens no se han perdido.</p>
+                <h2 className="text-2xl md:text-3xl font-serif text-blush-800 mb-4">Algo se complicó en el estudio</h2>
+                <p className="text-ink-600/70 mb-8 max-w-md mx-auto">
+                  Tuvimos un problema técnico o el tiempo de espera se agotó. 
+                  <br/><br/>
+                  <strong className="text-balance text-naranja-500 bg-naranja-50 p-2 rounded-lg inline-block text-sm">
+                    ⚠️ Sin embargo, es muy probable que tu canción siga creándose en segundo plano. Incluso si hubo error aquí, por favor revisa el apartado "Mis Canciones" en un par de minutos. Podría ya estar terminada allí.
+                  </strong>
+                </p>
                 <div className="flex flex-col gap-4 max-w-xs mx-auto">
                   <button onClick={() => setStep(2)} className="px-8 py-4 bg-blush-100 text-blush-800 rounded-2xl font-bold hover:bg-blush-200 transition">
                     VOLVER AL TALLER

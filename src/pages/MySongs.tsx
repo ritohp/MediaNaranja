@@ -52,7 +52,9 @@ export default function MySongs() {
           const sunoData = response?.data?.response?.sunoData || response?.response?.sunoData;
           
           if (sunoData && sunoData.length > 0 && sunoData[0].audioUrl) {
-            const audioUrl = sunoData[0].audioUrl;
+            const song1 = sunoData[0];
+            const song2 = sunoData.length > 1 ? sunoData[1] : null;
+            const audioUrl = song1.audioUrl;
             
             // --- Aplicar tratamiento de audio si no existe demo ---
             try {
@@ -61,8 +63,25 @@ export default function MySongs() {
               });
               const demoUrl = treatmentData?.demoUrl || audioUrl;
 
-              setSongs(current => current.map(s => s.id === song.id ? { ...s, audio_url: audioUrl, demo_url: demoUrl, status: 'completed' } : s));
-              await supabase.from('mn_songs').update({ audio_url: audioUrl, demo_url: demoUrl, status: 'completed' }).eq('id', song.id);
+              let finalUrl2 = null;
+              if (song2 && song2.audioUrl) {
+                 try {
+                    const { data: treatmentData2 } = await supabase.functions.invoke('process-audio', {
+                      body: { originalUrl: song2.audioUrl, songId: song.id, taskId: song.task_id }
+                    });
+                    finalUrl2 = treatmentData2?.demoUrl || song2.audioUrl;
+                 } catch (e) {
+                    finalUrl2 = song2.audioUrl;
+                 }
+              }
+
+              const updatedFormData = {
+                ...(song.form_data || {}),
+                version2: (song2 && song2.audioUrl) ? { audio_url: song2.audioUrl, demo_url: finalUrl2 } : null
+              };
+
+              setSongs(current => current.map(s => s.id === song.id ? { ...s, audio_url: audioUrl, demo_url: demoUrl, form_data: updatedFormData, status: 'completed' } : s));
+              await supabase.from('mn_songs').update({ audio_url: audioUrl, demo_url: demoUrl, form_data: updatedFormData, status: 'completed' }).eq('id', song.id);
             } catch (err) {
               setSongs(current => current.map(s => s.id === song.id ? { ...s, audio_url: audioUrl, status: 'completed' } : s));
               await supabase.from('mn_songs').update({ audio_url: audioUrl, status: 'completed' }).eq('id', song.id);
@@ -197,30 +216,62 @@ export default function MySongs() {
 
                 <div className="space-y-4">
                   {song.audio_url || song.demo_url ? (
-                    <div className="bg-naranja-50/30 rounded-2xl p-4 border border-naranja-100">
-                      <audio 
-                        key={song.audio_url || song.id}
-                        src={song.audio_url || ''}
-                        controls 
-                        controlsList="nodownload"
-                        referrerPolicy="no-referrer"
-                        onContextMenu={(e) => e.preventDefault()}
-                        onTimeUpdate={(e) => {
-                          if (e.currentTarget.currentTime >= 60) {
-                            e.currentTarget.pause();
-                            e.currentTarget.currentTime = 0;
-                            setShowDemoModal(true);
-                          }
-                        }}
-                        className="w-full h-10 accent-naranja-500"
-                      >
-                        Tu navegador no soporta el reproductor de audio.
-                      </audio>
-                      <div className="mt-3 text-center">
-                        <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">
-                          Muestra de 60s
-                        </span>
+                    <div className="space-y-4">
+                      <div className="bg-naranja-50/30 rounded-2xl p-4 border border-naranja-100 relative">
+                        <div className="absolute -left-2 -top-2 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest shadow-sm">Opción 1</div>
+                        <audio 
+                          key={song.audio_url || song.id}
+                          src={song.demo_url || song.audio_url || ''}
+                          controls 
+                          controlsList="nodownload"
+                          referrerPolicy="no-referrer"
+                          onContextMenu={(e) => e.preventDefault()}
+                          onTimeUpdate={(e) => {
+                            if (e.currentTarget.currentTime >= 60) {
+                              e.currentTarget.pause();
+                              e.currentTarget.currentTime = 0;
+                              setShowDemoModal(true);
+                            }
+                          }}
+                          className="w-full h-10 accent-naranja-500 mt-2"
+                        >
+                          Tu navegador no soporta el reproductor de audio.
+                        </audio>
+                        <div className="mt-3 text-center">
+                          <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">
+                            Muestra de 60s
+                          </span>
+                        </div>
                       </div>
+
+                      {song.form_data?.version2 && (
+                        <div className="bg-blush-50/50 rounded-2xl p-4 border border-blush-100 relative">
+                          <div className="absolute -left-2 -top-2 bg-gradient-to-r from-blush-400 to-blush-500 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest shadow-sm">Opción 2</div>
+                          <audio 
+                            key={`v2-${song.id}`}
+                            src={song.form_data.version2.demo_url || song.form_data.version2.audio_url || ''}
+                            controls 
+                            controlsList="nodownload"
+                            referrerPolicy="no-referrer"
+                            onContextMenu={(e) => e.preventDefault()}
+                            onTimeUpdate={(e) => {
+                              if (e.currentTarget.currentTime >= 60) {
+                                e.currentTarget.pause();
+                                e.currentTarget.currentTime = 0;
+                                setShowDemoModal(true);
+                              }
+                            }}
+                            className="w-full h-10 accent-blush-500 mt-2"
+                          >
+                            Tu navegador no soporta el reproductor de audio.
+                          </audio>
+                          <div className="mt-3 text-center">
+                            <span className="text-[10px] font-bold text-blush-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-blush-100 italic">
+                              Muestra Alternativa
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="bg-blush-50/30 rounded-2xl p-8 border border-dashed border-blush-200 text-center">
