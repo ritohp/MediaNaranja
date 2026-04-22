@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2 } from 'lucide-react';
+import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Song {
