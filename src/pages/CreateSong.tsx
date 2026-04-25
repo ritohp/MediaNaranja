@@ -332,8 +332,29 @@ INSTRUCCIONES:
 
       if (currentSongId) {
         await supabase.from('mn_songs')
-          .update({ task_id: taskId, status: 'generating_music' })
+          .update({ 
+            task_id: taskId, 
+            status: 'generating_music',
+            lyrics: lyrics,
+            style_prompt: cleanedStyle,
+            form_data: { ...formData, finalStylePrompt: cleanedStyle }
+          })
           .eq('id', currentSongId);
+      } else {
+        const { data: newSong } = await supabase.from('mn_songs')
+          .insert([{
+            user_id: user?.id,
+            title: formData.childName || formData.nombreDestinatario || 'Canción Personalizada',
+            lyrics: lyrics,
+            status: 'generating_music',
+            task_id: taskId,
+            style_prompt: cleanedStyle,
+            form_data: { ...formData, finalStylePrompt: cleanedStyle }
+          }])
+          .select()
+          .single();
+        
+        if (newSong) setCurrentSongId(newSong.id);
       }
 
       let attempts = 0;
