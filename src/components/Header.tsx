@@ -7,8 +7,12 @@ import type { User } from '@supabase/supabase-js';
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [tokens, setTokens] = useState<number | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
@@ -45,23 +49,32 @@ export default function Header() {
     setIsMenuOpen(false);
   }, [location]);
 
-  const handleLogin = async () => {
-    const email = window.prompt("Email:");
-    if (!email) return;
-    const password = window.prompt("Contraseña (mín. 6 caracteres):");
-    if (!password) return;
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError(null);
 
-    // Intentar Login
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    
-    if (signInError) {
-      // Si falla porque no existe, intentar Registro
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) {
-        alert("Error: " + signUpError.message);
+    try {
+      if (authMode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        setIsLoginModalOpen(false);
       } else {
-        alert("¡Cuenta creada! Ya puedes crear tus canciones.");
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        
+        if (data.session) {
+          setIsLoginModalOpen(false);
+          alert("¡Cuenta creada con éxito! Bienvenido a Media Naranja.");
+        } else {
+          setAuthMode('login');
+          alert("¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta y poder entrar.");
+        }
       }
+    } catch (err: any) {
+      setAuthError(err.message || "Ocurrió un error");
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -114,7 +127,7 @@ export default function Header() {
                   </div>
                 </div>
               ) : (
-                <button onClick={handleLogin} className="hover:text-naranja-500 transition-colors flex items-center gap-2 group ml-4">
+                <button onClick={() => setIsLoginModalOpen(true)} className="hover:text-naranja-500 transition-colors flex items-center gap-2 group ml-4">
                   <div className="p-2 rounded-full bg-blush-50 border border-blush-100 group-hover:bg-naranja-50 group-hover:border-naranja-200 transition-colors">
                     <UserIcon size={18} />
                   </div>
@@ -216,7 +229,10 @@ export default function Header() {
                   </button>
                 ) : (
                   <button 
-                    onClick={handleLogin}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsLoginModalOpen(true);
+                    }}
                     className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-blush-600 text-white font-bold uppercase tracking-widest text-sm shadow-md"
                   >
                     <UserIcon size={20} />
@@ -225,6 +241,89 @@ export default function Header() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de Auth */}
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-blush-950/40 backdrop-blur-md" onClick={() => setIsLoginModalOpen(false)} />
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden border border-blush-100 animate-in zoom-in duration-300">
+            <div className="p-8 md:p-10">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-naranja-50 text-naranja-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <UserIcon size={32} />
+                </div>
+                <h2 className="text-3xl font-serif text-blush-800">
+                  {authMode === 'login' ? '¡Qué bueno verte!' : 'Únete a la magia'}
+                </h2>
+                <p className="text-ink-600/70 text-sm mt-2">
+                  {authMode === 'login' 
+                    ? 'Entra para ver tus canciones y recuerdos.' 
+                    : 'Crea tu cuenta para empezar a componer.'}
+                </p>
+              </div>
+
+              <form onSubmit={handleAuth} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-blush-400 ml-1">Correo Electrónico</label>
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    className="w-full px-5 py-4 bg-blush-50 border border-blush-100 rounded-2xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-blush-400 ml-1">Contraseña</label>
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-5 py-4 bg-blush-50 border border-blush-100 rounded-2xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all"
+                    required
+                  />
+                </div>
+
+                {authError && (
+                  <p className="text-xs text-red-500 font-bold text-center bg-red-50 py-2 rounded-lg border border-red-100">
+                    {authError}
+                  </p>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={authLoading}
+                  className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:brightness-110 transition-all disabled:opacity-50"
+                >
+                  {authLoading ? 'PROCESANDO...' : (authMode === 'login' ? 'ENTRAR' : 'CREAR CUENTA')}
+                </button>
+              </form>
+
+              <div className="mt-8 text-center">
+                <button 
+                  onClick={() => {
+                    setAuthMode(authMode === 'login' ? 'signup' : 'login');
+                    setAuthError(null);
+                  }}
+                  className="text-xs font-bold text-blush-400 uppercase tracking-widest hover:text-naranja-500 transition-colors"
+                >
+                  {authMode === 'login' 
+                    ? '¿No tienes cuenta? Regístrate aquí' 
+                    : '¿Ya tienes cuenta? Inicia sesión'}
+                </button>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setIsLoginModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-blush-400 hover:text-naranja-500 transition-colors"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
       )}
