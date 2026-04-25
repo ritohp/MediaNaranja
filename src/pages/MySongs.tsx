@@ -249,7 +249,6 @@ export default function MySongs() {
                               : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url || '')}
                             controls 
                             controlsList="nodownload"
-                            crossOrigin="anonymous"
                             referrerPolicy="no-referrer"
                             onContextMenu={(e) => e.preventDefault()}
                             onTimeUpdate={(e) => {
@@ -259,10 +258,27 @@ export default function MySongs() {
                                 setShowDemoModal(song.id);
                               }
                             }}
-                            className="w-full mb-4 custom-audio-player"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (target.src && !target.src.includes('retry=')) {
+                                const url = new URL(target.src);
+                                url.searchParams.set('retry', Date.now().toString());
+                                target.src = url.toString();
+                              }
+                            }}
+                            className="w-full mb-2 custom-audio-player"
                           >
                             Tu navegador no soporta el reproductor de audio.
                           </audio>
+
+                          <div className="flex justify-center mb-4">
+                            <button 
+                              onClick={() => window.open((!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || song.demo_url) : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url), '_blank')}
+                              className="text-[9px] font-black uppercase text-naranja-500 hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
+                            >
+                              <ExternalLink size={10} /> ¿Problemas con el audio? Clic aquí
+                            </button>
+                          </div>
                           
                           <div className="flex items-center justify-between">
                             {!song.is_paid ? (
