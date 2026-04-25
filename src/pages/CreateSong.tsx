@@ -55,7 +55,6 @@ export default function CreateSong() {
     };
   });
 
-  const [lyrics, setLyrics] = useState('');
 
   // AUTO-GUARDADO: Guardar en localStorage cada vez que el form cambie
   useEffect(() => {
