@@ -266,7 +266,7 @@ export default function AdminDashboard() {
                                           {s?.audio_url || s?.demo_url ? (
                                             <div className="space-y-2">
                                               <p className="text-[8px] font-black uppercase text-gray-400">Opción 1</p>
-                                              <audio src={s.demo_url || s.audio_url} controls className="w-full h-8" />
+                                              <audio src={s.demo_url || s.audio_url} controls crossOrigin="anonymous" referrerPolicy="no-referrer" className="w-full h-8" />
                                             </div>
                                           ) : <div className="py-3 bg-gray-50 text-gray-300 rounded-xl text-[9px] font-black uppercase text-center border border-dashed border-gray-200">Sin Audio 1</div>}
 
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
                                           {s?.form_data?.version2 ? (
                                             <div className="space-y-2">
                                               <p className="text-[8px] font-black uppercase text-gray-400">Opción 2</p>
-                                              <audio src={s.form_data.version2.demo_url || s.form_data.version2.audio_url} controls className="w-full h-8" />
+                                              <audio src={s.form_data.version2.demo_url || s.form_data.version2.audio_url} controls crossOrigin="anonymous" referrerPolicy="no-referrer" className="w-full h-8" />
                                             </div>
                                           ) : null}
                                        </div>
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
                         <span className="text-[8px] text-gray-300">{new Date(s.created_at).toLocaleString()}</span>
                       </div>
                       <h4 className="font-bold text-sm truncate">{s.title || 'Sin Título'}</h4>
-                      <audio src={s.demo_url || s.audio_url} controls className="w-full h-8" />
+                      <audio src={s.demo_url || s.audio_url} controls crossOrigin="anonymous" referrerPolicy="no-referrer" className="w-full h-8" />
                    </div>
                  ))}
               </div>
