@@ -163,7 +163,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-brand-gradient opacity-10 blur-[100px] rounded-full animate-pulse"></div>
             <div className="relative z-10 animate-float">
                <img 
-                src="file:///C:/Users/LAPTOP-HP/.gemini/antigravity/brain/e46d2668-bc05-44e5-bd76-d803b3a84a54/mama_llorando_felicidad_cancion_1776729215826.png" 
+                src="/madre-emocionada.png" 
                 alt="Madre emocionada" 
                 className="w-full h-auto rounded-[3rem] shadow-2xl"
                />
@@ -234,7 +234,7 @@ export default function Home() {
               <div className="relative">
                 <div className="absolute inset-x-0 -bottom-10 h-40 bg-gradient-to-t from-[#FFFBF7] to-transparent z-10"></div>
                 <img 
-                  src="file:///C:/Users/LAPTOP-HP/.gemini/antigravity/brain/e46d2668-bc05-44e5-bd76-d803b3a84a54/padre_escuchando_corrido_emocionado_1776729202451.png" 
+                  src="/padre-emocionado.png" 
                   alt="Padre orgulloso" 
                   className="w-full h-auto rounded-[3.5rem] shadow-2xl relative z-0" 
                 />
