@@ -265,7 +265,6 @@ INSTRUCCIONES:
         .single();
       
       if (data) {
-        setCurrentSongId(data.id);
         // LIMPIAR LOCALSTORAGE al tener éxito inicial
         localStorage.removeItem('mn_draft_song');
       }
@@ -288,9 +287,14 @@ INSTRUCCIONES:
       setLyrics(generatedLyrics);
       setFeedback('');
       
-      if (currentSongId) {
-        await supabase.from('mn_songs').update({ lyrics: generatedLyrics }).eq('id', currentSongId);
-      }
+      // Siempre creamos una nueva entrada si no usamos un ID vinculado
+      await supabase.from('mn_songs').insert([{
+        user_id: user?.id,
+        form_data: formData,
+        lyrics: generatedLyrics,
+        style_prompt: formData.moodAndStyle,
+        status: 'draft'
+      }]);
     } catch (error: any) {
       console.error("DEBUG REWRITE ERROR:", error);
       alert(`[DEBUG REWRITE]: ${error.message || "Error desconocido"}.`);
@@ -330,85 +334,69 @@ INSTRUCCIONES:
         taskId = await generateMusicTask(lyrics, cleanedStyle, 'Canción Original Media Naranja');
       }
 
-      if (currentSongId) {
-        await supabase.from('mn_songs')
-          .update({ 
-            task_id: taskId, 
-            status: 'generating_music',
-            audio_url: null,
-            demo_url: null,
-            lyrics: lyrics,
-            style_prompt: cleanedStyle,
-            form_data: { ...formData, finalStylePrompt: cleanedStyle }
-          })
-          .eq('id', currentSongId);
-      } else {
-        const { data: newSong } = await supabase.from('mn_songs')
-          .insert([{
-            user_id: user?.id,
-            title: formData.childName || formData.nombreDestinatario || 'Canción Personalizada',
-            lyrics: lyrics,
-            status: 'generating_music',
-            task_id: taskId,
-            style_prompt: cleanedStyle,
-            form_data: { ...formData, finalStylePrompt: cleanedStyle }
-          }])
-          .select()
-          .single();
-        
-        if (newSong) setCurrentSongId(newSong.id);
-      }
-
-      let attempts = 0;
-      const maxAttempts = 100;
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        let response;
-        if (isTestMode) {
-          response = { response: { sunoData: [{ audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }] } };
-        } else {
-          try {
-            response = await checkMusicStatus(taskId);
-          } catch (e) {
-            console.error("Polling error detected:", e);
-            clearInterval(pollInterval);
-            setGenerationStatus('error');
-            return;
-          }
-        }
-        
-        const sunoData = response?.data?.response?.sunoData || response?.response?.sunoData;
-        
-        if (sunoData && sunoData.length > 0) {
-          const song1 = sunoData[0];
-          const song2 = sunoData.length > 1 ? sunoData[1] : null;
-
-          if (song1.audioUrl) {
-            clearInterval(pollInterval);
+      const { data: newSong } = await supabase.from('mn_songs')
+        .insert([{
+          user_id: user?.id,
+          title: formData.childName || formData.nombreDestinatario || 'Canción Personalizada',
+          lyrics: lyrics,
+          status: 'generating_music',
+          task_id: taskId,
+          style_prompt: cleanedStyle,
+          form_data: { ...formData, finalStylePrompt: cleanedStyle }
+        }])
+        .select()
+        .single();
+      
+      if (newSong) {
+        let attempts = 0;
+        const maxAttempts = 100;
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          let response;
+          if (isTestMode) {
+            response = { response: { sunoData: [{ audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }] } };
+          } else {
             try {
-              let finalUrl1 = song1.audioUrl;
-              const { data: treatmentData1 } = await supabase.functions.invoke('process-audio', {
-                body: { originalUrl: song1.audioUrl, songId: currentSongId, taskId }
-              });
-              finalUrl1 = treatmentData1?.demoUrl || song1.audioUrl;
+              response = await checkMusicStatus(taskId);
+            } catch (e) {
+              console.error("Polling error detected:", e);
+              clearInterval(pollInterval);
+              setGenerationStatus('error');
+              return;
+            }
+          }
+          
+          const sunoData = response?.data?.response?.sunoData || response?.response?.sunoData;
+          
+          if (sunoData && sunoData.length > 0) {
+            const song1 = sunoData[0];
+            const song2 = sunoData.length > 1 ? sunoData[1] : null;
 
-              let finalUrl2 = null;
-              if (song2 && song2.audioUrl) {
-                try {
-                  const { data: treatmentData2 } = await supabase.functions.invoke('process-audio', {
-                    body: { originalUrl: song2.audioUrl, songId: currentSongId, taskId }
-                  });
-                  finalUrl2 = treatmentData2?.demoUrl || song2.audioUrl;
-                } catch (e) {
-                  finalUrl2 = song2.audioUrl;
+            if (song1.audioUrl) {
+              clearInterval(pollInterval);
+              try {
+                let finalUrl1 = song1.audioUrl;
+                const { data: treatmentData1 } = await supabase.functions.invoke('process-audio', {
+                  body: { originalUrl: song1.audioUrl, songId: newSong.id, taskId }
+                });
+                finalUrl1 = treatmentData1?.demoUrl || song1.audioUrl;
+
+                let finalUrl2 = null;
+                if (song2 && song2.audioUrl) {
+                  try {
+                    const { data: treatmentData2 } = await supabase.functions.invoke('process-audio', {
+                      body: { originalUrl: song2.audioUrl, songId: newSong.id, taskId }
+                    });
+                    finalUrl2 = treatmentData2?.demoUrl || song2.audioUrl;
+                  } catch (e) {
+                    finalUrl2 = song2.audioUrl;
+                  }
                 }
-              }
 
-              setAudioUrl(finalUrl1);
-              setAudioUrl2(finalUrl2);
-              setGenerationStatus('completed');
-              
-              if (currentSongId) {
+                setAudioUrl(finalUrl1);
+                setAudioUrl2(finalUrl2);
+                setGenerationStatus('completed');
+                
                 const updatedFormData = {
                   ...formData,
                   finalStylePrompt: formData.finalStylePrompt || cleanedStyle,
@@ -425,22 +413,22 @@ INSTRUCCIONES:
                   suno_id: song1.id,
                   form_data: updatedFormData,
                   status: 'completed'
-                }).eq('id', currentSongId);
+                }).eq('id', newSong.id);
+              } catch (err) {
+                console.error("Error post-procesando audios:", err);
+                setAudioUrl(song1.audioUrl);
+                setAudioUrl2(song2?.audioUrl || null);
+                setGenerationStatus('completed');
               }
-            } catch (err) {
-              console.error("Error post-procesando audios:", err);
-              setAudioUrl(song1.audioUrl);
-              setAudioUrl2(song2?.audioUrl || null);
-              setGenerationStatus('completed');
+              fetchProfile(user!.id);
             }
-            fetchProfile(user!.id);
           }
-        }
-        if (attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          setGenerationStatus('error');
-        }
-      }, isTestMode ? 1000 : 7000); 
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setGenerationStatus('error');
+          }
+        }, isTestMode ? 1000 : 7000); 
+      }
     } catch (error) {
       setGenerationStatus('error');
     }

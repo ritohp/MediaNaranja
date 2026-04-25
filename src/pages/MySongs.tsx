@@ -311,9 +311,7 @@ export default function MySongs() {
                   onClick={() => {
                     const draft = {
                       ...song.form_data,
-                      id: song.id,
                       lyrics: song.lyrics,
-                      currentSongId: song.id,
                       step: 2 // Saltar directamente al taller de letra
                     };
                     localStorage.setItem('mn_draft_song', JSON.stringify(draft));
