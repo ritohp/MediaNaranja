@@ -56,6 +56,14 @@ export default function Home() {
            background: radial-gradient(circle at top right, rgba(255, 107, 0, 0.05), transparent),
                        radial-gradient(circle at bottom left, rgba(255, 45, 85, 0.05), transparent);
         }
+
+        .text-gradient {
+          background: linear-gradient(135deg, #FF6B00 0%, #FF2D55 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          color: transparent;
+        }
       `}</style>
 
       {/* --- 1. SECCIÓN ESPECIAL: DÍA DE LAS MADRES --- */}
@@ -239,7 +247,7 @@ export default function Home() {
       <section className="py-40 px-6 text-center bg-white border-t border-gray-50">
          <div className="max-w-4xl mx-auto space-y-12">
             <h2 className="text-6xl md:text-8xl font-playfair italic leading-[1] text-[#1A1A1A]">
-              Tu vida <br /> <span className="bg-brand-gradient text-transparent bg-clip-text">hecha canción.</span>
+              Tu vida <br /> <span className="text-gradient">hecha canción.</span>
             </h2>
             <button 
               onClick={() => navigate('/crear-cancion')}
