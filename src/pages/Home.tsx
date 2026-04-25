@@ -5,84 +5,24 @@ import {
   Heart, 
   Sparkles, 
   ArrowRight, 
-  Play, 
   CheckCircle2, 
   Star, 
-  Mic2, 
-  Gift,
-  CloudLightning,
-  User,
+  User, 
   Users,
-  GraduationCap,
   Baby,
-  Trophy,
-  Coffee,
-  ChevronRight,
-  ChevronLeft
+  Gift
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function Home() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [activeTag, setActiveTag] = useState('papá');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
   }, []);
-
-  const tags = [
-    { 
-      id: 'papá', 
-      label: 'Papá', 
-      icon: <User size={18}/>,
-      title: 'Su valentía hecha canción',
-      desc: 'Para el hombre que lo dio todo sin pedir nada. Un corrido o una balada que guarde para siempre el orgullo de ser su hijo.',
-      color: 'bg-orange-500'
-    },
-    { 
-      id: 'mamá', 
-      label: 'Mamá', 
-      icon: <Heart size={18}/>,
-      title: 'Gracias en cada nota',
-      desc: 'Lo que las palabras no alcanzan a decir, la música lo hace eterno. Un regalo que ella escuchará una y mil veces con lágrimas de felicidad.',
-      color: 'bg-pink-500'
-    },
-    { 
-      id: 'hijo', 
-      label: 'Hijos', 
-      icon: <Baby size={18}/>,
-      title: 'Un legado sonoro',
-      desc: 'Un mensaje de aliento para que escuchen cuando crezcan, recordándoles que siempre creerás en ellos.',
-      color: 'bg-blue-500'
-    },
-    { 
-      id: 'pareja', 
-      label: 'Pareja', 
-      icon: <Users size={18}/>,
-      title: 'Nuestra historia favorita',
-      desc: 'Celebra ese momento mágico donde vuestras vidas se cruzaron. Un detalle que redefine lo que significa amar.',
-      color: 'bg-red-500'
-    },
-    { 
-      id: 'maestro', 
-      label: 'Maestros', 
-      icon: <GraduationCap size={18}/>,
-      title: 'Huella eterna',
-      desc: 'Para quienes nos guiaron con paciencia. Un tributo musical que les demuestra que su dedicación valió la pena.',
-      color: 'bg-emerald-500'
-    },
-    { 
-      id: 'superacion', 
-      label: 'Motivación', 
-      icon: <Trophy size={18}/>,
-      title: 'Mi propia victoria',
-      desc: 'Una melodía que celebre tu camino, tus retos vencidos y la fuerza que te trajo hasta hoy.',
-      color: 'bg-amber-500'
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-[#FFFBF7] text-[#2D2D2D] font-sans selection:bg-[#FF6B00]/20 pb-20">
@@ -116,207 +56,190 @@ export default function Home() {
            background: radial-gradient(circle at top right, rgba(255, 107, 0, 0.05), transparent),
                        radial-gradient(circle at bottom left, rgba(255, 45, 85, 0.05), transparent);
         }
-
-        /* Hide scrollbar for category list */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .mask-fade {
-          mask-image: linear-gradient(to right, black 85%, transparent 100%);
-          -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-        }
-        
-        @media (min-width: 1024px) {
-          .mask-fade { mask-image: none; -webkit-mask-image: none; }
-        }
       `}</style>
 
-      {/* --- HERO SECTION --- */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-24 px-6 bg-silk overflow-hidden">
-        <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
-          <div className="space-y-10">
-            <div className="inline-flex items-center gap-3 px-5 py-2 bg-white rounded-full shadow-sm border border-orange-100">
-              <Sparkles className="w-4 h-4 text-[#FF6B00]" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#FF6B00] font-outfit text-center">Boutique de Historias Musicales</span>
-            </div>
-            
-            <h1 className="text-6xl md:text-8xl font-playfair leading-[1] text-[#1A1A1A]">
-               Su historia <span className="italic text-[#FF2D55]">hecha</span> <br /> 
-               <span className="text-[#FF6B00] font-bold">canción.</span>
-            </h1>
-            
-            <p className="text-xl text-gray-500 font-outfit max-w-lg leading-relaxed">
-              Hay palabras que el tiempo se lleva, pero una canción se queda para siempre. Transformamos tus recuerdos más puros en una <span className="font-bold text-[#1A1A1A]">herencia sonora</span>. El regalo que les recordará, en cada nota, cuánto los amas.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-5 pt-4">
-              <button 
-                onClick={() => navigate('/crear-cancion')}
-                className="px-12 py-6 bg-brand-gradient text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3"
-              >
-                Crear canción inolvidable <ArrowRight size={18} />
-              </button>
-            </div>
-          </div>
-
-          <div className="relative group hidden lg:block">
-            <div className="absolute inset-0 bg-brand-gradient opacity-10 blur-[100px] rounded-full animate-pulse"></div>
-            <div className="relative z-10 animate-float">
-               <img 
-                src="/madre-emocionada.png" 
-                alt="Madre emocionada" 
-                className="w-full h-auto rounded-[3rem] shadow-2xl"
-               />
-               <div className="absolute -bottom-8 -right-8 glass-premium p-8 rounded-3xl space-y-2 max-w-[280px]">
-                  <p className="text-lg font-playfair italic">"Es el regalo más hermoso que me han dado jamás..."</p>
-               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* --- SPECIAL MOTHER'S DAY SECTION --- */}
-      <section className="py-24 px-6 relative overflow-hidden bg-gradient-to-b from-[#FFFBF7] to-[#FDF2F4]">
+      {/* --- 1. SECCIÓN ESPECIAL: DÍA DE LAS MADRES --- */}
+      <section className="py-20 px-6 relative overflow-hidden bg-gradient-to-b from-[#FFFBF7] to-[#FDF2F4] border-b border-pink-50">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="order-2 lg:order-1 space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-pink-50 text-pink-500 rounded-full border border-pink-100 text-[10px] font-black uppercase tracking-widest">
               Edición Especial 10 de Mayo
             </div>
+            <h2 className="text-6xl md:text-8xl font-playfair leading-[1] text-[#1A1A1A]">
+              Para ella, <br />
+              <span className="italic text-[#FF2D55]">lo eterno.</span>
+            </h2>
+            <p className="text-xl text-gray-500 font-outfit leading-relaxed max-w-lg">
+              Las flores se marchitan, pero una canción que narra su amor es un tesoro que ella guardará en su alma para siempre. Dile "gracias" con la melodía que se merece.
+            </p>
+            <button 
+              onClick={() => navigate('/crear-cancion')}
+              className="w-full sm:w-auto px-12 py-6 bg-[#FF2D55] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:shadow-pink-200 transition-all flex items-center justify-center gap-3"
+            >
+              Crear canción para Mamá <Heart size={18} />
+            </button>
+          </div>
+          <div className="order-1 lg:order-2 relative group">
+            <div className="absolute -inset-4 bg-pink-200/20 blur-3xl rounded-full"></div>
+            <img 
+              src="/madre-emocionada.png" 
+              alt="Mamá emocionada" 
+              className="relative z-10 w-full h-auto rounded-[3rem] shadow-2xl border-4 border-white animate-float"
+            />
+            <div className="absolute -bottom-8 -right-8 glass-premium p-8 rounded-3xl space-y-2 max-w-[280px] z-20">
+               <p className="text-lg font-playfair italic">"Es el regalo más hermoso que me han dado jamás..."</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- 2. SECCIÓN: HISTORIAS DE AMOR (PAREJAS) --- */}
+      <section className="py-32 px-6 bg-white border-b border-orange-50">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="relative group">
+            <div className="absolute -inset-10 bg-orange-100/30 blur-[80px] rounded-full"></div>
+            <img 
+              src="/pareja-amor.png" 
+              alt="Historia de Amor" 
+              className="relative z-10 w-full h-auto rounded-[4rem] shadow-2xl transform -rotate-2 hover:rotate-0 transition-transform duration-500"
+            />
+          </div>
+          <div className="space-y-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-orange-600 rounded-full border border-orange-100 text-[10px] font-black uppercase tracking-widest">
+              Historias de Amor
+            </div>
             <h2 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
-              Este año, regálale <br />
-              <span className="italic text-[#FF2D55]">lágrimas de felicidad.</span>
+              Nuestra vida <br />
+              <span className="text-[#FF6B00] font-bold">cantada.</span>
             </h2>
             <p className="text-xl text-gray-500 font-outfit leading-relaxed">
-              Las flores se marchitan y los chocolates se acaban, pero una canción que narra su vida es un tesoro que ella guardará en su corazón para siempre.
+              Celebra ese momento mágico donde vuestras vidas se cruzaron. Convierte vuestros secretos, viajes y promesas en una balada o un ritmo que defina vuestra unión.
             </p>
             <div className="space-y-4">
-              {[
-                "Composición personalizada basada en tus recuerdos",
-                "Voz profesional de estudio",
-                "Entrega digital premium lista para compartir",
-                "Opción de incluir su foto en la portada"
-              ].map((item, i) => (
+              {["Letras basadas en vuestros momentos reales", "Producción boutique personalizada", "Un detalle que redefine el romance"].map((t, i) => (
                 <div key={i} className="flex items-center gap-3 text-gray-600 font-outfit font-medium">
-                  <div className="w-5 h-5 rounded-full bg-pink-100 flex items-center justify-center">
-                    <CheckCircle2 size={12} className="text-pink-500" />
-                  </div>
-                  {item}
+                  <CheckCircle2 size={16} className="text-[#FF6B00]" /> {t}
                 </div>
               ))}
             </div>
             <button 
               onClick={() => navigate('/crear-cancion')}
-              className="w-full sm:w-auto px-10 py-5 bg-[#FF2D55] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:shadow-pink-200 transition-all flex items-center justify-center gap-3"
+              className="w-full sm:w-auto px-10 py-5 bg-[#FF6B00] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-[#E66000] transition-all flex items-center justify-center gap-3"
             >
-              Sorprender a Mamá <Gift size={18} />
+              Comenzar nuestra historia <ArrowRight size={18} />
             </button>
           </div>
-          <div className="order-1 lg:order-2 relative">
-            <div className="absolute -inset-4 bg-pink-200/20 blur-3xl rounded-full"></div>
-            <div className="relative z-10">
-              <img 
-                src="/madre-emocionada.png" 
-                alt="Mamá escuchando su canción" 
-                className="w-full h-auto rounded-[3rem] shadow-2xl border-4 border-white"
-              />
-              <div className="absolute -bottom-6 -left-6 md:bottom-10 md:-left-10 glass-premium p-6 rounded-2xl shadow-xl animate-float">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="flex gap-0.5">
-                    {[1,2,3,4,5].map(s => <Star key={s} size={12} className="fill-[#FF6B00] text-[#FF6B00]" />)}
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Testimonio Real</span>
-                </div>
-                <p className="text-sm font-playfair italic text-gray-600 max-w-[200px]">
-                  "Nunca imaginé que mi historia se escucharía tan hermosa. Gracias por este regalo."
-                </p>
-              </div>
+        </div>
+      </section>
+
+      {/* --- 3. SECCIÓN: PADRES (HÉROES) --- */}
+      <section className="py-32 px-6 bg-silk border-b border-blush-50">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="order-2 lg:order-1 space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 text-[10px] font-black uppercase tracking-widest">
+              Tributo a Papá
             </div>
+            <h2 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
+              Dile que es <br />
+              <span className="text-blue-600 font-bold italic">tu héroe.</span>
+            </h2>
+            <p className="text-xl text-gray-500 font-outfit leading-relaxed">
+              Para el hombre que lo dio todo sin pedir nada. Un corrido o una balada que guarde para siempre el orgullo de ser su hijo y el honor de su apellido.
+            </p>
+            <div className="p-8 bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-blue-50 italic text-gray-600 font-playfair text-xl">
+               "Es la primera vez que siento que mi vida se convirtió en arte."
+            </div>
+            <button 
+              onClick={() => navigate('/crear-cancion')}
+              className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3"
+            >
+              Crear tributo para Papá <User size={18} />
+            </button>
+          </div>
+          <div className="order-1 lg:order-2">
+            <img 
+              src="/padre-emocionado.png" 
+              alt="Padre orgulloso" 
+              className="w-full h-auto rounded-[3.5rem] shadow-2xl border-4 border-white" 
+            />
           </div>
         </div>
       </section>
 
-      {/* --- SECCIÓN CATEGORÍAS (REDISEÑADA PARA MÓVIL) --- */}
-      <section className="py-24 px-6 bg-white overflow-hidden" id="tags">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-4xl md:text-6xl font-playfair text-[#1A1A1A]">Dile lo que sientes</h2>
-            <p className="text-gray-400 font-outfit max-w-xl mx-auto italic">Selecciona a quién quieres sorprender y descubre la magia.</p>
+      {/* --- 4. SECCIÓN: NIÑOS (CANCIÓN DE CUNA) --- */}
+      <section className="py-32 px-6 bg-white border-b border-indigo-50 overflow-hidden">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="relative group">
+            <div className="absolute -inset-20 bg-indigo-100/30 blur-[100px] rounded-full"></div>
+            <img 
+              src="/bebe-cuna.png" 
+              alt="Canción de Cuna" 
+              className="relative z-10 w-full h-auto rounded-[5rem] shadow-2xl animate-float"
+            />
           </div>
-
-          {/* Nav de Tags (Scroll horizontal intuitivo con recorte visual) */}
-          <div className="flex lg:grid lg:grid-cols-6 gap-4 mb-10 overflow-x-auto no-scrollbar pb-6 px-1 mask-fade">
-            {tags.map((tag) => (
-              <button
-                key={tag.id}
-                onClick={() => setActiveTag(tag.id)}
-                className={`flex-shrink-0 lg:flex-shrink lg:w-full flex items-center justify-center lg:flex-col gap-3 p-5 lg:p-7 rounded-[2rem] transition-all font-outfit font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-300 border ${activeTag === tag.id ? 'bg-brand-gradient text-white shadow-xl shadow-orange-500/20 border-transparent scale-105' : 'bg-white text-gray-400 border-gray-100 hover:border-[#FF6B00] hover:text-[#FF6B00] shadow-sm'}`}
-              >
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg ${tag.color} ${activeTag === tag.id ? 'bg-white !text-[#FF6B00]' : ''}`}>{tag.icon}</div>
-                {tag.label}
-              </button>
-            ))}
-            {/* Espaciador invisible para forzar el recorte visual en móvil */}
-            <div className="flex-shrink-0 w-8 lg:hidden"></div>
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 text-[10px] font-black uppercase tracking-widest">
+              Sueños de Amor
+            </div>
+            <h2 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
+              Su primera <br />
+              <span className="text-indigo-400 font-bold italic">canción de cuna.</span>
+            </h2>
+            <p className="text-xl text-gray-500 font-outfit leading-relaxed">
+              Personaliza su descanso con una melodía que incluya su nombre y el significado de su llegada. El arrullo perfecto para que sepa, desde el primer día, que es el centro de tu mundo.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {["Incluye su nombre", "Fecha de nacimiento", "Significado especial"].map((tag, i) => (
+                <span key={i} className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold font-outfit">{tag}</span>
+              ))}
+            </div>
+            <button 
+              onClick={() => navigate('/crear-cancion')}
+              className="w-full sm:w-auto px-10 py-5 bg-indigo-400 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-500 transition-all flex items-center justify-center gap-3"
+            >
+              Crear arrullo mágico <Baby size={18} />
+            </button>
           </div>
+        </div>
+      </section>
 
-          {/* Contenido Dinámico (Unificado para móvil) */}
+      {/* --- 5. SECCIÓN: HERMANOS Y AMIGOS --- */}
+      <section className="py-32 px-6 bg-silk">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
+              Cómplices de Vida
+            </div>
+            <h2 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
+              Hermanos y <br />
+              <span className="text-emerald-500 font-bold">amigos.</span>
+            </h2>
+            <p className="text-xl text-gray-500 font-outfit leading-relaxed">
+              Para quienes conocen tus mejores historias porque las vivieron contigo. Celebra esa lealtad incondicional con una canción llena de anécdotas, risas y gratitud.
+            </p>
+            <button 
+              onClick={() => navigate('/crear-cancion')}
+              className="w-full sm:w-auto px-10 py-5 bg-emerald-500 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-3"
+            >
+              Sorprender a mi cómplice <Users size={18} />
+            </button>
+          </div>
           <div className="relative">
-            {tags.map((tag) => (
-               <div key={tag.id} className={`transition-all duration-700 ${activeTag === tag.id ? 'opacity-100 translate-y-0 relative z-10' : 'opacity-0 translate-y-10 absolute inset-0 pointer-events-none'}`}>
-                 <div className="glass-premium p-10 md:p-14 rounded-[3rem] text-center md:text-left grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-                    <div className="space-y-6">
-                       <h3 className="text-3xl md:text-5xl font-playfair italic leading-tight">{tag.title}</h3>
-                       <p className="text-lg text-gray-500 font-outfit leading-relaxed">{tag.desc}</p>
-                       <button 
-                        onClick={() => navigate('/crear-cancion')}
-                        className="flex items-center gap-3 text-[#FF6B00] font-black text-[10px] uppercase tracking-[0.4em] group mx-auto md:mx-0"
-                       >
-                        Hacer historia hecha canción <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
-                       </button>
-                    </div>
-                    <div className="hidden md:block">
-                       <div className="w-full h-64 bg-gray-50 rounded-3xl flex items-center justify-center">
-                          <Music className="text-gray-200 animate-pulse" size={64} />
-                       </div>
-                    </div>
-                 </div>
-               </div>
-            ))}
+            <div className="absolute inset-0 bg-emerald-100/20 blur-[60px] rounded-full"></div>
+            <img 
+              src="/amigos-hermanos.png" 
+              alt="Hermanos y Amigos" 
+              className="relative z-10 w-full h-auto rounded-[3.5rem] shadow-2xl border-4 border-white" 
+            />
           </div>
-        </div>
-      </section>
-
-      {/* --- SECCIÓN EMOCIONES: FOTOS GENERADAS --- */}
-      <section className="py-24 px-6 bg-silk">
-        <div className="max-w-6xl mx-auto space-y-40">
-           {/* FOTO PADRE */}
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div className="relative">
-                <div className="absolute inset-x-0 -bottom-10 h-40 bg-gradient-to-t from-[#FFFBF7] to-transparent z-10"></div>
-                <img 
-                  src="/padre-emocionado.png" 
-                  alt="Padre orgulloso" 
-                  className="w-full h-auto rounded-[3.5rem] shadow-2xl relative z-0" 
-                />
-              </div>
-              <div className="space-y-8">
-                 <h3 className="text-5xl font-playfair italic leading-tight text-center md:text-left">Dile que es tu <br /><span className="text-[#FF6B00] font-bold">héroe.</span></h3>
-                 <p className="text-lg text-gray-500 font-outfit text-center md:text-left">
-                    Un regalo que habla de su valentía y esfuerzo. Imagina su rostro al escuchar su vida cantada con honor.
-                 </p>
-                 <div className="p-8 bg-white rounded-3xl shadow-sm border border-orange-50 italic text-gray-600 font-playfair text-xl text-center">
-                    "Es la primera vez que siento que mi vida se convirtió en arte."
-                 </div>
-              </div>
-           </div>
         </div>
       </section>
 
       {/* --- CTA FINAL --- */}
-      <section className="py-20 px-6 text-center">
+      <section className="py-40 px-6 text-center bg-white border-t border-gray-50">
          <div className="max-w-4xl mx-auto space-y-12">
             <h2 className="text-6xl md:text-8xl font-playfair italic leading-[1] text-[#1A1A1A]">
-              Tu vida <br /> <span className="text-brand-gradient">hecha canción.</span>
+              Tu vida <br /> <span className="bg-brand-gradient text-transparent bg-clip-text">hecha canción.</span>
             </h2>
             <button 
               onClick={() => navigate('/crear-cancion')}
@@ -327,7 +250,7 @@ export default function Home() {
          </div>
       </section>
 
-      <footer className="py-16 text-center">
+      <footer className="py-16 text-center border-t border-gray-50">
          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-300 font-outfit">
            © 2026 Media Naranja • Masterpiece Studio
          </p>

@@ -38,6 +38,9 @@ export default function CreateSong() {
     const saved = localStorage.getItem('mn_draft_song');
     const parsed = saved ? JSON.parse(saved) : {};
     return {
+      category: parsed.category || 'otro',
+      childName: parsed.childName || '',
+      birthDate: parsed.birthDate || '',
       mensajeHablado: parsed.mensajeHablado || '',
       specificDetails: parsed.specificDetails || '',
       moodAndStyle: parsed.moodAndStyle || '',
@@ -106,8 +109,17 @@ export default function CreateSong() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const buildPrompt = (data: typeof formData, answers: Record<string, string>, context: string, feedbackText?: string, previousLyrics?: string) => {
-    let contextSummary = `Idea Inicial: ${context}\n`;
+  const buildPrompt = (data: any, answers: Record<string, string>, context: string, feedbackText?: string, previousLyrics?: string) => {
+    let contextSummary = `Categoría: ${data.category}\n`;
+    contextSummary += `Idea Inicial: ${context}\n`;
+    
+    if (data.category === 'hijo') {
+      contextSummary += `DATOS DEL NIÑO/A (OBLIGATORIO INCLUIR): \n`;
+      contextSummary += `- Nombre: ${data.childName}\n`;
+      contextSummary += `- Fecha de Nacimiento: ${data.birthDate}\n`;
+      contextSummary += `INSTRUCCIÓN PARA NIÑO: La canción debe mencionar su nombre, el significado de su nombre (o un mensaje sobre su origen) y la importancia del día que nació.\n\n`;
+    }
+
     if (data.specificDetails) {
       contextSummary += `Detalles Específicos Adicionales: ${data.specificDetails}\n`;
     }
@@ -130,9 +142,10 @@ export default function CreateSong() {
     
     INSTRUCCIÓN CRÍTICA:
     1. Incorpora los detalles de las respuestas en la lírica de forma fluida y natural, no los copies literalmente.
-    2. La sección [Spoken Word] debe contener el mensaje hablado proporcionado, ajustado para que suene natural si es necesario.
-    3. Asegura que el ritmo y tono coincida con el ESTILO DE LA CANCIÓN DESEADO.
-    4. Responde ÚNICAMENTE con la letra estructurada.`;
+    2. Si es para un niño, que se sienta como una canción de cuna mágica.
+    3. La sección [Spoken Word] debe contener el mensaje hablado proporcionado.
+    4. Asegura que el ritmo y tono coincida con el ESTILO DE LA CANCIÓN DESEADO.
+    5. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
       return `Eres un compositor experto. REESCRIBE la siguiente canción basándote exclusivamente en el AJUSTE solicitado.
@@ -154,6 +167,13 @@ INSTRUCCIONES:
   const handleProceedToDetails = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!initialContext.trim()) return;
+    
+    if (formData.category === 'hijo') {
+      if (!formData.childName?.trim() || !formData.birthDate?.trim()) {
+        alert("Por favor, ingresa el nombre y la fecha de nacimiento.");
+        return;
+      }
+    }
     
     setIsGeneratingDetailsPrompt(true);
     try {
@@ -448,12 +468,65 @@ INSTRUCCIONES:
             {formPhase === 'spark' ? (
               <form onSubmit={handleProceedToDetails} className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
                 <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-6">
-                  <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Sparkles className="text-naranja-500" /> ¿Cuál es la chispa inicial?</h3>
+                  <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Sparkles className="text-naranja-500" /> ¿Para quién es esta canción?</h3>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { id: 'mama', label: 'Mamá', icon: <Heart size={14}/> },
+                      { id: 'papa', label: 'Papá', icon: <User size={14}/> },
+                      { id: 'pareja', label: 'Pareja', icon: <Users size={14}/> },
+                      { id: 'hijo', label: 'Hijo/Niño', icon: <Baby size={14}/> },
+                      { id: 'amigos', label: 'Amigos/Hermanos', icon: <Users size={14}/> },
+                      { id: 'otro', label: 'Otro', icon: <Music size={14}/> },
+                    ].map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, category: cat.id })}
+                        className={`flex items-center gap-2 p-3 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all ${formData.category === cat.id ? 'bg-naranja-500 text-white border-transparent shadow-md' : 'bg-white text-gray-500 border-gray-100 hover:border-naranja-200'}`}
+                      >
+                        {cat.icon} {cat.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {formData.category === 'hijo' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-indigo-50 rounded-2xl border border-indigo-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-indigo-700 uppercase tracking-widest">Nombre del niño/a *</label>
+                        <input 
+                          type="text"
+                          name="childName"
+                          value={formData.childName}
+                          onChange={handleChange}
+                          placeholder="Ej: Mateo"
+                          className="w-full p-3 rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-400"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-indigo-700 uppercase tracking-widest">Fecha de nacimiento *</label>
+                        <input 
+                          type="date"
+                          name="birthDate"
+                          value={formData.birthDate}
+                          onChange={handleChange}
+                          className="w-full p-3 rounded-xl border border-indigo-200 outline-none focus:ring-2 focus:ring-indigo-400"
+                          required
+                        />
+                      </div>
+                      <p className="md:col-span-2 text-[10px] text-indigo-500 italic mt-1">
+                        Esta información es clave para que la canción de cuna sea mágica e incluya su nombre y el día que llegó a tu vida.
+                      </p>
+                    </div>
+                  )}
+
+                  <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3 pt-4"><Sparkles className="text-naranja-500" /> ¿Cuál es la chispa inicial?</h3>
                   <p className="text-ink-600/70 text-sm italic">Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".</p>
                   <textarea 
                     value={initialContext}
                     onChange={(e) => setInitialContext(e.target.value)}
-                    placeholder="Escribe aquí de qué se trata la canción y para quién es..."
+                    placeholder="Escribe aquí de qué se trata la canción..."
                     className="w-full h-40 bg-blush-50/50 border border-blush-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-lg font-medium resize-none transition-all"
                     required
                   ></textarea>
