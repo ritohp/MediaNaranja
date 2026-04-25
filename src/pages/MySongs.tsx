@@ -21,6 +21,7 @@ export default function MySongs() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [showDemoModal, setShowDemoModal] = useState<string | null>(null);
+  const [selectedVersions, setSelectedVersions] = useState<{[key: string]: number}>({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -218,54 +219,37 @@ export default function MySongs() {
 
                 <div className="space-y-4">
                   {song.audio_url || song.demo_url ? (
-                    <div className="space-y-4">
-                      <div className="bg-naranja-50/30 rounded-2xl p-4 border border-naranja-100 relative">
-                        <div className="absolute -left-2 -top-2 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest shadow-sm">Opción 1</div>
-                        <audio 
-                          key={song.audio_url || song.id}
-                          src={song.audio_url || song.demo_url || ''}
-                          controls 
-                          controlsList="nodownload"
-                          referrerPolicy="no-referrer"
-                          onContextMenu={(e) => e.preventDefault()}
-                          onTimeUpdate={(e) => {
-                            if (!song.is_paid && e.currentTarget.currentTime >= 60) {
-                              e.currentTarget.pause();
-                              e.currentTarget.currentTime = 0;
-                              setShowDemoModal(song.id);
-                            }
-                          }}
-                          className="w-full h-10 accent-naranja-500 mt-2"
-                        >
-                          Tu navegador no soporta el reproductor de audio.
-                        </audio>
-                        <div className="mt-3 flex items-center justify-between">
-                          {!song.is_paid ? (
-                            <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">
-                              Muestra de 60s
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                              ✓ Pista Completa
-                            </span>
-                          )}
-                          
-                          {song.is_paid && (
-                            <a href={song.audio_url || ''} target="_blank" rel="noreferrer" download className="text-[10px] flex items-center gap-1 font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 hover:bg-naranja-50 transition">
-                              <Download size={12} /> Descargar
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
+                    <div className="space-y-6">
+                      {/* Selector de Versiones si existe v2 */}
                       {song.form_data?.version2 && (
-                        <div className="bg-blush-50/50 rounded-2xl p-4 border border-blush-100 relative">
-                          <div className="absolute -left-2 -top-2 bg-gradient-to-r from-blush-400 to-blush-500 text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest shadow-sm">Opción 2</div>
+                        <div className="flex p-1 bg-blush-50/50 rounded-xl w-full max-w-xs mx-auto">
+                          <button 
+                            onClick={() => setSelectedVersions(prev => ({...prev, [song.id]: 1}))}
+                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? 'bg-white text-naranja-500 shadow-sm' : 'text-blush-400 hover:text-blush-600'}`}
+                          >
+                            Opción 1
+                          </button>
+                          <button 
+                            onClick={() => setSelectedVersions(prev => ({...prev, [song.id]: 2}))}
+                            className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedVersions[song.id] === 2 ? 'bg-white text-blush-500 shadow-sm' : 'text-blush-400 hover:text-blush-600'}`}
+                          >
+                            Opción 2
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="bg-gradient-to-b from-white to-blush-50/30 rounded-3xl p-6 border border-blush-100 shadow-sm relative overflow-hidden group/player">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-naranja-100/20 rounded-full blur-3xl -mr-16 -mt-16 group-hover/player:bg-naranja-200/30 transition-colors duration-700"></div>
+                        
+                        <div className="relative z-10">
                           <audio 
-                            key={`v2-${song.id}`}
-                            src={song.form_data.version2.audio_url || song.form_data.version2.demo_url || ''}
+                            key={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || song.demo_url) : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url)}
+                            src={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) 
+                              ? (song.audio_url || song.demo_url || '') 
+                              : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url || '')}
                             controls 
                             controlsList="nodownload"
+                            crossOrigin="anonymous"
                             referrerPolicy="no-referrer"
                             onContextMenu={(e) => e.preventDefault()}
                             onTimeUpdate={(e) => {
@@ -275,34 +259,39 @@ export default function MySongs() {
                                 setShowDemoModal(song.id);
                               }
                             }}
-                            className="w-full h-10 accent-blush-500 mt-2"
+                            className="w-full mb-4 custom-audio-player"
                           >
                             Tu navegador no soporta el reproductor de audio.
                           </audio>
-                          <div className="mt-3 flex items-center justify-between">
+                          
+                          <div className="flex items-center justify-between">
                             {!song.is_paid ? (
-                              <span className="text-[10px] font-bold text-blush-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-blush-100 italic">
-                                Muestra Alternativa (60s)
+                              <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">
+                                {(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? 'Muestra de 60s' : 'Muestra Alternativa'}
                               </span>
                             ) : (
                               <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                                ✓ Pista Alternativa
+                                ✓ Pista Completa
                               </span>
                             )}
-
+                            
                             {song.is_paid && (
-                              <a href={song.form_data.version2.audio_url || ''} target="_blank" rel="noreferrer" download className="text-[10px] flex items-center gap-1 font-bold text-blush-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-blush-100 hover:bg-blush-50 transition">
+                              <a 
+                                href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
+                                target="_blank" rel="noreferrer" download 
+                                className="text-[10px] flex items-center gap-1 font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 hover:bg-naranja-50 transition shadow-sm"
+                              >
                                 <Download size={12} /> Descargar
                               </a>
                             )}
                           </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   ) : (
-                    <div className="bg-blush-50/30 rounded-2xl p-8 border border-dashed border-blush-200 text-center">
-                      <Clock size={24} className="mx-auto text-blush-300 mb-2 animate-pulse" />
-                      <p className="text-[10px] text-blush-400 uppercase font-bold tracking-widest">En proceso de grabación...</p>
+                    <div className="py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-3">
+                      <Clock className="animate-pulse" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest italic">Componiendo tu historia...</p>
                     </div>
                   )}
                 </div>
