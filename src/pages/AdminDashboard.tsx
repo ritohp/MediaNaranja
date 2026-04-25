@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('panel'); // panel, seguimiento, e-commerce, marketing
+  const [activeTab, setActiveTab] = useState('panel'); // panel, seguimiento, recientes, marketing
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -148,6 +148,11 @@ export default function AdminDashboard() {
     (user?.email || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const allRecentSongs = (masterData || [])
+    .flatMap(u => (u.songs || []).map((s: any) => ({ ...s, userEmail: u.email })))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 20);
+
   if (checking || loading) {
     return (
       <div className="min-h-screen bg-[#FDF9F8] flex items-center justify-center p-6">
@@ -172,9 +177,10 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-10">
           <div className="text-2xl font-black text-[#FF6B00] font-outfit">MN<span className="text-[#FF2D55]">ADMIN</span></div>
           <div className="hidden md:flex gap-8">
-             <button onClick={() => setActiveTab('panel')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'panel' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Panel</button>
-             <button onClick={() => setActiveTab('seguimiento')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'seguimiento' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Seguimiento</button>
-             <button onClick={() => setActiveTab('marketing')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'marketing' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Marketing (Emails)</button>
+              <button onClick={() => setActiveTab('panel')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'panel' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Panel</button>
+              <button onClick={() => setActiveTab('seguimiento')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'seguimiento' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Seguimiento</button>
+              <button onClick={() => setActiveTab('recientes')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'recientes' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Recientes</button>
+              <button onClick={() => setActiveTab('marketing')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'marketing' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Marketing</button>
           </div>
         </div>
       </nav>
@@ -241,9 +247,8 @@ export default function AdminDashboard() {
                         {expandedUser === u?.id && (
                           <tr className="bg-orange-50/20">
                             <td colSpan={4} className="p-8">
-                               <div className="flex gap-6 overflow-x-auto pb-6 custom-scroll">
-                                  {(u?.songs || []).length > 0 ? u.songs.map((s: any) => (
-                                    <div key={s?.id || Math.random()} className="min-w-[340px] bg-white p-8 rounded-[2.5rem] border border-orange-100 shadow-lg space-y-6 flex-shrink-0 relative">
+                               <div className="flex gap-6 overflow-x-auto pb-6 cust                                   {(u?.songs || []).length > 0 ? u.songs.map((s: any) => (
+                                    <div key={s?.id || Math.random()} className="min-w-[380px] bg-white p-8 rounded-[2.5rem] border border-orange-100 shadow-lg space-y-6 flex-shrink-0 relative">
                                        <div className="flex justify-between items-start">
                                           <Music size={24} className={s?.status === 'complete' ? 'text-emerald-500' : 'text-gray-300'} />
                                           <div className="flex flex-col items-end gap-2">
@@ -254,16 +259,31 @@ export default function AdminDashboard() {
                                           </div>
                                        </div>
                                        <h4 className="text-base font-black truncate">{s?.title || 'Historia Sonora'}</h4>
-                                       <div className="flex gap-3 border-t border-gray-50 pt-4">
-                                          {s?.audio_url ? (
-                                            <>
-                                               <button onClick={() => window.open(s.audio_url, '_blank')} className="flex-1 py-3 bg-[#1A1A1A] text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-lg"><Play size={14} fill="currentColor" /> ESCUCHAR</button>
-                                               <a href={s.audio_url} download className="w-12 h-12 bg-gray-50 text-gray-400 rounded-xl flex items-center justify-center hover:bg-naranja-500 hover:text-white transition-all"><Download size={18} /></a>
-                                            </>
-                                          ) : <div className="flex-1 py-3 bg-gray-50 text-gray-300 rounded-xl text-[9px] font-black uppercase text-center border border-dashed border-gray-200">Grabando...</div>}
+                                       
+                                       <div className="space-y-4">
+                                          {/* Opción 1 */}
+                                          {s?.audio_url || s?.demo_url ? (
+                                            <div className="space-y-2">
+                                              <p className="text-[8px] font-black uppercase text-gray-400">Opción 1</p>
+                                              <audio src={s.demo_url || s.audio_url} controls className="w-full h-8" />
+                                            </div>
+                                          ) : <div className="py-3 bg-gray-50 text-gray-300 rounded-xl text-[9px] font-black uppercase text-center border border-dashed border-gray-200">Sin Audio 1</div>}
+
+                                          {/* Opción 2 */}
+                                          {s?.form_data?.version2 ? (
+                                            <div className="space-y-2">
+                                              <p className="text-[8px] font-black uppercase text-gray-400">Opción 2</p>
+                                              <audio src={s.form_data.version2.demo_url || s.form_data.version2.audio_url} controls className="w-full h-8" />
+                                            </div>
+                                          ) : null}
+                                       </div>
+
+                                       <div className="pt-4 border-t border-gray-50 flex gap-2">
+                                          {s?.audio_url && <a href={s.audio_url} target="_blank" rel="noreferrer" className="flex-1 py-3 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-black uppercase text-center hover:bg-naranja-500 hover:text-white transition-all flex items-center justify-center gap-2"><Download size={14} /> Descargar Original</a>}
                                        </div>
                                     </div>
                                   )) : <div className="w-full py-10 flex flex-col items-center justify-center text-gray-300 space-y-4"><AlertCircle size={40} className="opacity-20" /><p className="text-xs font-black uppercase tracking-widest italic">Aún no hay creaciones</p></div>}
+es</p></div>}
                                </div>
                             </td>
                           </tr>
@@ -275,6 +295,24 @@ export default function AdminDashboard() {
                </table>
             </div>
           </div>
+        )}
+
+        {activeTab === 'recientes' && (
+           <div className="animate-in slide-in-from-bottom-5 duration-500 space-y-6">
+              <h2 className="text-3xl font-black font-outfit">Últimas 20 Creaciones (Global)</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {allRecentSongs.map((s: any) => (
+                   <div key={s.id} className="bg-white p-6 rounded-[2rem] border border-orange-50 shadow-sm space-y-4">
+                      <div className="flex justify-between items-start">
+                        <p className="text-[9px] font-black uppercase text-naranja-500">{s.userEmail}</p>
+                        <span className="text-[8px] text-gray-300">{new Date(s.created_at).toLocaleString()}</span>
+                      </div>
+                      <h4 className="font-bold text-sm truncate">{s.title || 'Sin Título'}</h4>
+                      <audio src={s.demo_url || s.audio_url} controls className="w-full h-8" />
+                   </div>
+                 ))}
+              </div>
+           </div>
         )}
 
         {activeTab === 'marketing' && (
