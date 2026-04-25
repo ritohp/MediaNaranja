@@ -791,6 +791,7 @@ INSTRUCCIONES:
                     controls 
                     controlsList="nodownload" 
                     autoPlay
+                    crossOrigin="anonymous"
                     referrerPolicy="no-referrer"
                     onContextMenu={(e) => e.preventDefault()}
                     onTimeUpdate={(e) => {
@@ -800,10 +801,24 @@ INSTRUCCIONES:
                         setShowDemoModal(true);
                       }
                     }}
-                    className="w-full mb-8 custom-audio-player"
+                    onError={(e) => {
+                      console.error("Audio Load Error:", e);
+                      // Intentar recargar una vez si falla
+                      const audio = e.currentTarget;
+                      if (!audio.getAttribute('data-retried')) {
+                        audio.setAttribute('data-retried', 'true');
+                        audio.load();
+                      }
+                    }}
+                    className="w-full mb-4 custom-audio-player"
                   >
                     Tu navegador no soporta el reproductor de audio.
                   </audio>
+                  
+                  {/* Ayuda si falla la carga */}
+                  <p className="text-[9px] text-blush-400 mb-8 italic">
+                    ¿No escuchas nada? Intenta <button onClick={() => window.location.reload()} className="underline hover:text-naranja-500">recargar la página</button> o cambia de opción.
+                  </p>
                   <div className="space-y-4 relative z-10">
                     <button 
                       onClick={() => window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${currentSongId}`}
