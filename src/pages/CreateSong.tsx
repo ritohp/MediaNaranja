@@ -335,6 +335,8 @@ INSTRUCCIONES:
           .update({ 
             task_id: taskId, 
             status: 'generating_music',
+            audio_url: null,
+            demo_url: null,
             lyrics: lyrics,
             style_prompt: cleanedStyle,
             form_data: { ...formData, finalStylePrompt: cleanedStyle }
