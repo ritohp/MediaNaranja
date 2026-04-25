@@ -16,6 +16,8 @@ export default function CreateSong() {
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioUrl2, setAudioUrl2] = useState<string | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<1 | 2>(1);
   const [generationStatus, setGenerationStatus] = useState<'idle' | 'generating' | 'completed' | 'error'>('idle');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -376,23 +378,32 @@ INSTRUCCIONES:
               }
 
               setAudioUrl(finalUrl1);
+              setAudioUrl2(finalUrl2);
               setGenerationStatus('completed');
+              
               if (currentSongId) {
                 const updatedFormData = {
                   ...formData,
                   finalStylePrompt: formData.finalStylePrompt || cleanedStyle,
-                  version2: (song2 && song2.audioUrl) ? { audio_url: song2.audioUrl, demo_url: finalUrl2 } : null
+                  version2: (song2 && song2.audioUrl) ? { 
+                    audio_url: song2.audioUrl, 
+                    demo_url: finalUrl2,
+                    song_id: song2.id 
+                  } : null
                 };
 
                 await supabase.from('mn_songs').update({ 
                   audio_url: song1.audioUrl,
                   demo_url: finalUrl1,
+                  suno_id: song1.id,
                   form_data: updatedFormData,
                   status: 'completed'
                 }).eq('id', currentSongId);
               }
             } catch (err) {
+              console.error("Error post-procesando audios:", err);
               setAudioUrl(song1.audioUrl);
+              setAudioUrl2(song2?.audioUrl || null);
               setGenerationStatus('completed');
             }
             fetchProfile(user!.id);
@@ -751,11 +762,31 @@ INSTRUCCIONES:
                   <div className="absolute top-0 right-0 p-4 opacity-5">
                     <Music size={120} />
                   </div>
+                  
+                  {/* Selector de Versiones */}
+                  {audioUrl2 && (
+                    <div className="flex bg-blush-50 p-1.5 rounded-2xl mb-8 relative z-10">
+                      <button 
+                        onClick={() => setSelectedVersion(1)}
+                        className={`flex-1 py-3 rounded-xl font-bold text-xs transition-all ${selectedVersion === 1 ? 'bg-white text-naranja-600 shadow-sm' : 'text-blush-400'}`}
+                      >
+                        OPCIÓN 1
+                      </button>
+                      <button 
+                        onClick={() => setSelectedVersion(2)}
+                        className={`flex-1 py-3 rounded-xl font-bold text-xs transition-all ${selectedVersion === 2 ? 'bg-white text-naranja-600 shadow-sm' : 'text-blush-400'}`}
+                      >
+                        OPCIÓN 2
+                      </button>
+                    </div>
+                  )}
+
                   <audio 
-                    key={audioUrl}
-                    src={audioUrl}
+                    key={selectedVersion === 1 ? audioUrl : audioUrl2}
+                    src={selectedVersion === 1 ? audioUrl! : audioUrl2!}
                     controls 
                     controlsList="nodownload" 
+                    autoPlay
                     referrerPolicy="no-referrer"
                     onContextMenu={(e) => e.preventDefault()}
                     onTimeUpdate={(e) => {
