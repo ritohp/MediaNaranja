@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock } from 'lucide-react';
+import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Song {
@@ -320,11 +320,18 @@ export default function MySongs() {
                 
                 <button 
                   onClick={() => {
-                    alert(`Letra de la canción:\n\n${song.lyrics}`);
+                    const draft = {
+                      ...song.form_data,
+                      lyrics: song.lyrics,
+                      currentSongId: song.id,
+                      step: 2 // Saltar directamente al taller de letra
+                    };
+                    localStorage.setItem('mn_draft_song', JSON.stringify(draft));
+                    window.location.href = '/crear-cancion';
                   }}
                   className="w-full py-3 bg-blush-50 text-blush-600 rounded-xl font-bold text-xs hover:bg-naranja-50 hover:text-naranja-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
                 >
-                  <ExternalLink size={14} /> Ver Letra
+                  <RefreshCw size={14} /> Ver Letra / Modificar
                 </button>
               </div>
             </div>

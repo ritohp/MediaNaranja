@@ -67,33 +67,38 @@ export async function generateInterviewQuestions(context: string): Promise<strin
   }
 }
 
-export async function cleanStylePrompt(rawStyle: string): Promise<string> {
+export async function cleanStylePrompt(rawStyle: string, category?: string): Promise<string> {
   try {
-    const prompt = `El usuario ha descrito el estilo musical que desea para su canción: "${rawStyle}".
-    Extrae y describe el género musical de forma concisa (ej. 'Banda sinaloense alegre', 'Balada pop romántica acústica').
+    const prompt = `El usuario desea una canción con este estilo: "${rawStyle}".
+    Tu tarea es extraer los TÉRMINOS TÉCNICOS de género musical para una IA generativa (Suno).
     
-    INSTRUCCIÓN CRÍTICA: Si el usuario menciona nombres de artistas, cantantes o bandas reales con copyright (ej. Banda MS, Luis Miguel, Ed Sheeran), ELIMÍNALOS por completo. Solo describe el estilo musical genérico que los representa.
+    CONTEXTO DE CATEGORÍA: ${category || 'General'}
     
-    RESPONDE ÚNICAMENTE CON EL ESTILO RESULTANTE, SIN NINGÚN OTRO TEXTO NI COMILLAS.`;
+    INSTRUCCIONES:
+    1. Analiza la intención del usuario. Si es para un niño y pide algo 'divertido' o 'alegre', usa estilos como 'Upbeat Children's Music', 'Kids Pop', 'Playful'.
+    2. Si es para un niño pero pide algo tranquilo, usa 'Lullaby', 'Soft Piano', 'Dreamy'.
+    3. NUNCA incluyas instrumentos pesados como 'Tuba' o géneros de 'Banda' a menos que el usuario lo pida explícitamente por su nombre.
+    4. Si el usuario menciona artistas reales, usa solo su género musical.
+    5. Responde con 3 a 5 palabras clave separadas por comas.
+    
+    RESPONDE ÚNICAMENTE CON EL ESTILO RESULTANTE.`;
 
     const { data, error } = await supabase.functions.invoke('generate-lyrics', {
       body: { prompt }
     });
 
     if (error || !data || !data.text) {
-      // Si falla, regresamos el string crudo o algo muy genérico para no romper el flujo
       console.warn("Fallo el filtro de estilo, usando estilo por defecto");
-      return "Pop romántico";
+      return category === 'hijo' ? "Lullaby, Soft Piano" : "Pop romántico acústico";
     }
 
-    // Limpiamos de comillas si la IA no hizo caso
     let cleanText = data.text.trim();
     cleanText = cleanText.replace(/^["']|["']$/g, '');
     
     return cleanText;
   } catch (error) {
     console.error("Error in cleanStylePrompt:", error);
-    return "Pop acústico emocional";
+    return category === 'hijo' ? "Lullaby, Soft Piano" : "Pop acústico emocional";
   }
 }
 

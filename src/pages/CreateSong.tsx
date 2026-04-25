@@ -9,10 +9,16 @@ export default function CreateSong() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [tokens, setTokens] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState(1); // 1: Form, 2: Lyrics Workshop, 3: Music Studio
+  
+  // Recuperar borrador si existe
+  const savedDraft = localStorage.getItem('mn_draft_song');
+  const parsedDraft = savedDraft ? JSON.parse(savedDraft) : null;
+
+  const [step, setStep] = useState(parsedDraft?.step || 1); 
+  const [lyrics, setLyrics] = useState(parsedDraft?.lyrics || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [feedback, setFeedback] = useState('');
-  const [currentSongId, setCurrentSongId] = useState<string | null>(null);
+  const [currentSongId, setCurrentSongId] = useState<string | null>(parsedDraft?.currentSongId || null);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -24,8 +30,8 @@ export default function CreateSong() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
   // NUEVOS ESTADOS PARA ENTREVISTA DINÁMICA
-  const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>('spark');
-  const [initialContext, setInitialContext] = useState('');
+  const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>(parsedDraft ? 'interview' : 'spark');
+  const [initialContext, setInitialContext] = useState(parsedDraft?.initialContext || '');
   const [isGeneratingDetailsPrompt, setIsGeneratingDetailsPrompt] = useState(false);
   const [detailsPrompt, setDetailsPrompt] = useState({
     title: "Nombres, lugares y la historia",
@@ -33,12 +39,11 @@ export default function CreateSong() {
     placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
   });
   const [aiQuestions, setAiQuestions] = useState<string[]>([]);
-  const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>({});
+  const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(parsedDraft?.interviewAnswers || {});
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
   const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem('mn_draft_song');
-    const parsed = saved ? JSON.parse(saved) : {};
+    const parsed = parsedDraft || {};
     return {
       category: parsed.category || 'otro',
       childName: parsed.childName || '',
@@ -130,7 +135,7 @@ export default function CreateSong() {
       contextSummary += `- Detalle ${index + 1}: ${a}\n`;
     });
 
-    const basePrompt = `Eres un compositor experto para "Media Naranja". 
+    const basePrompt = `Eres un compositor experto de canciones personalizadas. 
     Genera la letra completa de una canción siguiendo estos datos, estructurada con [Verse 1], [Chorus], [Verse 2], [Spoken Word], [Chorus], [Bridge], [Outro].
     
     CONTEXTO Y DETALLES EMOCIONALES:
@@ -142,11 +147,11 @@ export default function CreateSong() {
     ESTILO DE LA CANCIÓN DESEADO:
     ${data.moodAndStyle}
     
-    INSTRUCCIÓN CRÍTICA:
-    1. Incorpora los detalles de las respuestas en la lírica de forma fluida y natural, no los copies literalmente.
-    2. Si es para un niño, que se sienta como una canción de cuna mágica.
-    3. La sección [Spoken Word] debe contener el mensaje hablado proporcionado.
-    4. Asegura que el ritmo y tono coincida con el ESTILO DE LA CANCIÓN DESEADO.
+    INSTRUCCIONES CRÍTICAS DE REDACCIÓN:
+    1. PROHIBICIÓN: No incluyas nunca la frase "Media Naranja" ni menciones a la plataforma en la letra. La canción debe ser 100% personal para el destinatario.
+    2. NIÑOS/BEBÉS: Si la categoría es 'hijo', es MANDATORIO que investigues o deduzcas poéticamente el significado de su nombre "${data.childName}" y lo integres en un verso. Debe sentirse como una bendición o un regalo del destino.
+    3. FLUIDEZ: Incorpora los detalles de las respuestas en la lírica de forma natural y poética.
+    4. SPOKEN WORD: La sección [Spoken Word] debe contener el mensaje hablado proporcionado.
     5. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
@@ -313,7 +318,7 @@ INSTRUCCIONES:
       
       if (tokenError) throw new Error("Error al procesar el token.");
 
-      const cleanedStyle = await cleanStylePrompt(formData.moodAndStyle);
+      const cleanedStyle = await cleanStylePrompt(formData.moodAndStyle, formData.category);
       setFormData(prev => ({...prev, finalStylePrompt: cleanedStyle}));
 
       const isTestMode = false;
