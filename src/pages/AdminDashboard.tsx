@@ -247,7 +247,8 @@ export default function AdminDashboard() {
                         {expandedUser === u?.id && (
                           <tr className="bg-orange-50/20">
                             <td colSpan={4} className="p-8">
-                               <div className="flex gap-6 overflow-x-auto pb-6 cust                                   {(u?.songs || []).length > 0 ? u.songs.map((s: any) => (
+                                <div className="flex gap-6 overflow-x-auto pb-6 custom-scroll">
+                                   {(u?.songs || []).length > 0 ? u.songs.map((s: any) => (
                                     <div key={s?.id || Math.random()} className="min-w-[380px] bg-white p-8 rounded-[2.5rem] border border-orange-100 shadow-lg space-y-6 flex-shrink-0 relative">
                                        <div className="flex justify-between items-start">
                                           <Music size={24} className={s?.status === 'complete' ? 'text-emerald-500' : 'text-gray-300'} />
@@ -283,8 +284,7 @@ export default function AdminDashboard() {
                                        </div>
                                     </div>
                                   )) : <div className="w-full py-10 flex flex-col items-center justify-center text-gray-300 space-y-4"><AlertCircle size={40} className="opacity-20" /><p className="text-xs font-black uppercase tracking-widest italic">Aún no hay creaciones</p></div>}
-es</p></div>}
-                               </div>
+                                </div>
                             </td>
                           </tr>
                         )}
