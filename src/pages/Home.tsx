@@ -146,7 +146,7 @@ export default function Home() {
             </h1>
             
             <p className="text-xl text-gray-500 font-outfit max-w-lg leading-relaxed">
-              Convierte los recuerdos más profundos en una <span className="font-bold text-[#1A1A1A]">melodía eterna</span>. Un regalo que no solo se escucha, se siente para siempre.
+              Hay palabras que el tiempo se lleva, pero una canción se queda para siempre. Transformamos tus recuerdos más puros en una <span className="font-bold text-[#1A1A1A]">herencia sonora</span>. El regalo que les recordará, en cada nota, cuánto los amas.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-5 pt-4">
@@ -170,6 +170,66 @@ export default function Home() {
                <div className="absolute -bottom-8 -right-8 glass-premium p-8 rounded-3xl space-y-2 max-w-[280px]">
                   <p className="text-lg font-playfair italic">"Es el regalo más hermoso que me han dado jamás..."</p>
                </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* --- SPECIAL MOTHER'S DAY SECTION --- */}
+      <section className="py-24 px-6 relative overflow-hidden bg-gradient-to-b from-[#FFFBF7] to-[#FDF2F4]">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div className="order-2 lg:order-1 space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-pink-50 text-pink-500 rounded-full border border-pink-100 text-[10px] font-black uppercase tracking-widest">
+              Edición Especial 10 de Mayo
+            </div>
+            <h2 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
+              Este año, regálale <br />
+              <span className="italic text-[#FF2D55]">lágrimas de felicidad.</span>
+            </h2>
+            <p className="text-xl text-gray-500 font-outfit leading-relaxed">
+              Las flores se marchitan y los chocolates se acaban, pero una canción que narra su vida es un tesoro que ella guardará en su corazón para siempre.
+            </p>
+            <div className="space-y-4">
+              {[
+                "Composición personalizada basada en tus recuerdos",
+                "Voz profesional de estudio",
+                "Entrega digital premium lista para compartir",
+                "Opción de incluir su foto en la portada"
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 text-gray-600 font-outfit font-medium">
+                  <div className="w-5 h-5 rounded-full bg-pink-100 flex items-center justify-center">
+                    <CheckCircle2 size={12} className="text-pink-500" />
+                  </div>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <button 
+              onClick={() => navigate('/crear-cancion')}
+              className="w-full sm:w-auto px-10 py-5 bg-[#FF2D55] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:shadow-pink-200 transition-all flex items-center justify-center gap-3"
+            >
+              Sorprender a Mamá <Gift size={18} />
+            </button>
+          </div>
+          <div className="order-1 lg:order-2 relative">
+            <div className="absolute -inset-4 bg-pink-200/20 blur-3xl rounded-full"></div>
+            <div className="relative z-10">
+              <img 
+                src="/madre-emocionada.png" 
+                alt="Mamá escuchando su canción" 
+                className="w-full h-auto rounded-[3rem] shadow-2xl border-4 border-white"
+              />
+              <div className="absolute -bottom-6 -left-6 md:bottom-10 md:-left-10 glass-premium p-6 rounded-2xl shadow-xl animate-float">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex gap-0.5">
+                    {[1,2,3,4,5].map(s => <Star key={s} size={12} className="fill-[#FF6B00] text-[#FF6B00]" />)}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Testimonio Real</span>
+                </div>
+                <p className="text-sm font-playfair italic text-gray-600 max-w-[200px]">
+                  "Nunca imaginé que mi historia se escucharía tan hermosa. Gracias por este regalo."
+                </p>
+              </div>
             </div>
           </div>
         </div>
