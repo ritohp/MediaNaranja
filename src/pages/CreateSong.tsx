@@ -399,21 +399,17 @@ INSTRUCCIONES:
               clearInterval(pollInterval);
               try {
                 let finalUrl1 = song1.audioUrl;
-                const { data: treatmentData1 } = await supabase.functions.invoke('process-audio', {
-                  body: { originalUrl: song1.audioUrl, songId: newSong.id, taskId }
-                });
-                finalUrl1 = treatmentData1?.demoUrl || song1.audioUrl;
+                // TEMPORAL: Desactivamos Cloudinary demo_url porque está bloqueando los audios de Suno (Error 403 / 0:00).
+                // Confiamos en el límite de 60s del frontend temporalmente.
+                try {
+                  await supabase.functions.invoke('process-audio', {
+                    body: { originalUrl: song1.audioUrl, songId: newSong.id, taskId }
+                  });
+                } catch(e) {}
 
                 let finalUrl2 = null;
                 if (song2 && song2.audioUrl) {
-                  try {
-                    const { data: treatmentData2 } = await supabase.functions.invoke('process-audio', {
-                      body: { originalUrl: song2.audioUrl, songId: newSong.id, taskId }
-                    });
-                    finalUrl2 = treatmentData2?.demoUrl || song2.audioUrl;
-                  } catch (e) {
-                    finalUrl2 = song2.audioUrl;
-                  }
+                  finalUrl2 = song2.audioUrl;
                 }
 
                 setAudioUrl(finalUrl1);
