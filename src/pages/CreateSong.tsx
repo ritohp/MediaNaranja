@@ -332,7 +332,10 @@ INSTRUCCIONES:
         taskId = "mock-task-id-" + Date.now();
       } else {
         const uniqueTitle = 'Canción Personalizada ' + Math.floor(Date.now() / 1000);
-        taskId = await generateMusicTask(lyrics, cleanedStyle, uniqueTitle);
+        // Suno/Kie cachea basándose estrictamente en las letras (prompt) y estilo.
+        // Añadimos un tag final único para forzar una NUEVA generación en sus servidores.
+        const lyricsWithUniqueBypass = lyrics + `\n\n[Fade Out ${Math.floor(Date.now() / 1000)}]`;
+        taskId = await generateMusicTask(lyricsWithUniqueBypass, cleanedStyle, uniqueTitle);
       }
 
       let newSong;
@@ -449,7 +452,9 @@ INSTRUCCIONES:
           }
         }, isTestMode ? 1000 : 7000); 
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Critical Generation Error:", error);
+      alert(`Error crítico al generar: ${error?.message || "Desconocido"}. Revisa tu conexión.`);
       setGenerationStatus('error');
     }
   };

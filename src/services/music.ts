@@ -9,8 +9,14 @@ export async function generateMusicTask(lyrics: string, style: string, title: st
     if (error) throw error;
     if (data.error) throw new Error(data.error);
 
-    // Kie.ai anida el taskId dentro de un objeto 'data'
-    return data.data?.taskId || data.taskId; 
+    const taskId = data.data?.taskId || data.taskId; 
+    
+    if (!taskId) {
+      console.error("Kie AI Unexpected Response:", data);
+      throw new Error(`Kie Error: ${data.msg || data.message || JSON.stringify(data)}`);
+    }
+
+    return taskId;
   } catch (error: any) {
     console.error("Music Service Error (Task):", error);
     throw error;
