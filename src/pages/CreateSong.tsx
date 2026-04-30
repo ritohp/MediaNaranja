@@ -395,7 +395,11 @@ INSTRUCCIONES:
             const song1 = sunoData[0];
             const song2 = sunoData.length > 1 ? sunoData[1] : null;
 
-            if (song1.audioUrl && song1.audioUrl.trim() !== '') {
+            const isSong1Ready = song1?.audioUrl && song1.audioUrl.trim() !== '';
+            const isSong2Ready = song2?.audioUrl && song2.audioUrl.trim() !== '';
+
+            // Esperar a que ambas versiones estén listas para no perder la opción 2
+            if (isSong1Ready && (isSong2Ready || attempts > 20)) {
               clearInterval(pollInterval);
               try {
                 let finalUrl1 = song1.audioUrl;
