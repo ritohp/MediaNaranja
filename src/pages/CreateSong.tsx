@@ -399,14 +399,6 @@ INSTRUCCIONES:
               clearInterval(pollInterval);
               try {
                 let finalUrl1 = song1.audioUrl;
-                // TEMPORAL: Desactivamos Cloudinary demo_url porque está bloqueando los audios de Suno (Error 403 / 0:00).
-                // Confiamos en el límite de 60s del frontend temporalmente.
-                try {
-                  await supabase.functions.invoke('process-audio', {
-                    body: { originalUrl: song1.audioUrl, songId: newSong.id, taskId }
-                  });
-                } catch(e) {}
-
                 let finalUrl2 = null;
                 if (song2 && song2.audioUrl) {
                   finalUrl2 = song2.audioUrl;
@@ -427,8 +419,8 @@ INSTRUCCIONES:
                 };
 
                 await supabase.from('mn_songs').update({ 
-                  audio_url: song1.audioUrl,
-                  demo_url: finalUrl1,
+                  audio_url: finalUrl1,
+                  demo_url: null,
                   suno_id: song1.id,
                   form_data: updatedFormData,
                   status: 'completed'
