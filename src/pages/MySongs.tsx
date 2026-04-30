@@ -356,7 +356,8 @@ export default function MySongs() {
                     const draft = {
                       ...song.form_data,
                       lyrics: song.lyrics,
-                      step: 2 // Saltar directamente al taller de letra
+                      step: 2, // Saltar directamente al taller de letra
+                      currentSongId: song.status === 'draft' ? song.id : null // Solo sobreescribir si es borrador
                     };
                     localStorage.setItem('mn_draft_song', JSON.stringify(draft));
                     window.location.href = '/crear-cancion';

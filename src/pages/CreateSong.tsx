@@ -335,8 +335,9 @@ INSTRUCCIONES:
         taskId = await generateMusicTask(lyrics, cleanedStyle, uniqueTitle);
       }
 
-      const { data: newSong } = await supabase.from('mn_songs')
-        .insert([{
+      let newSong;
+      try {
+        const songData = {
           user_id: user?.id,
           title: formData.childName || formData.nombreDestinatario || 'Canción Personalizada',
           lyrics: lyrics,
@@ -344,9 +345,27 @@ INSTRUCCIONES:
           task_id: taskId,
           style_prompt: cleanedStyle,
           form_data: { ...formData, finalStylePrompt: cleanedStyle }
-        }])
-        .select()
-        .single();
+        };
+
+        if (currentSongId) {
+          const { data } = await supabase.from('mn_songs')
+            .update(songData)
+            .eq('id', currentSongId)
+            .select()
+            .single();
+          newSong = data;
+        } else {
+          const { data } = await supabase.from('mn_songs')
+            .insert([songData])
+            .select()
+            .single();
+          newSong = data;
+        }
+      } catch (err) {
+        console.error("Error saving song:", err);
+        setGenerationStatus('error');
+        return;
+      }
       
       if (newSong) {
         let attempts = 0;
