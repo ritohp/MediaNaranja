@@ -232,7 +232,17 @@ export default function AdminDashboard() {
                     {filteredData.map((u) => (
                       <React.Fragment key={u?.id || Math.random()}>
                         <tr onClick={() => u?.id && setExpandedUser(expandedUser === u.id ? null : u.id)} className="hover:bg-gray-50/50 cursor-pointer transition-colors">
-                          <td className="py-6 px-8 font-black text-sm">{u?.email || 'N/A'}</td>
+                          <td className="py-6 px-8 font-black text-sm">
+                            <div className="flex items-center gap-2">
+                              <span>{u?.email || 'N/A'}</span>
+                              {(u?.songs || []).some((s: any) => s?.form_data?.audio_issue_reported) && (
+                                <span className="text-[9px] font-bold uppercase bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse shadow-sm flex items-center gap-1 whitespace-nowrap">
+                                  ⚠️ REVISAR AUDIO
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
                           <td className="py-6 px-8"><div className="flex items-center gap-2"><Coins size={14} className="text-amber-500" /> <span className="font-bold">{u?.tokens_balance ?? 0}</span></div></td>
                           <td className="py-6 px-8"><span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${u?.statusColor || 'bg-gray-100'}`}>{u?.funnelStatus || 'Unknown'}</span></td>
                           <td className="py-6 px-8 text-right">
