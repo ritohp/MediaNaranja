@@ -325,8 +325,17 @@ export default function MySongs() {
                     </div>
                   ) : (
                     <div className="py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-3">
-                      <Clock className="animate-pulse" />
-                      <p className="text-[10px] font-bold uppercase tracking-widest italic">Componiendo tu historia...</p>
+                      {song.status === 'draft' ? (
+                        <>
+                          <RefreshCw className="text-gray-300" />
+                          <p className="text-[10px] font-bold uppercase tracking-widest italic">Borrador Guardado</p>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="animate-pulse" />
+                          <p className="text-[10px] font-bold uppercase tracking-widest italic">Componiendo tu historia...</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

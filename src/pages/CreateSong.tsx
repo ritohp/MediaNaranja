@@ -331,7 +331,8 @@ INSTRUCCIONES:
       if (isTestMode) {
         taskId = "mock-task-id-" + Date.now();
       } else {
-        taskId = await generateMusicTask(lyrics, cleanedStyle, 'Canción Original Media Naranja');
+        const uniqueTitle = 'Canción Personalizada ' + Math.floor(Date.now() / 1000);
+        taskId = await generateMusicTask(lyrics, cleanedStyle, uniqueTitle);
       }
 
       const { data: newSong } = await supabase.from('mn_songs')
@@ -372,7 +373,7 @@ INSTRUCCIONES:
             const song1 = sunoData[0];
             const song2 = sunoData.length > 1 ? sunoData[1] : null;
 
-            if (song1.audioUrl) {
+            if (song1.audioUrl && song1.audioUrl.trim() !== '') {
               clearInterval(pollInterval);
               try {
                 let finalUrl1 = song1.audioUrl;
