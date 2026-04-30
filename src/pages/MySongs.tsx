@@ -117,6 +117,20 @@ export default function MySongs() {
       </div>
     );
   }
+  const reportAudioIssue = async (songId: string) => {
+    try {
+      const song = songs.find(s => s.id === songId);
+      if (!song) return;
+      
+      const newFormData = { ...song.form_data, audio_issue_reported: true };
+      await supabase.from('mn_songs').update({ form_data: newFormData }).eq('id', songId);
+      alert('Hemos recibido tu reporte. Nuestro equipo técnico revisará el audio y nos pondremos en contacto contigo a la brevedad.');
+      if (user) fetchSongs(user.id);
+    } catch (e) {
+      console.error(e);
+      alert('Error al enviar el reporte. Por favor intenta de nuevo.');
+    }
+  };
 
   if (!user) {
     return (
@@ -271,16 +285,19 @@ export default function MySongs() {
                             Tu navegador no soporta el reproductor de audio.
                           </audio>
 
-                          {song.is_paid && (
-                            <div className="flex justify-center mb-4">
-                              <button 
-                                onClick={() => window.open((!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || song.demo_url) : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url), '_blank')}
-                                className="text-[9px] font-black uppercase text-naranja-500 hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
-                              >
-                                <ExternalLink size={10} /> Abrir archivo de audio completo
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex justify-center mb-4">
+                            <button 
+                              onClick={() => reportAudioIssue(song.id)}
+                              disabled={song.form_data?.audio_issue_reported}
+                              className={`text-[9px] font-black uppercase flex items-center gap-1 transition-opacity ${song.form_data?.audio_issue_reported ? 'text-amber-500 opacity-100' : 'text-naranja-500 opacity-60 hover:opacity-100 hover:underline'}`}
+                            >
+                              {song.form_data?.audio_issue_reported ? (
+                                <><Clock size={10} /> Reporte enviado - Te contactaremos</>
+                              ) : (
+                                <><ExternalLink size={10} /> ¿Problemas con el audio? Repórtalo aquí</>
+                              )}
+                            </button>
+                          </div>
                           
                           <div className="flex items-center justify-between">
                             {!song.is_paid ? (

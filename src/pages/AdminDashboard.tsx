@@ -253,6 +253,11 @@ export default function AdminDashboard() {
                                        <div className="flex justify-between items-start">
                                           <Music size={24} className={s?.status === 'complete' ? 'text-emerald-500' : 'text-gray-300'} />
                                           <div className="flex flex-col items-end gap-2">
+                                             {s?.form_data?.audio_issue_reported && (
+                                                <span className="text-[10px] font-bold uppercase bg-red-500 text-white px-3 py-1 rounded-full animate-pulse shadow-md flex items-center gap-1">
+                                                  ⚠️ AUDIO REPORTADO
+                                                </span>
+                                             )}
                                              <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${s?.status === 'complete' ? 'bg-pink-50 text-pink-500' : 'bg-gray-50'}`}>{s?.status || 'Draft'}</span>
                                              <button onClick={() => s?.id && handleResetSongStatus(s.id)} className="text-[8px] font-black uppercase text-naranja-400 hover:text-naranja-600 transition-colors flex items-center gap-1">
                                                 {isProcessing === s?.id ? <Loader2 size={10} className="animate-spin" /> : <RotateCcw size={10} />} Regresar a Edición
@@ -309,7 +314,12 @@ export default function AdminDashboard() {
                         <p className="text-[9px] font-black uppercase text-naranja-500">{s.userEmail}</p>
                         <span className="text-[8px] text-gray-300">{new Date(s.created_at).toLocaleString()}</span>
                       </div>
-                      <h4 className="font-bold text-sm truncate">{s.title || 'Sin Título'}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-sm truncate">{s.title || 'Sin Título'}</h4>
+                        {s?.form_data?.audio_issue_reported && (
+                          <span className="text-[8px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse" title="El usuario reportó que el audio no se escucha o está mal">⚠️</span>
+                        )}
+                      </div>
                       <audio src={s.demo_url || s.audio_url} controls referrerPolicy="no-referrer" className="w-full h-8" />
                       <button onClick={() => window.open(s.demo_url || s.audio_url, '_blank')} className="text-[8px] text-naranja-500 underline mt-1">Abrir Audio</button>
                    </div>
