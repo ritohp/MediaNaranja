@@ -271,14 +271,16 @@ export default function MySongs() {
                             Tu navegador no soporta el reproductor de audio.
                           </audio>
 
-                          <div className="flex justify-center mb-4">
-                            <button 
-                              onClick={() => window.open((!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || song.demo_url) : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url), '_blank')}
-                              className="text-[9px] font-black uppercase text-naranja-500 hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
-                            >
-                              <ExternalLink size={10} /> ¿Problemas con el audio? Clic aquí
-                            </button>
-                          </div>
+                          {song.is_paid && (
+                            <div className="flex justify-center mb-4">
+                              <button 
+                                onClick={() => window.open((!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || song.demo_url) : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url), '_blank')}
+                                className="text-[9px] font-black uppercase text-naranja-500 hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
+                              >
+                                <ExternalLink size={10} /> Abrir archivo de audio completo
+                              </button>
+                            </div>
+                          )}
                           
                           <div className="flex items-center justify-between">
                             {!song.is_paid ? (
