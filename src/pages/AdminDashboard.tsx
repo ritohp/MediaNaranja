@@ -32,7 +32,9 @@ export default function AdminDashboard() {
     totalSongs: 0,
     conversionRate: 0,
     revenue: 0,
-    activeCreations: 0
+    activeCreations: 0,
+    uniqueVisitors: 0,
+    pageViews: 0
   });
 
   const [masterData, setMasterData] = useState<any[]>([]);
@@ -69,18 +71,26 @@ export default function AdminDashboard() {
       const totalU = profiles?.length || 0;
       const totalS = songs?.length || 0;
       const activeS = (songs || []).filter(s => s.status !== 'complete').length || 0;
-      const conv = totalU > 0 ? (totalS / totalU) * 100 : 0;
       
       const { data: payments } = await supabase.from('mn_payments').select('*');
-      
       const realRevenue = (payments || []).filter(p => p.status === 'completed').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+      // Analytics Fetching
+      const { data: analytics } = await supabase.from('mn_analytics').select('visitor_id');
+      const uniqueVisitors = new Set((analytics || []).map(a => a.visitor_id)).size;
+      const pageViews = (analytics || []).length;
+      
+      // Nueva métrica de conversión más realista: (Registrados / Visitantes Únicos)
+      const conv = uniqueVisitors > 0 ? (totalU / uniqueVisitors) * 100 : 0;
 
       setStats({
         totalUsers: totalU,
         totalSongs: totalS,
         conversionRate: parseFloat(conv.toFixed(1)),
         revenue: realRevenue,
-        activeCreations: activeS
+        activeCreations: activeS,
+        uniqueVisitors,
+        pageViews
       });
 
     } catch (error) {
@@ -188,17 +198,19 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-8">
         
         {activeTab === 'panel' && (
-          <div className="animate-in fade-in duration-500 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="animate-in fade-in duration-500 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
              {[
-               { label: 'Usuarios', value: stats.totalUsers, icon: <Users /> },
-               { label: 'Historias', value: stats.totalSongs, icon: <Music /> },
+               { label: 'Visitantes Únicos', value: stats.uniqueVisitors, icon: <Search /> },
+               { label: 'Vistas de Página', value: stats.pageViews, icon: <Play /> },
+               { label: 'Conversión (Visitante -> Reg.)', value: `${stats.conversionRate}%`, icon: <TrendingUp /> },
+               { label: 'Usuarios Registrados', value: stats.totalUsers, icon: <Users /> },
+               { label: 'Historias Creadas', value: stats.totalSongs, icon: <Music /> },
                { label: 'Ingresos MXN', value: `$${stats.revenue.toLocaleString()}`, icon: <DollarSign /> },
-               { label: 'Conversión', value: `${stats.conversionRate}%`, icon: <TrendingUp /> }
              ].map((m, i) => (
-               <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-orange-50 shadow-sm">
+               <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-orange-50 shadow-sm hover:shadow-md transition-all">
                   <div className="text-naranja-500 mb-4 opacity-50">{m.icon}</div>
-                  <p className="text-[10px] font-black uppercase text-gray-300 mb-1">{m.label}</p>
-                  <p className="text-3xl font-black font-outfit">{m.value}</p>
+                  <p className="text-[10px] font-black uppercase text-gray-400 mb-1 tracking-widest">{m.label}</p>
+                  <p className="text-4xl font-black font-outfit text-blush-800">{m.value}</p>
                </div>
              ))}
           </div>

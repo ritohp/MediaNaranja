@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import AnalyticsTracker from './components/AnalyticsTracker';
 import Home from './pages/Home';
 import CreateSong from './pages/CreateSong';
 import MySongs from './pages/MySongs';
@@ -11,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 function App() {
   return (
     <Router>
+      <AnalyticsTracker />
       <div className="min-h-screen relative overflow-hidden bg-[#FDF7F8]">
         <Header />
         
