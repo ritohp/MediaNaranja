@@ -38,6 +38,7 @@ export default function AdminDashboard() {
   });
 
   const [masterData, setMasterData] = useState<any[]>([]);
+  const [analyticsData, setAnalyticsData] = useState<any[]>([]);
 
   const fetchData = async () => {
     try {
@@ -76,9 +77,10 @@ export default function AdminDashboard() {
       const realRevenue = (payments || []).filter(p => p.status === 'completed').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
       // Analytics Fetching
-      const { data: analytics } = await supabase.from('mn_analytics').select('visitor_id');
+      const { data: analytics } = await supabase.from('mn_analytics').select('*');
+      setAnalyticsData(analytics || []);
       const uniqueVisitors = new Set((analytics || []).map(a => a.visitor_id)).size;
-      const pageViews = (analytics || []).length;
+      const pageViews = (analytics || []).filter(a => a.event_type === 'pageview').length;
       
       // Nueva métrica de conversión más realista: (Registrados / Visitantes Únicos)
       const conv = uniqueVisitors > 0 ? (totalU / uniqueVisitors) * 100 : 0;
@@ -188,6 +190,7 @@ export default function AdminDashboard() {
           <div className="text-2xl font-black text-[#FF6B00] font-outfit">MN<span className="text-[#FF2D55]">ADMIN</span></div>
           <div className="hidden md:flex gap-8">
               <button onClick={() => setActiveTab('panel')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'panel' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Panel</button>
+              <button onClick={() => setActiveTab('trafico')} className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${activeTab === 'trafico' ? 'text-indigo-500 border-b-2 border-indigo-500' : 'text-gray-300'}`}>Inteligencia</button>
               <button onClick={() => setActiveTab('seguimiento')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'seguimiento' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Seguimiento</button>
               <button onClick={() => setActiveTab('recientes')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'recientes' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Recientes</button>
               <button onClick={() => setActiveTab('marketing')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'marketing' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Marketing</button>
@@ -213,6 +216,108 @@ export default function AdminDashboard() {
                   <p className="text-4xl font-black font-outfit text-blush-800">{m.value}</p>
                </div>
              ))}
+          </div>
+        )}
+
+        {activeTab === 'trafico' && (
+          <div className="animate-in slide-in-from-right-8 duration-500 space-y-8">
+            <header className="flex justify-between items-center gap-6">
+              <div>
+                <h2 className="text-3xl font-black font-outfit text-indigo-900">Inteligencia de Tráfico</h2>
+                <p className="text-sm text-indigo-400 font-bold uppercase tracking-widest mt-1">Monitor "Modo Espía" Activo</p>
+              </div>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               {/* Orígenes */}
+               <div className="bg-white p-6 rounded-[2rem] border border-indigo-50 shadow-sm">
+                 <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-4">Top Referidores</h3>
+                 <div className="space-y-3">
+                   {Object.entries(
+                     analyticsData.filter(a => a.event_type === 'pageview').reduce((acc, a) => {
+                       const ref = a.referrer === 'Direct' ? 'Tráfico Directo' : new URL(a.referrer).hostname;
+                       acc[ref] = (acc[ref] || 0) + 1;
+                       return acc;
+                     }, {} as any)
+                   ).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([ref, count]: any) => (
+                     <div key={ref} className="flex justify-between items-center text-sm">
+                       <span className="font-bold text-gray-700 truncate">{ref}</span>
+                       <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-black text-xs">{count}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+
+               {/* Dispositivos */}
+               <div className="bg-white p-6 rounded-[2rem] border border-indigo-50 shadow-sm">
+                 <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-4">Dispositivos y SO</h3>
+                 <div className="space-y-3">
+                   {Object.entries(
+                     analyticsData.filter(a => a.event_type === 'pageview').reduce((acc, a) => {
+                       const dev = `${a.device_type} - ${a.os}`;
+                       acc[dev] = (acc[dev] || 0) + 1;
+                       return acc;
+                     }, {} as any)
+                   ).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([dev, count]: any) => (
+                     <div key={dev} className="flex justify-between items-center text-sm">
+                       <span className="font-bold text-gray-700 truncate">{dev}</span>
+                       <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-black text-xs">{count}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+
+               {/* Clics Clave */}
+               <div className="bg-white p-6 rounded-[2rem] border border-indigo-50 shadow-sm">
+                 <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-4">Interacciones (Embudos)</h3>
+                 <div className="space-y-3">
+                   {Object.entries(
+                     analyticsData.filter(a => a.event_type === 'click').reduce((acc, a) => {
+                       const btn = a.event_details?.text || 'Clic Desconocido';
+                       acc[btn] = (acc[btn] || 0) + 1;
+                       return acc;
+                     }, {} as any)
+                   ).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([btn, count]: any) => (
+                     <div key={btn} className="flex justify-between items-center text-sm">
+                       <span className="font-bold text-gray-700 truncate max-w-[150px]">{btn}</span>
+                       <span className="bg-naranja-50 text-naranja-600 px-3 py-1 rounded-full font-black text-xs">{count}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+            </div>
+
+            <div className="bg-white rounded-[2rem] border border-indigo-50 shadow-sm overflow-hidden p-6">
+               <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-6">Últimas 20 Acciones Detectadas</h3>
+               <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-[9px] font-black uppercase text-gray-400 border-b border-gray-50">
+                      <th className="py-3 px-4">Hora</th>
+                      <th className="py-3 px-4">Usuario/ID</th>
+                      <th className="py-3 px-4">Tipo</th>
+                      <th className="py-3 px-4">Detalle / Ruta</th>
+                      <th className="py-3 px-4">Navegador</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {analyticsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 20).map(a => (
+                      <tr key={a.id} className="text-xs hover:bg-gray-50/50">
+                        <td className="py-3 px-4 text-gray-500 font-medium">{new Date(a.created_at).toLocaleTimeString()}</td>
+                        <td className="py-3 px-4 text-indigo-600 font-mono text-[10px]">{a.visitor_id?.substring(0,8)}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase ${a.event_type === 'click' ? 'bg-naranja-50 text-naranja-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                            {a.event_type}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-bold text-gray-700 truncate max-w-[200px]">
+                          {a.event_type === 'click' ? a.event_details?.text : a.path}
+                        </td>
+                        <td className="py-3 px-4 text-gray-400">{a.browser} en {a.device_type}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+               </table>
+            </div>
           </div>
         )}
 
