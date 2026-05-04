@@ -235,7 +235,14 @@ export default function AdminDashboard() {
                  <div className="space-y-3">
                    {Object.entries(
                      analyticsData.filter(a => a.event_type === 'pageview').reduce((acc, a) => {
-                       const ref = a.referrer === 'Direct' ? 'Tráfico Directo' : new URL(a.referrer).hostname;
+                       let ref = 'Tráfico Directo';
+                       if (a.referrer && a.referrer !== 'Direct') {
+                         try {
+                           ref = new URL(a.referrer).hostname;
+                         } catch (e) {
+                           ref = String(a.referrer).substring(0, 30);
+                         }
+                       }
                        acc[ref] = (acc[ref] || 0) + 1;
                        return acc;
                      }, {} as any)
