@@ -42,14 +42,14 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const { data: profiles } = await supabase.from('mn_profiles').select('*').order('created_at', { ascending: false });
+      const { data: profiles } = await supabase.rpc('get_admin_profiles_v2');
       const { data: songs } = await supabase.from('mn_songs').select('*').order('created_at', { ascending: false });
 
       const unified = (profiles || []).map((profile: any) => {
         const userSongs = (songs || []).filter(s => s.user_id === profile.id);
         
-        let funnelStatus = '🔖 Registro';
-        let statusColor = 'bg-gray-100 text-gray-500';
+        let funnelStatus = profile.email_confirmed ? '🔖 Registro' : '📩 SIN CONFIRMAR';
+        let statusColor = profile.email_confirmed ? 'bg-gray-100 text-gray-500' : 'bg-red-50 text-red-500 border border-red-100';
         
         if (userSongs.some(s => s.status === 'complete')) {
           funnelStatus = '✅ Éxito';
@@ -299,7 +299,8 @@ export default function AdminDashboard() {
                <table className="w-full text-left">
                   <thead>
                     <tr className="text-[9px] font-black uppercase text-gray-400 border-b border-gray-50">
-                      <th className="py-3 px-4">Hora</th>
+                      <th className="py-3 px-4">Fecha/Hora</th>
+                      <th className="py-3 px-4">Duración</th>
                       <th className="py-3 px-4">Usuario/ID</th>
                       <th className="py-3 px-4">Tipo</th>
                       <th className="py-3 px-4">Detalle / Ruta</th>
@@ -307,9 +308,20 @@ export default function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {analyticsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 20).map(a => (
+                    {analyticsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 20).map(a => {
+                      const sessionEvents = analyticsData.filter(ev => ev.session_id === a.session_id);
+                      const sessionStart = Math.min(...sessionEvents.map(ev => new Date(ev.created_at).getTime()));
+                      const sessionEnd = Math.max(...sessionEvents.map(ev => new Date(ev.created_at).getTime()));
+                      const durationSecs = Math.floor((sessionEnd - sessionStart) / 1000);
+                      const durationText = durationSecs > 60 ? `${Math.floor(durationSecs / 60)}m ${durationSecs % 60}s` : `${durationSecs}s`;
+
+                      return (
                       <tr key={a.id} className="text-xs hover:bg-gray-50/50">
-                        <td className="py-3 px-4 text-gray-500 font-medium">{new Date(a.created_at).toLocaleTimeString()}</td>
+                        <td className="py-3 px-4 text-gray-500 font-medium whitespace-nowrap">
+                          {new Date(a.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}<br/>
+                          <span className="text-[10px] opacity-70">{new Date(a.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[10px] text-gray-400">{durationText}</td>
                         <td className="py-3 px-4 text-indigo-600 font-mono text-[10px]">{a.visitor_id?.substring(0,8)}</td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase ${a.event_type === 'click' ? 'bg-naranja-50 text-naranja-600' : 'bg-emerald-50 text-emerald-600'}`}>
@@ -321,7 +333,8 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-4 text-gray-400">{a.browser} en {a.device_type}</td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                </table>
             </div>

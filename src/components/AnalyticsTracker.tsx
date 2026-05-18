@@ -26,7 +26,14 @@ export default function AnalyticsTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname.startsWith('/admin')) return;
+    // Truco para excluir dispositivos de los administradores
+    if (location.search.includes('ignore_me=true')) {
+      localStorage.setItem('mn_ignore_analytics', 'true');
+    }
+
+    if (location.pathname.startsWith('/admin') || localStorage.getItem('mn_ignore_analytics') === 'true') {
+      return;
+    }
 
     let visitorId = localStorage.getItem('mn_visitor_id');
     if (!visitorId) {
