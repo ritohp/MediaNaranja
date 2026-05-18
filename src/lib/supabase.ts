@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Forzado manualmente para saltar el reinicio del servidor
-const supabaseUrl = 'https://hkakmdpqbbsstacpgpqe.supabase.co';
-const supabaseAnonKey = 'sb_publishable_BI9Kc4Ik9F6ywN4ZjV6xiQ_y0iE4tbb';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
