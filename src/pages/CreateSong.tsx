@@ -36,7 +36,10 @@ export default function CreateSong() {
   const [detailsPrompt, setDetailsPrompt] = useState({
     title: "Nombres, lugares y la historia",
     subtitle: "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que debemos mencionar en la canción?",
-    placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+    placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos...",
+    familyTitle: "Familiares y personas importantes",
+    familySubtitle: "¿Cómo se llaman las personas que giran a su alrededor? (Opcional pero recomendado)",
+    familyPlaceholder: "Ej: Su pareja, sus hijos o sus mejores amigos..."
   });
   const [aiQuestions, setAiQuestions] = useState<string[]>([]);
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(parsedDraft?.interviewAnswers || {});
@@ -50,6 +53,7 @@ export default function CreateSong() {
       birthDate: parsed.birthDate || '',
       mensajeHablado: parsed.mensajeHablado || '',
       specificDetails: parsed.specificDetails || '',
+      familyNames: parsed.familyNames || '',
       moodAndStyle: parsed.moodAndStyle || '',
       finalStylePrompt: parsed.finalStylePrompt || ''
     };
@@ -129,6 +133,9 @@ export default function CreateSong() {
     if (data.specificDetails) {
       contextSummary += `Detalles Específicos Adicionales: ${data.specificDetails}\n`;
     }
+    if (data.familyNames) {
+      contextSummary += `Personas importantes (esposa, hijos, etc.): ${data.familyNames}\n`;
+    }
     contextSummary += `\nHechos y Detalles Extraídos de la Entrevista:\n`;
     Object.values(answers).forEach((a, index) => {
       contextSummary += `- Detalle ${index + 1}: ${a}\n`;
@@ -187,7 +194,10 @@ INSTRUCCIONES:
       setDetailsPrompt({
         title: prompt.title || "Nombres, lugares y la historia",
         subtitle: prompt.subtitle || "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que debemos mencionar?",
-        placeholder: prompt.placeholder || "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+        placeholder: prompt.placeholder || "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos...",
+        familyTitle: prompt.familyTitle || "Familiares y personas importantes",
+        familySubtitle: prompt.familySubtitle || "¿Cómo se llaman las personas que giran a su alrededor? (Opcional pero recomendado)",
+        familyPlaceholder: prompt.familyPlaceholder || "Ej: Su pareja, sus hijos o sus mejores amigos..."
       });
     } catch (err) {
       console.error("Error al generar detalle base", err);
@@ -272,7 +282,7 @@ INSTRUCCIONES:
       window.scrollTo(0, 0);
     } catch (error: any) {
       console.error("DEBUG AI ERROR:", error);
-      alert(`Error llamando a la IA: ${error.message || "Error desconocido"}. Revisa tu internet o la API Key.`);
+      alert(`Error llamando a Naranjín: ${error.message || "Error desconocido"}. Revisa tu conexión.`);
     } finally {
       setIsGenerating(false);
     }
@@ -505,7 +515,7 @@ INSTRUCCIONES:
             <div className="text-center mb-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-naranja-50 text-naranja-500 mb-6 border border-naranja-100"><Music size={32} /></div>
               <h1 className="text-4xl md:text-5xl mb-4 font-serif text-blush-800">Crea tu <span className="text-naranja-500 italic">Obra Maestra</span></h1>
-              <p className="text-ink-600/70 text-lg font-light max-w-2xl mx-auto">Cuéntanos tu historia y deja que nuestra IA diseñe la entrevista perfecta para tu canción.</p>
+              <p className="text-ink-600/70 text-lg font-light max-w-2xl mx-auto">Cuéntanos tu historia y deja que Naranjín, nuestro compositor virtual, diseñe la entrevista perfecta para tu canción.</p>
             </div>
 
             {formPhase === 'spark' ? (
@@ -596,6 +606,19 @@ INSTRUCCIONES:
                       required
                     ></textarea>
                   </div>
+
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> {detailsPrompt.familyTitle}</h3>
+                    <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.familySubtitle}</p>
+                    <input 
+                      type="text"
+                      name="familyNames"
+                      value={formData.familyNames || ''}
+                      onChange={handleChange}
+                      placeholder={detailsPrompt.familyPlaceholder}
+                      className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all"
+                    />
+                  </div>
                   
                   <div>
                     <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Music className="text-naranja-500" /> Género, tono y emoción</h3>
@@ -622,7 +645,7 @@ INSTRUCCIONES:
                 
                 <div className="text-center pb-6">
                   <h2 className="text-3xl font-serif text-blush-800">El Corazón de tu Historia</h2>
-                  <p className="text-ink-600/70 mt-2">La IA ha preparado estas 6 preguntas clave para profundizar en tus sentimientos.</p>
+                  <p className="text-ink-600/70 mt-2">Naranjín ha preparado estas 6 preguntas clave para profundizar en tus sentimientos.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
@@ -695,7 +718,7 @@ INSTRUCCIONES:
               <div className="space-y-6">
                 <div className="bg-naranja-50/50 p-6 rounded-3xl border border-naranja-100">
                   <h4 className="font-bold text-naranja-700 mb-2 flex items-center gap-2 italic"><Sparkles size={16} /> ¿Algún ajuste?</h4>
-                  <p className="text-xs text-naranja-600/70 mb-4">Dile a la IA qué mejorar (ej: "Más intensidad", "Añade nuestro aniversario").</p>
+                  <p className="text-xs text-naranja-600/70 mb-4">Dile a Naranjín qué mejorar (ej: "Más intensidad", "Añade nuestro aniversario").</p>
                   <textarea 
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
@@ -703,7 +726,7 @@ INSTRUCCIONES:
                     className="w-full bg-white border border-naranja-100 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-naranja-400 h-28"
                   ></textarea>
                   <button onClick={handleRewrite} disabled={isGenerating || !feedback.trim()} className="w-full mt-4 py-3 bg-white border-2 border-naranja-500 text-naranja-600 rounded-xl font-bold text-xs hover:bg-naranja-500 hover:text-white transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                    {isGenerating ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />} REESCRIBIR CON IA
+                    {isGenerating ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />} REESCRIBIR CON NARANJÍN
                   </button>
                 </div>
 

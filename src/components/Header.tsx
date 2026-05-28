@@ -9,7 +9,7 @@ export default function Header() {
   const [tokens, setTokens] = useState<number | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'recovery'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
@@ -41,6 +41,10 @@ export default function Header() {
       } else {
         setTokens(null);
       }
+      if (_event === 'PASSWORD_RECOVERY') {
+        setAuthMode('recovery');
+        setIsLoginModalOpen(true);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -70,11 +74,48 @@ export default function Header() {
           alert("¡Cuenta creada con éxito! Bienvenido a Media Naranja.");
         } else {
           setAuthMode('login');
-          alert("¡Cuenta creada! Por favor, revisa tu correo electrónico para confirmar tu cuenta y poder entrar.");
+          alert("⚠️ ¡ATENCIÓN! Tu cuenta NO está activada.\n\nSi no confirmas tu correo en los próximos 15 minutos, perderás el acceso al estudio y no podrás generar tu canción.");
         }
       }
     } catch (err: any) {
       setAuthError(err.message || "Ocurrió un error");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      setAuthError("Por favor, ingresa tu correo electrónico arriba primero.");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (error) throw error;
+      alert("Te hemos enviado un enlace de recuperación. Revisa tu correo electrónico.");
+    } catch (err: any) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      alert("¡Contraseña actualizada con éxito! Ya puedes entrar.");
+      setAuthMode('login');
+      setIsLoginModalOpen(false);
+    } catch (err: any) {
+      setAuthError(err.message);
     } finally {
       setAuthLoading(false);
     }
@@ -257,29 +298,44 @@ export default function Header() {
                   <UserIcon size={32} />
                 </div>
                 <h2 className="text-3xl font-serif text-blush-800">
-                  {authMode === 'login' ? '¡Qué bueno verte!' : 'Únete a la magia'}
+                  {authMode === 'login' ? '¡Qué bueno verte!' : authMode === 'signup' ? 'Únete a la magia' : 'Nueva Contraseña'}
                 </h2>
                 <p className="text-ink-600/70 text-sm mt-2">
                   {authMode === 'login' 
                     ? 'Entra para ver tus canciones y recuerdos.' 
-                    : 'Crea tu cuenta para empezar a componer.'}
+                    : authMode === 'signup' 
+                    ? 'Crea tu cuenta para empezar a componer.'
+                    : 'Ingresa tu nueva contraseña para recuperar el acceso.'}
                 </p>
               </div>
 
-              <form onSubmit={handleAuth} className="space-y-4">
+              <form onSubmit={authMode === 'recovery' ? handleUpdatePassword : handleAuth} className="space-y-4">
+                {authMode !== 'recovery' && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-blush-400 ml-1">Correo Electrónico</label>
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tu@email.com"
+                      className="w-full px-5 py-4 bg-blush-50 border border-blush-100 rounded-2xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all"
+                      required
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-blush-400 ml-1">Correo Electrónico</label>
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
-                    className="w-full px-5 py-4 bg-blush-50 border border-blush-100 rounded-2xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-blush-400 ml-1">Contraseña</label>
+                  <div className="flex justify-between items-center ml-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-blush-400">Contraseña</label>
+                    {authMode === 'login' && (
+                      <button 
+                        type="button" 
+                        onClick={handleResetPassword}
+                        className="text-[10px] font-bold text-naranja-500 hover:text-naranja-600 transition-colors uppercase tracking-widest"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    )}
+                  </div>
                   <input 
                     type="password" 
                     value={password}
@@ -288,6 +344,11 @@ export default function Header() {
                     className="w-full px-5 py-4 bg-blush-50 border border-blush-100 rounded-2xl outline-none focus:ring-2 focus:ring-naranja-400 transition-all"
                     required
                   />
+                  {authMode === 'signup' && (
+                    <p className="text-[10px] font-bold text-naranja-600/80 mt-2 bg-naranja-50 p-2 rounded-lg border border-naranja-100">
+                      ⚠️ ¡Atención! Si no confirmas tu correo una vez registrado, perderás tu sesión de estudio.
+                    </p>
+                  )}
                 </div>
 
                 {authError && (
@@ -301,23 +362,25 @@ export default function Header() {
                   disabled={authLoading}
                   className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:brightness-110 transition-all disabled:opacity-50"
                 >
-                  {authLoading ? 'PROCESANDO...' : (authMode === 'login' ? 'ENTRAR' : 'CREAR CUENTA')}
+                  {authLoading ? 'PROCESANDO...' : (authMode === 'login' ? 'ENTRAR' : authMode === 'signup' ? 'CREAR CUENTA' : 'GUARDAR CONTRASEÑA')}
                 </button>
               </form>
 
-              <div className="mt-8 text-center">
-                <button 
-                  onClick={() => {
-                    setAuthMode(authMode === 'login' ? 'signup' : 'login');
-                    setAuthError(null);
-                  }}
-                  className="text-xs font-bold text-blush-400 uppercase tracking-widest hover:text-naranja-500 transition-colors"
-                >
-                  {authMode === 'login' 
-                    ? '¿No tienes cuenta? Regístrate aquí' 
-                    : '¿Ya tienes cuenta? Inicia sesión'}
-                </button>
-              </div>
+              {authMode !== 'recovery' && (
+                <div className="mt-8 text-center">
+                  <button 
+                    onClick={() => {
+                      setAuthMode(authMode === 'login' ? 'signup' : 'login');
+                      setAuthError(null);
+                    }}
+                    className="text-xs font-bold text-blush-400 uppercase tracking-widest hover:text-naranja-500 transition-colors"
+                  >
+                    {authMode === 'login' 
+                      ? '¿No tienes cuenta? Regístrate aquí' 
+                      : '¿Ya tienes cuenta? Inicia sesión'}
+                  </button>
+                </div>
+              )}
             </div>
             
             <button 

@@ -102,17 +102,25 @@ export async function cleanStylePrompt(rawStyle: string, category?: string): Pro
   }
 }
 
-export async function generateDetailsPrompt(context: string): Promise<{title: string, subtitle: string, placeholder: string}> {
+export async function generateDetailsPrompt(context: string): Promise<{
+  title: string, subtitle: string, placeholder: string,
+  familyTitle: string, familySubtitle: string, familyPlaceholder: string
+}> {
   try {
     const prompt = `Basado en la siguiente idea inicial para una canción: "${context}"
     
-    Genera un título, un subtítulo descriptivo y un texto de ejemplo (placeholder) que inviten al usuario a escribir más detalles y anécdotas relevantes para este tipo específico de canción (ej. si es para un padre, un hijo, una mascota, una pareja, etc.)
+    Genera dos conjuntos de textos:
+    1. Textos para pedir detalles generales y la historia.
+    2. Textos específicos para pedir nombres de familiares o personas cercanas relevantes a la historia (hijos, esposa, novio, amigos, etc.) adaptado exactamente al tipo de relación.
     
     RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA (SIN TEXTO ANTES NI DESPUÉS):
     {
       "title": "Nombres y la historia...",
       "subtitle": "¿Cómo se llama? ¿De dónde es? ¿Qué cosas específicas no pueden faltar en la canción?",
-      "placeholder": "Ej: Se llama Juan, creció en Veracruz, es muy trabajador..."
+      "placeholder": "Ej: Se llama Juan, creció en Veracruz, es muy trabajador...",
+      "familyTitle": "Familiares y personas importantes",
+      "familySubtitle": "¿Cómo se llaman su esposa e hijos? (Opcional pero recomendado)",
+      "familyPlaceholder": "Ej: Su esposa María y sus hijos Leo y Sofía..."
     }`;
 
     const { data, error } = await supabase.functions.invoke('generate-lyrics', {
@@ -128,14 +136,20 @@ export async function generateDetailsPrompt(context: string): Promise<{title: st
     return {
       title: parsed.title || "Nombres, lugares y la historia",
       subtitle: parsed.subtitle || "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que mencionar?",
-      placeholder: parsed.placeholder || "Ej: Tienen 3 hijos, se conocieron en la playa..."
+      placeholder: parsed.placeholder || "Ej: Tienen 3 hijos, se conocieron en la playa...",
+      familyTitle: parsed.familyTitle || "Familiares y personas importantes",
+      familySubtitle: parsed.familySubtitle || "¿Cómo se llaman las personas que giran a su alrededor? (Opcional pero recomendado)",
+      familyPlaceholder: parsed.familyPlaceholder || "Ej: Su pareja, sus hijos o sus mejores amigos..."
     };
   } catch (error) {
     console.error("Error generating details prompt:", error);
     return {
       title: "Nombres, lugares y la historia",
       subtitle: "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que mencionar?",
-      placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos..."
+      placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos...",
+      familyTitle: "Familiares y personas importantes",
+      familySubtitle: "¿Cómo se llaman las personas que giran a su alrededor? (Opcional pero recomendado)",
+      familyPlaceholder: "Ej: Su pareja, sus hijos o sus mejores amigos..."
     };
   }
 }

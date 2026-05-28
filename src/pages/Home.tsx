@@ -10,7 +10,9 @@ import {
   User, 
   Users,
   Baby,
-  Gift
+  Gift,
+  MessageSquare,
+  ShieldCheck
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -66,36 +68,36 @@ export default function Home() {
         }
       `}</style>
 
-      {/* --- 1. SECCIÓN ESPECIAL: DÍA DE LAS MADRES --- */}
-      <section className="py-20 px-6 relative overflow-hidden bg-gradient-to-b from-[#FFFBF7] to-[#FDF2F4] border-b border-pink-50">
+      {/* --- 1. SECCIÓN ESPECIAL: DÍA DEL PADRE --- */}
+      <section className="py-20 px-6 relative overflow-hidden bg-gradient-to-b from-[#FFFBF7] to-[#F0F7FF] border-b border-blue-50">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="order-2 lg:order-1 space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-pink-50 text-pink-500 rounded-full border border-pink-100 text-[10px] font-black uppercase tracking-widest">
-              Edición Especial 10 de Mayo
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 text-[10px] font-black uppercase tracking-widest">
+              Edición Especial Día del Padre
             </div>
             <h2 className="text-6xl md:text-8xl font-playfair leading-[1] text-[#1A1A1A]">
-              Para ella, <br />
-              <span className="italic text-[#FF2D55]">lo eterno.</span>
+              Para el rey de la casa, <br />
+              <span className="italic text-blue-600">su legado.</span>
             </h2>
             <p className="text-xl text-gray-500 font-outfit leading-relaxed max-w-lg">
-              Las flores se marchitan, pero una canción que narra su amor es un tesoro que ella guardará en su alma para siempre. Dile "gracias" con la melodía que se merece.
+              Las corbatas pasan de moda y los relojes se olvidan, pero una canción que narre su vida y sacrificios es un tesoro que guardará en el alma para siempre. Dile "gracias" con la melodía que se merece.
             </p>
             <button 
               onClick={() => navigate('/crear-cancion')}
-              className="w-full sm:w-auto px-12 py-6 bg-[#FF2D55] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:shadow-pink-200 transition-all flex items-center justify-center gap-3"
+              className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:shadow-blue-200 transition-all flex items-center justify-center gap-3"
             >
-              Crear canción para Mamá <Heart size={18} />
+              Crear canción para Papá <User size={18} />
             </button>
           </div>
           <div className="order-1 lg:order-2 relative group">
-            <div className="absolute -inset-4 bg-pink-200/20 blur-3xl rounded-full"></div>
+            <div className="absolute -inset-4 bg-blue-200/20 blur-3xl rounded-full"></div>
             <img 
-              src="/madre-emocionada.png" 
-              alt="Mamá emocionada" 
+              src="/papa-sorpresa.png" 
+              alt="Papá emocionado" 
               className="relative z-10 w-full h-auto rounded-[3rem] shadow-2xl border-4 border-white animate-float"
             />
             <div className="absolute -bottom-8 -right-8 glass-premium p-8 rounded-3xl space-y-2 max-w-[280px] z-20">
-               <p className="text-lg font-playfair italic">"Es el regalo más hermoso que me han dado jamás..."</p>
+               <p className="text-lg font-playfair italic">"Es el mejor regalo que me han dado jamás..."</p>
             </div>
           </div>
         </div>
@@ -140,34 +142,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- 3. SECCIÓN: PADRES (HÉROES) --- */}
-      <section className="py-32 px-6 bg-silk border-b border-blush-50">
+      {/* --- 3. SECCIÓN: TRIBUTO A MAMÁ --- */}
+      <section className="py-32 px-6 bg-silk border-b border-pink-50">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="order-2 lg:order-1 space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 text-[10px] font-black uppercase tracking-widest">
-              Tributo a Papá
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-pink-50 text-pink-500 rounded-full border border-pink-100 text-[10px] font-black uppercase tracking-widest">
+              Tributo a Mamá
             </div>
             <h2 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
               Dile que es <br />
-              <span className="text-blue-600 font-bold italic">tu héroe.</span>
+              <span className="text-pink-500 font-bold italic">tu heroína.</span>
             </h2>
             <p className="text-xl text-gray-500 font-outfit leading-relaxed">
-              Para el hombre que lo dio todo sin pedir nada. Un corrido o una balada que guarde para siempre el orgullo de ser su hijo y el honor de su apellido.
+              Las flores se marchitan, pero una canción que narre su amor es un tesoro que guardará en su alma para siempre. Sorpréndela con la melodía que se merece.
             </p>
-            <div className="p-8 bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-blue-50 italic text-gray-600 font-playfair text-xl">
-               "Es la primera vez que siento que mi vida se convirtió en arte."
+            <div className="p-8 bg-white/80 backdrop-blur rounded-3xl shadow-sm border border-pink-50 italic text-gray-600 font-playfair text-xl">
+               "Lloré de emoción al escuchar mi historia hecha arte."
             </div>
             <button 
               onClick={() => navigate('/crear-cancion')}
-              className="w-full sm:w-auto px-10 py-5 bg-blue-600 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-3"
+              className="w-full sm:w-auto px-10 py-5 bg-[#FF2D55] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-[#E6284C] transition-all flex items-center justify-center gap-3"
             >
-              Crear tributo para Papá <User size={18} />
+              Crear tributo para Mamá <Heart size={18} />
             </button>
           </div>
           <div className="order-1 lg:order-2">
             <img 
-              src="/padre-emocionado.png" 
-              alt="Padre orgulloso" 
+              src="/madre-emocionada.png" 
+              alt="Madre orgullosa" 
               className="w-full h-auto rounded-[3.5rem] shadow-2xl border-4 border-white" 
             />
           </div>
@@ -239,6 +241,56 @@ export default function Home() {
               alt="Hermanos y Amigos" 
               className="relative z-10 w-full h-auto rounded-[3.5rem] shadow-2xl border-4 border-white" 
             />
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECCIÓN: CÓMO FUNCIONA --- */}
+      <section className="py-32 px-6 bg-gradient-to-b from-white to-[#FFFBF7]">
+        <div className="max-w-6xl mx-auto space-y-20">
+          <div className="text-center space-y-6">
+            <h2 className="text-5xl md:text-6xl font-playfair leading-[1.1] text-[#1A1A1A]">
+              Cómo funciona crear una canción en <br /> <span className="text-naranja-500 italic">Media Naranja MX</span>
+            </h2>
+            <p className="text-xl text-gray-500 font-outfit max-w-2xl mx-auto">
+              Nuestro compositor Naranjín te guiará paso a paso para extraer los mejores recuerdos y convertirlos en arte.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
+            {/* Paso 1 */}
+            <div className="glass-premium p-10 rounded-[2.5rem] space-y-6 relative hover:-translate-y-2 transition-transform duration-300">
+              <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 shadow-sm border border-orange-100">
+                <MessageSquare size={28} />
+                <Sparkles size={14} className="absolute top-8 right-8 text-orange-400" />
+              </div>
+              <h3 className="text-2xl font-playfair font-bold text-[#1A1A1A]">Una conversación <span className="italic text-orange-500">interactiva</span></h3>
+              <p className="text-gray-500 font-outfit leading-relaxed">
+                Nuestro compositor Naranjín no usa cuestionarios repetitivos. Escucha tus respuestas en tiempo real y te hace preguntas de seguimiento personalizadas acordes a las anécdotas y detalles que compartes.
+              </p>
+            </div>
+
+            {/* Paso 2 */}
+            <div className="glass-premium p-10 rounded-[2.5rem] space-y-6 relative hover:-translate-y-2 transition-transform duration-300 delay-100">
+              <div className="w-16 h-16 rounded-full bg-pink-50 flex items-center justify-center text-pink-500 shadow-sm border border-pink-100">
+                <Music size={28} />
+              </div>
+              <h3 className="text-2xl font-playfair font-bold text-[#1A1A1A]">Co-creación <br/><span className="italic text-pink-500">desde el corazón</span></h3>
+              <p className="text-gray-500 font-outfit leading-relaxed">
+                Nuestro compositor Naranjín toma tus propias palabras, emociones y vivencias para entrelazarlas en una composición musical única y hecha a la medida, adaptada al estilo sonoro que imaginas.
+              </p>
+            </div>
+
+            {/* Paso 3 */}
+            <div className="glass-premium p-10 rounded-[2.5rem] space-y-6 relative hover:-translate-y-2 transition-transform duration-300 delay-200">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-100">
+                <ShieldCheck size={28} />
+              </div>
+              <h3 className="text-2xl font-playfair font-bold text-[#1A1A1A]">Hasta 3 pruebas <span className="italic text-emerald-500">sin riesgo</span></h3>
+              <p className="text-gray-500 font-outfit leading-relaxed">
+                Recibe un demo de tu canción. Si sientes que le falta algún detalle o quieres explorar un enfoque diferente, puedes generar hasta 3 demos distintos gratis. Solo desbloqueas la versión completa si te encanta.
+              </p>
+            </div>
           </div>
         </div>
       </section>
