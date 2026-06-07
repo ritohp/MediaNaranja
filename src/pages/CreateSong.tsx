@@ -159,9 +159,9 @@ export default function CreateSong() {
     1. PROHIBICIÓN: No incluyas nunca la frase "Media Naranja" ni menciones a la plataforma en la letra. La canción debe ser 100% personal para el destinatario.
     2. NIÑOS/BEBÉS: Si la categoría es 'hijo', es MANDATORIO que investigues o deduzcas poéticamente el significado de su nombre "${data.childName}" y lo integres en un verso. Debe sentirse como una bendición o un regalo del destino.
     3. FLUIDEZ: Incorpora los detalles de las respuestas en la lírica de forma natural y poética.
-    4. SPOKEN WORD: La sección [Spoken Word] debe contener el mensaje hablado proporcionado.${isTribute ? `\n    5. REGLAS DE FORMATO (¡USAR SOLO CORCHETES!): Si agregas indicaciones de instrumentos, ponlas SIEMPRE dentro de corchetes. NUNCA uses paréntesis (). Ejemplo: [Intro: saxofón].
-    6. PERSPECTIVA DEL NARRADOR: Canta desde la perspectiva de un observador ("él era...") o colectivo ("nuestro padre..."). Cuenta su historia en tercera persona, no le cantes directamente ("tú").` : ''}
-    ${isTribute ? '7' : '5'}. Responde ÚNICAMENTE con la letra estructurada.`;
+    4. SPOKEN WORD: La sección [Spoken Word] debe contener el mensaje hablado proporcionado.${isTribute ? `\n    5. REGLAS DE FORMATO Y METATAGS (¡CRÍTICO PARA SUNO!): SUNO NO ENTIENDE INSTRUCCIONES DESCRIPTIVAS. NUNCA escribas frases narrativas dentro de los corchetes (por ejemplo, PROHIBIDO escribir: "[Baja la música, entra violín]"). Suno cantará ese texto por error. Si necesitas cambiar la música, usa ÚNICAMENTE metatags estructurales estándar de 1 o 2 palabras en inglés (ejemplo: [Break], [Guitar Solo], [Instrumental Interlude], [Drop], [Build], [Acapella]).
+    6. PERSPECTIVA DEL NARRADOR: Canta desde la perspectiva de un observador ("él era...") o colectivo ("nuestro padre..."). Cuenta su historia en tercera persona, no le cantes directamente ("tú").` : `\n    5. METATAGS DE SUNO: NUNCA uses frases descriptivas en los corchetes (ej. "[Música suave]"). Suno lo cantará por error. Usa solo etiquetas cortas en inglés: [Verse], [Chorus], [Bridge], [Guitar Solo], [Break].`}
+    ${isTribute ? '7' : '6'}. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
       return `Eres un compositor experto. REESCRIBE la siguiente canción basándote exclusivamente en el AJUSTE solicitado.
