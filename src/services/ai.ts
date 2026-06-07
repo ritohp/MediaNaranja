@@ -153,3 +153,161 @@ export async function generateDetailsPrompt(context: string): Promise<{
     };
   }
 }
+
+export async function generateTributeQuestions(
+  story: string, 
+  answers: string[], 
+  recipientName: string
+): Promise<string[]> {
+  const prompt = `Actúa como un biógrafo experto y cálido. Estamos construyendo un "Legado Digital" (Línea del tiempo, Valores y Testimonios) para honrar a ${recipientName}.
+Historia previa: "${story}"
+Detalles ya conocidos: "${answers.join(" | ")}"
+
+Tu objetivo es formular EXACTAMENTE 5 preguntas conversacionales, directas y altamente personalizadas para extraer la información DURA que FALTA para completar su biografía.
+
+REGLAS VITALES:
+1. Dirígete al usuario en segunda persona (tú) y usa el nombre "${recipientName}" en las preguntas para que se sientan hechas a la medida.
+2. NO pidas información que ya está en la "Historia previa" o "Detalles ya conocidos". Si ya sabemos dónde nació, pregúntale por su primer trabajo o reto.
+3. Necesitamos datos específicos: Fechas (años) clave para la línea de tiempo, nombres de familiares (si faltan), y virtudes principales.
+4. Tono emotivo pero enfocado en obtener respuestas concretas.
+
+RESPONDE ÚNICAMENTE CON UN ARRAY JSON DE 5 STRINGS (sin markdown extra). Ejemplo:
+[
+  "Mencionaste que ${recipientName} empezó a trabajar muy joven, ¿en qué año fue eso y cuál fue su primer gran logro?",
+  "¿Cuáles dirías que son los 3 valores más grandes que lo definen?",
+  "¿Cómo se llaman las personas más importantes en su vida actualmente (esposa, hijos)?",
+  "¿Cuál ha sido el mayor obstáculo que ${recipientName} tuvo que superar?",
+  "Si pudieras resumir su legado en una frase corta que él siempre dice, ¿cuál sería?"
+]`;
+
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-lyrics', { body: { prompt } });
+    if (error) throw error;
+    if (!data || !data.text) throw new Error("La IA no devolvió texto");
+
+    const text = data.text;
+    const startIndex = text.indexOf('[');
+    const endIndex = text.lastIndexOf(']');
+    if (startIndex === -1 || endIndex === -1) throw new Error("No se encontró Array JSON");
+
+    const jsonStr = text.substring(startIndex, endIndex + 1);
+    const parsedQuestions = JSON.parse(jsonStr) as string[];
+    
+    if (parsedQuestions.length !== 5) {
+      // Fallback if not exactly 5
+      return parsedQuestions.slice(0, 5);
+    }
+    return parsedQuestions;
+  } catch (error) {
+    console.error("Error generating tribute questions:", error);
+    return [
+      `¿En qué año nació ${recipientName} y dónde creció?`,
+      `¿Cuáles dirías que son los 3 mayores valores o virtudes de ${recipientName}?`,
+      `Nombra a sus familiares más cercanos (hijos, esposa, etc.)`,
+      `¿Cuál ha sido el mayor sacrificio o reto superado por ${recipientName}?`,
+      `Si pudieras resumir su legado en una frase corta, ¿cuál sería?`
+    ];
+  }
+}
+
+export interface InfographicData {
+  theme: string;
+  archetype: string;
+  timeline: { title: string; subtitle: string; icon: string }[];
+  shields: { name: string; icon: string }[];
+  nameMeaning: { name: string; meaning: string };
+  lastNameMeaning: { lastName: string; meaning: string };
+  quote: string;
+  familyMembers: string[];
+  testimonials: { text: string }[];
+}
+
+export async function generateInfographicData(
+  story: string, 
+  answers: string[], 
+  recipientName: string, 
+  archetype: string, 
+  theme: string
+): Promise<InfographicData> {
+  const prompt = `Analiza la historia y las respuestas de esta entrevista para crear una Infografía "Historia de Vida".
+Homenajeado: "${recipientName}"
+Arquetipo: ${archetype}
+Historia Inicial: "${story}"
+Detalles Adicionales (Respuestas de la entrevista): "${answers.join(" | ")}"
+
+Extrae los datos y RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA (SIN TEXTO ANTES NI DESPUÉS):
+{
+  "theme": "${theme}",
+  "archetype": "${archetype}",
+  "timeline": [
+    // ¡DEBES CREAR EXACTAMENTE 5 ELEMENTOS PARA LA LÍNEA DEL TIEMPO, NO MÁS, NO MENOS!
+    {"title": "INFANCIA", "subtitle": "Donde empezó su historia...", "icon": "Home"}
+  ],
+  "shields": [
+    // CREA EXACTAMENTE 5 VALORES O VIRTUDES (Ej: TRABAJO, HONESTIDAD, FAMILIA, PERSEVERANCIA, GENEROSIDAD)
+    {"name": "Valor humano", "icon": "Hammer"}
+  ],
+  "nameMeaning": {
+    "name": "Primer nombre", 
+    "meaning": "Escribe el origen real primero. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre."
+  },
+  "lastNameMeaning": {
+    "lastName": "Primer apellido", 
+    "meaning": "Escribe el origen de su apellido. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo."
+  },
+  "quote": "Una frase poética de 10 a 15 palabras que resuma su legado o historia.",
+  "familyMembers": [
+    // EXTRAE LOS NOMBRES EXACTOS DE LOS FAMILIARES (hijos, esposa, nietos) MENCIONADOS EN LA HISTORIA. Si no hay, pon "Su Familia".
+    "Nombre 1", "Nombre 2"
+  ], 
+  "testimonials": [
+    // REFINA Y MEJORA LO QUE DIJO EL USUARIO. No copies y pegues. Haz que suene muy profesional, pulido y emotivo, como la dedicatoria de un libro.
+    {"text": "Testimonio o anécdota refinada."}
+  ]
+}
+
+NOTAS:
+- USA ÚNICAMENTE NOMBRES COMPATIBLES CON LUCIDE-REACT para los iconos (ej: Home, Briefcase, Hammer, Users, Star, Heart, Mountain, Feather, TreeDeciduous, Award).
+- Todo debe estar en español y ser muy emotivo.`;
+
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-lyrics', { body: { prompt } });
+    if (error) throw error;
+    if (!data || !data.text) throw new Error("La IA no devolvió texto");
+
+    const text = data.text;
+    const startIndex = text.indexOf('{');
+    const endIndex = text.lastIndexOf('}');
+    if (startIndex === -1 || endIndex === -1) throw new Error("No se encontró JSON en la respuesta");
+
+    const jsonStr = text.substring(startIndex, endIndex + 1);
+    return JSON.parse(jsonStr) as InfographicData;
+  } catch (error) {
+    console.error("Error in Tribute Generator:", error);
+    return {
+      theme: theme || "legacy",
+      archetype: archetype || "LEGACY",
+      timeline: [
+        {title: "INICIOS", subtitle: "Donde comenzó todo.", icon: "Home"},
+        {title: "CAMINO", subtitle: "Paso a paso forjando la historia.", icon: "Compass"},
+        {title: "ESFUERZO", subtitle: "Superando cada obstáculo.", icon: "Mountain"},
+        {title: "UNIÓN", subtitle: "El valor de estar juntos.", icon: "Heart"},
+        {title: "HOY", subtitle: "Una historia digna de contar.", icon: "Star"}
+      ],
+      shields: [
+        {name: "VALOR", icon: "Flame"},
+        {name: "HONESTIDAD", icon: "Heart"},
+        {name: "FAMILIA", icon: "Users"},
+        {name: "PERSEVERANCIA", icon: "Mountain"},
+        {name: "BONDAD", icon: "Sun"}
+      ],
+      nameMeaning: {name: recipientName.split(' ')[0] || "Tu Nombre", meaning: "Valioso, de gran estima, digno de alabanza."},
+      lastNameMeaning: {lastName: recipientName.split(' ')[1] || "Tu Apellido", meaning: "De origen noble, lleno de historia."},
+      quote: "Una historia que construyó mucho más que recuerdos, construyó un legado.",
+      familyMembers: ["Tu Familia"],
+      testimonials: [
+        {text: "Su ejemplo y sus valores dejaron huellas en nuestros corazones."}
+      ]
+    };
+  }
+}

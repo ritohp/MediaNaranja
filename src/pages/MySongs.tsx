@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import TributeAddon from '../components/tribute/TributeAddon';
 
 interface Song {
   id: string;
@@ -342,13 +343,14 @@ export default function MySongs() {
               </div>
 
               <div className="px-8 pb-8 pt-2 flex flex-col gap-3">
-                {!song.is_paid && (song.audio_url || song.demo_url) && (
-                  <button 
-                    onClick={() => window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`}
+                {(song.audio_url || song.demo_url) && (
+                  <Link 
+                    to={`/cancion/${song.id}`}
                     className="w-full py-3 md:py-4 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
                   >
-                    <Lock size={14} /> DESBLOQUEAR CANCIÓN
-                  </button>
+                    {!song.is_paid ? <Lock size={14} /> : <Heart size={14} />} 
+                    {!song.is_paid ? "DESBLOQUEAR Y VER REGALO" : "VER MI REGALO"}
+                  </Link>
                 )}
                 
                 <button 
@@ -366,6 +368,14 @@ export default function MySongs() {
                 >
                   <RefreshCw size={14} /> Ver Letra / Modificar
                 </button>
+
+                {/* Botón de Upsell para Legado Digital en la tarjeta */}
+                {song.form_data?.category === 'papa' && !song.form_data?.infographic_data && (
+                  <TributeAddon 
+                    song={song} 
+                    variant="card" 
+                  />
+                )}
               </div>
             </div>
           ))}

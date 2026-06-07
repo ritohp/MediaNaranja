@@ -141,6 +141,7 @@ export default function CreateSong() {
       contextSummary += `- Detalle ${index + 1}: ${a}\n`;
     });
 
+    const isTribute = data.category === 'papa';
     const basePrompt = `Eres un compositor experto de canciones personalizadas. 
     Genera la letra completa de una canción siguiendo estos datos, estructurada con [Verse 1], [Chorus], [Verse 2], [Spoken Word], [Chorus], [Bridge], [Outro].
     
@@ -157,8 +158,9 @@ export default function CreateSong() {
     1. PROHIBICIÓN: No incluyas nunca la frase "Media Naranja" ni menciones a la plataforma en la letra. La canción debe ser 100% personal para el destinatario.
     2. NIÑOS/BEBÉS: Si la categoría es 'hijo', es MANDATORIO que investigues o deduzcas poéticamente el significado de su nombre "${data.childName}" y lo integres en un verso. Debe sentirse como una bendición o un regalo del destino.
     3. FLUIDEZ: Incorpora los detalles de las respuestas en la lírica de forma natural y poética.
-    4. SPOKEN WORD: La sección [Spoken Word] debe contener el mensaje hablado proporcionado.
-    5. Responde ÚNICAMENTE con la letra estructurada.`;
+    4. SPOKEN WORD: La sección [Spoken Word] debe contener el mensaje hablado proporcionado.${isTribute ? `\n    5. REGLAS DE FORMATO (¡USAR SOLO CORCHETES!): Si agregas indicaciones de instrumentos, ponlas SIEMPRE dentro de corchetes. NUNCA uses paréntesis (). Ejemplo: [Intro: saxofón].
+    6. PERSPECTIVA DEL NARRADOR: Canta desde la perspectiva de un observador ("él era...") o colectivo ("nuestro padre..."). Cuenta su historia en tercera persona, no le cantes directamente ("tú").` : ''}
+    ${isTribute ? '7' : '5'}. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
       return `Eres un compositor experto. REESCRIBE la siguiente canción basándote exclusivamente en el AJUSTE solicitado.

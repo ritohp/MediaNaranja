@@ -8,6 +8,8 @@ import MyMemories from './pages/MyMemories';
 import MemoryGallery from './pages/MemoryGallery';
 import MemoryCustomizer from './pages/MemoryCustomizer';
 import AdminDashboard from './pages/AdminDashboard';
+import SongPlayer from './pages/SongPlayer';
+import TributeWizard from './pages/TributeWizard';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/crear-cancion" element={<CreateSong />} />
           <Route path="/mis-canciones" element={<MySongs />} />
+          <Route path="/cancion/:id" element={<SongPlayer />} />
+          <Route path="/legado/:id" element={<TributeWizard />} />
           <Route path="/mis-recuerdos" element={<MyMemories />} />
           <Route path="/galeria-recuerdos" element={<MemoryGallery />} />
           <Route path="/personalizar-cuadro" element={<MemoryCustomizer />} />
