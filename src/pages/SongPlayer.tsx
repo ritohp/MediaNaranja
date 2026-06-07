@@ -65,9 +65,18 @@ export default function SongPlayer() {
   };
 
   useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && song) {
       const audio = audioRef.current;
+      const isAdminUser = user?.email === 'ritohp@gmail.com';
+      const isSongPaid = song.is_paid || isAdminUser;
+
       const updateProgress = () => {
+        if (!isSongPaid && audio.currentTime >= 90) {
+          audio.pause();
+          audio.currentTime = 0;
+          setIsPlaying(false);
+          alert("Has alcanzado el límite de la versión de prueba (1.5 min). ¡Desbloquea tu regalo para escucharla completa!");
+        }
         setCurrentTime(audio.currentTime);
         setProgress((audio.currentTime / audio.duration) * 100);
       };
@@ -84,7 +93,7 @@ export default function SongPlayer() {
         audio.removeEventListener('ended', onEnded);
       };
     }
-  }, [song]);
+  }, [song, user]);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -212,7 +221,38 @@ export default function SongPlayer() {
   const isOwner = user?.id === song.user_id;
   const isAdmin = user?.email === 'ritohp@gmail.com';
   const isPaid = song.is_paid || isAdmin;
-  const currentAudioUrl = isPaid ? song.audio_url : song.demo_url;
+  
+  // Bloqueo de acceso público
+  if (!isPaid && !isOwner && !isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#111] p-6 text-center animate-in fade-in zoom-in duration-500">
+        <div className="bg-[#1C2A39] p-8 md:p-12 rounded-[2.5rem] shadow-2xl max-w-lg w-full border border-[#2A3F54] relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 text-white">
+            <Lock size={120} />
+          </div>
+          <div className="w-20 h-20 bg-naranja-500/20 text-naranja-400 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+            <Lock size={40} />
+          </div>
+          <h2 className="text-2xl font-serif text-white mb-4 relative z-10">Legado Privado</h2>
+          <p className="text-gray-400 mb-8 relative z-10 text-sm leading-relaxed">
+            Esta canción y su legado aún no han sido desbloqueados públicamente por su creador.
+          </p>
+          <button 
+            onClick={() => navigate('/crear-cancion')}
+            className="w-full py-4 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all"
+          >
+            CREAR MI PROPIO LEGADO
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedVersion = song.form_data?.selected_version || 1;
+  const currentAudioUrl = isPaid 
+    ? (selectedVersion === 2 && song.form_data?.version2?.audio_url ? song.form_data.version2.audio_url : song.audio_url)
+    : (selectedVersion === 2 && song.form_data?.version2?.demo_url ? song.form_data.version2.demo_url : song.demo_url);
+    
   const photoUrl = song.form_data?.legacy_photo_url || song.form_data?.custom_photo_url || "/papa-sorpresa.png";
   
   // Extraer datos infográficos
@@ -472,15 +512,28 @@ export default function SongPlayer() {
 
         {/* Acciones Web */}
         <div className={`px-6 md:px-12 pb-12 pt-6 flex flex-col gap-4 border-t ${tokens.border} border-opacity-20 mt-4 relative z-20 ${tokens.bg}`}>
+          
+          {!isPaid && (isAdmin || isOwner) && (
+            <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-2 text-center shadow-inner">
+              <p className="text-[10px] text-orange-800 font-medium uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+                <Lock size={12} /> LEGADO RESTRINGIDO
+              </p>
+              <p className="text-xs text-orange-700 leading-relaxed italic">
+                Para descargar la canción completa, obtener el PDF en alta calidad y poder compartir este enlace públicamente, necesitas desbloquear tu regalo.
+              </p>
+            </div>
+          )}
+
           <button 
             onClick={() => {
               if (isPaid) {
-                 window.open(currentAudioUrl, '_blank');
+                 window.open(song.selected_version ? song.selected_version.url : currentAudioUrl, '_blank');
               } else {
                  window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
               }
             }}
-            className="w-full py-4 bg-[#1C2A39] border border-[#1C2A39] text-white rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#2A3F54] transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase"
+            className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase
+              ${isPaid ? 'bg-[#1C2A39] text-white hover:bg-[#2A3F54]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
           >
             {isPaid ? <Download size={16} /> : <Lock size={16} className="opacity-60" />}
             {isPaid ? "Descargar Canción MP3" : "Desbloquear MP3 ($199 MXN)"}

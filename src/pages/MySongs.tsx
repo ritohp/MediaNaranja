@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw } from 'lucide-react';
+import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw, Scroll } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import TributeAddon from '../components/tribute/TributeAddon';
 
@@ -23,6 +23,30 @@ export default function MySongs() {
   const [user, setUser] = useState<any>(null);
   const [showDemoModal, setShowDemoModal] = useState<string | null>(null);
   const [selectedVersions, setSelectedVersions] = useState<{[key: string]: number}>({});
+
+  const handleVersionSelect = async (songId: string, version: number, currentFormData: any) => {
+    setSelectedVersions(prev => ({ ...prev, [songId]: version }));
+    try {
+      await supabase
+        .from('mn_songs')
+        .update({ 
+          form_data: { 
+            ...currentFormData, 
+            selected_version: version 
+          } 
+        })
+        .eq('id', songId);
+      
+      // Update local state to reflect new form_data
+      setSongs(current => current.map(s => 
+        s.id === songId 
+          ? { ...s, form_data: { ...s.form_data, selected_version: version } } 
+          : s
+      ));
+    } catch (err) {
+      console.error("Error saving selected version", err);
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -239,13 +263,13 @@ export default function MySongs() {
                       {song.form_data?.version2 && (
                         <div className="flex p-1 bg-blush-50/50 rounded-xl w-full max-w-xs mx-auto">
                           <button 
-                            onClick={() => setSelectedVersions(prev => ({...prev, [song.id]: 1}))}
+                            onClick={() => handleVersionSelect(song.id, 1, song.form_data)}
                             className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? 'bg-white text-naranja-500 shadow-sm' : 'text-blush-400 hover:text-blush-600'}`}
                           >
                             Opción 1
                           </button>
                           <button 
-                            onClick={() => setSelectedVersions(prev => ({...prev, [song.id]: 2}))}
+                            onClick={() => handleVersionSelect(song.id, 2, song.form_data)}
                             className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedVersions[song.id] === 2 ? 'bg-white text-blush-500 shadow-sm' : 'text-blush-400 hover:text-blush-600'}`}
                           >
                             Opción 2
@@ -267,7 +291,7 @@ export default function MySongs() {
                             referrerPolicy="no-referrer"
                             onContextMenu={(e) => e.preventDefault()}
                             onTimeUpdate={(e) => {
-                              if (!song.is_paid && e.currentTarget.currentTime >= 60) {
+                              if (!song.is_paid && e.currentTarget.currentTime >= 90) {
                                 e.currentTarget.pause();
                                 e.currentTarget.currentTime = 0;
                                 setShowDemoModal(song.id);
@@ -303,7 +327,7 @@ export default function MySongs() {
                           <div className="flex items-center justify-between">
                             {!song.is_paid ? (
                               <span className="text-[10px] font-bold text-naranja-600 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-naranja-100 italic">
-                                {(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? 'Muestra de 60s' : 'Muestra Alternativa'}
+                                {(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? 'Muestra de 1.5 Minutos' : 'Muestra Alternativa'}
                               </span>
                             ) : (
                               <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full border border-green-100">
@@ -343,38 +367,64 @@ export default function MySongs() {
               </div>
 
               <div className="px-8 pb-8 pt-2 flex flex-col gap-3">
-                {(song.audio_url || song.demo_url) && (
-                  <Link 
-                    to={`/cancion/${song.id}`}
-                    className="w-full py-3 md:py-4 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
-                  >
-                    {!song.is_paid ? <Lock size={14} /> : <Heart size={14} />} 
-                    {!song.is_paid ? "DESBLOQUEAR Y VER REGALO" : "VER MI REGALO"}
-                  </Link>
-                )}
-                
-                <button 
-                  onClick={() => {
-                    const draft = {
-                      ...song.form_data,
-                      lyrics: song.lyrics,
-                      step: 2, // Saltar directamente al taller de letra
-                      currentSongId: song.status === 'draft' ? song.id : null // Solo sobreescribir si es borrador
-                    };
-                    localStorage.setItem('mn_draft_song', JSON.stringify(draft));
-                    window.location.href = '/crear-cancion';
-                  }}
-                  className="w-full py-3 bg-blush-50 text-blush-600 rounded-xl font-bold text-xs hover:bg-naranja-50 hover:text-naranja-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
-                >
-                  <RefreshCw size={14} /> Ver Letra / Modificar
-                </button>
+                {song.form_data?.infographic_data ? (
+                  <>
+                    <Link 
+                      to={`/cancion/${song.id}`}
+                      className="w-full py-3 bg-[#1C2A39] text-white rounded-xl font-bold text-xs hover:bg-[#2A3F54] transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-3"
+                    >
+                      <Scroll size={14} /> Ver Mi Legado
+                    </Link>
+                    <Link 
+                      to={`/legado/${song.id}`}
+                      className="w-full py-3 bg-blush-50 text-[#1C2A39] border border-[#1C2A39]/20 rounded-xl font-bold text-xs hover:bg-[#1C2A39] hover:text-white transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw size={14} /> Modificar Legado / Foto
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    {/* Botón Ver Regalo */}
+                    {song.status === 'completed' && (
+                      <Link 
+                        to={song.is_paid ? `/cancion/${song.id}` : '#'}
+                        onClick={(e) => {
+                          if (!song.is_paid) {
+                            e.preventDefault();
+                            window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
+                          }
+                        }}
+                        className={`w-full py-3 ${!song.is_paid ? 'bg-naranja-500 hover:bg-naranja-600' : 'bg-blush-500 hover:bg-blush-600'} text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-3`}
+                      >
+                        {!song.is_paid ? <Lock size={14} /> : <Heart size={14} />} 
+                        {!song.is_paid ? "DESBLOQUEAR Y VER REGALO" : "VER MI REGALO"}
+                      </Link>
+                    )}
+                    
+                    <button 
+                      onClick={() => {
+                        const draft = {
+                          ...song.form_data,
+                          lyrics: song.lyrics,
+                          step: 2, // Saltar directamente al taller de letra
+                          currentSongId: song.status === 'draft' ? song.id : null // Solo sobreescribir si es borrador
+                        };
+                        localStorage.setItem('mn_draft_song', JSON.stringify(draft));
+                        window.location.href = '/crear-cancion';
+                      }}
+                      className="w-full py-3 bg-blush-50 text-blush-600 rounded-xl font-bold text-xs hover:bg-naranja-50 hover:text-naranja-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw size={14} /> Ver Letra / Modificar
+                    </button>
 
-                {/* Botón de Upsell para Legado Digital en la tarjeta */}
-                {song.form_data?.category === 'papa' && !song.form_data?.infographic_data && (
-                  <TributeAddon 
-                    song={song} 
-                    variant="card" 
-                  />
+                    {/* Botón de Upsell para Legado Digital en la tarjeta */}
+                    {song.form_data?.category === 'papa' && !song.form_data?.infographic_data && (
+                      <TributeAddon 
+                        song={song} 
+                        variant="card" 
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>

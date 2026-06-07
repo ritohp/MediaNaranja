@@ -4,6 +4,7 @@ import { Music, Sparkles, BookOpen, User, Users, Heart, Baby, Mic, Target, Calen
 import { supabase } from '../lib/supabase';
 import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import TributeAddon from '../components/tribute/TributeAddon';
 
 export default function CreateSong() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -248,15 +249,6 @@ INSTRUCCIONES:
 
   const handleStartLyrics = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-
-    if (tokens !== null && tokens <= 0) {
-      alert("❌ No tienes tokens suficientes. ¡Adquiere más!");
-      return;
-    }
 
     setIsGenerating(true);
     try {
@@ -264,27 +256,12 @@ INSTRUCCIONES:
       const generatedLyrics = await generateLyrics(prompt);
       setLyrics(generatedLyrics);
       
-      const { data } = await supabase
-        .from('mn_songs')
-        .insert([{
-          user_id: user?.id,
-          form_data: formData,
-          lyrics: generatedLyrics,
-          style_prompt: formData.moodAndStyle,
-          status: 'draft'
-        }])
-        .select()
-        .single();
-      
-      if (data) {
-        // LIMPIAR LOCALSTORAGE al tener éxito inicial
-        localStorage.removeItem('mn_draft_song');
-      }
+      // El borrador se mantiene en localStorage en el useEffect hasta confirmar la música
       setStep(2);
       window.scrollTo(0, 0);
-    } catch (error: any) {
-      console.error("DEBUG AI ERROR:", error);
-      alert(`Error llamando a Naranjín: ${error.message || "Error desconocido"}. Revisa tu conexión.`);
+    } catch (error) {
+      console.error("Error generating lyrics:", error);
+      alert("Hubo un error al generar la letra. Inténtalo de nuevo.");
     } finally {
       setIsGenerating(false);
     }
@@ -298,24 +275,20 @@ INSTRUCCIONES:
       const generatedLyrics = await generateLyrics(prompt);
       setLyrics(generatedLyrics);
       setFeedback('');
-      
-      // Siempre creamos una nueva entrada si no usamos un ID vinculado
-      await supabase.from('mn_songs').insert([{
-        user_id: user?.id,
-        form_data: formData,
-        lyrics: generatedLyrics,
-        style_prompt: formData.moodAndStyle,
-        status: 'draft'
-      }]);
-    } catch (error: any) {
-      console.error("DEBUG REWRITE ERROR:", error);
-      alert(`[DEBUG REWRITE]: ${error.message || "Error desconocido"}.`);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Hubo un error reescribiendo la letra.");
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleConfirmLyrics = async () => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (tokens !== null && tokens <= 0) {
       alert("❌ No tienes tokens suficientes.");
       return;
@@ -375,6 +348,9 @@ INSTRUCCIONES:
             .select()
             .single();
           newSong = data;
+        }
+        if (newSong) {
+          localStorage.removeItem('mn_draft_song');
         }
       } catch (err) {
         console.error("Error saving song:", err);
@@ -812,7 +788,7 @@ INSTRUCCIONES:
                   <h2 className="text-4xl font-serif text-blush-800 mb-2">¡Muestra Lista! 🎨</h2>
                   <p className="text-ink-600/70 text-lg">Escucha un adelanto de tu canción personalizada.</p>
                   <div className="mt-2 inline-block px-4 py-1 bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-100 italic">
-                    Versión Demo (1 Minuto con Marca de Agua)
+                    Versión Demo (1.5 Minutos con Marca de Agua)
                   </div>
                 </div>
                 <div className="bg-white p-8 md:p-12 rounded-[2.5rem] border-2 border-naranja-100 shadow-xl relative overflow-hidden">
@@ -847,7 +823,7 @@ INSTRUCCIONES:
                     referrerPolicy="no-referrer"
                     onContextMenu={(e) => e.preventDefault()}
                     onTimeUpdate={(e) => {
-                      if (e.currentTarget.currentTime >= 60) {
+                      if (e.currentTarget.currentTime >= 90) {
                         e.currentTarget.pause();
                         e.currentTarget.currentTime = 0;
                         setShowDemoModal(true);
@@ -878,11 +854,24 @@ INSTRUCCIONES:
                     >
                       DESBLOQUEAR CANCIÓN COMPLETA <Sparkles size={20} />
                     </button>
-                    <p className="text-[10px] text-ink-400 font-medium">
+                    <p className="text-[10px] text-ink-400 font-medium text-center">
                       Al comprar recibirás la versión original de alta fidelidad, de duración completa y sin voces de marca de agua.
                     </p>
                   </div>
                 </div>
+
+                {/* Mostrar el botón del Legado Digital si aplica */}
+                {formData.category === 'papa' && !formData.infographic_data && (
+                  <div className="w-full bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-[#1C2A39]/10 shadow-xl relative overflow-hidden">
+                    <TributeAddon 
+                      song={{ 
+                        id: currentSongId, 
+                        form_data: formData,
+                        is_paid: false
+                      }} 
+                    />
+                  </div>
+                )}
                 <div className="pt-4">
                    <button onClick={() => setStep(1)} className="text-blush-400 text-xs font-bold hover:text-naranja-500 transition-all uppercase tracking-widest underline decoration-blush-200">
                     ¿PROBAR CON OTRA LETRA?
