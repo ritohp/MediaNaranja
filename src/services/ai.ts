@@ -26,7 +26,7 @@ export async function generateLyrics(prompt: string) {
   }
 }
 
-export async function generateInterviewQuestions(context: string): Promise<string[]> {
+export async function generateInterviewQuestions(context: string): Promise<{questions: string[], extractedName: string}> {
   try {
     const prompt = `Eres un experto entrevistador para "Media Naranja", una plataforma que crea canciones personalizadas ultra-sentimentales.
     A partir de la siguiente idea inicial del usuario: "${context}"
@@ -34,8 +34,13 @@ export async function generateInterviewQuestions(context: string): Promise<strin
     Genera exactamente 6 preguntas abiertas y profundas que nos ayuden a extraer los mejores detalles para una canción inolvidable.
     Las preguntas deben enfocarse en: anécdotas, rasgos físicos/personales, palabras clave entre ellos, apodos, momentos difíciles superados, y el sentimiento exacto.
     
-    RESPONDE ÚNICAMENTE CON UN ARRAY JSON DE STRINGS, SIN TEXTO ADICIONAL.
-    Ejemplo: ["Pregunta 1", "Pregunta 2", ...]`;
+    ADEMÁS, intenta extraer o deducir el nombre principal de la persona a la que va dirigida la canción (el destinatario o festejado). Si no puedes deducirlo, usa un string vacío "".
+    
+    RESPONDE ÚNICAMENTE CON UN OBJETO JSON CON ESTA ESTRUCTURA (SIN TEXTO ADICIONAL NI MARKDOWN):
+    {
+      "extractedName": "Javier Rayas",
+      "questions": ["Pregunta 1", "Pregunta 2", "Pregunta 3", "Pregunta 4", "Pregunta 5", "Pregunta 6"]
+    }`;
 
     const { data, error } = await supabase.functions.invoke('generate-lyrics', {
       body: { prompt }
@@ -46,24 +51,32 @@ export async function generateInterviewQuestions(context: string): Promise<strin
     const text = data.text;
     if (!text) throw new Error(data?.error || "La IA no respondió correctamente.");
 
-    const questions = JSON.parse(text.substring(text.indexOf('['), text.lastIndexOf(']') + 1));
+    const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    const parsed = JSON.parse(jsonStr);
     
+    let questions = parsed.questions;
     if (!Array.isArray(questions) || questions.length === 0) {
       throw new Error("Formato de preguntas inválido");
     }
 
-    return questions.slice(0, 6);
+    return { 
+      questions: questions.slice(0, 6), 
+      extractedName: parsed.extractedName || '' 
+    };
   } catch (error: any) {
     console.error("Error generating questions:", error);
     // PLAN B: Lista de emergencia de exactamente 6 preguntas
-    return [
-      "¿Cómo describirías su personalidad en 3 palabras?",
-      "¿Cuál es el recuerdo más divertido que comparten?",
-      "¿Qué es lo que más admiras de esta persona?",
-      "¿Tienen algún lugar que sea 'suyo'?",
-      "¿Hay alguna frase que siempre digan?",
-      "¿Cómo ha cambiado tu vida desde que le conoces?"
-    ];
+    return {
+      extractedName: '',
+      questions: [
+        "¿Cómo describirías su personalidad en 3 palabras?",
+        "¿Cuál es el recuerdo más divertido que comparten?",
+        "¿Qué es lo que más admiras de esta persona?",
+        "¿Tienen algún lugar que sea 'suyo'?",
+        "¿Hay alguna frase que siempre digan?",
+        "¿Cómo ha cambiado tu vida desde que le conoces?"
+      ]
+    };
   }
 }
 

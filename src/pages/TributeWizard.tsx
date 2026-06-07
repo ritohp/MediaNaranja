@@ -23,13 +23,18 @@ export default function TributeWizard() {
       setSong(data);
       
       if (data) {
-        const recipientName = data.form_data?.recipientName || "tu ser querido";
-        const story = data.form_data?.initialContext || "";
-        const previousAnswers = [
-          data.form_data?.details1, 
-          data.form_data?.details2, 
-          data.form_data?.details3
-        ].filter(Boolean);
+        const recipientName = data.form_data?.nombreDestinatario || data.form_data?.childName || "tu ser querido";
+        const story = data.form_data?.initialContext || data.form_data?.specificDetails || "";
+        
+        let previousAnswers: string[] = [];
+        if (data.form_data?.interviewAnswers) {
+          previousAnswers = Object.values(data.form_data.interviewAnswers);
+        } else {
+          previousAnswers = [
+            data.form_data?.familyNames,
+            data.form_data?.specificDetails
+          ].filter(Boolean) as string[];
+        }
 
         const aiQuestions = await generateTributeQuestions(story, previousAnswers, recipientName);
         setQuestions(aiQuestions);

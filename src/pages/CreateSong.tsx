@@ -217,9 +217,19 @@ INSTRUCCIONES:
     
     setIsGeneratingQuestions(true);
     try {
-      const combinedContext = `Idea base: ${initialContext}. Detalles: ${formData.specificDetails}. Estilo deseado: ${formData.moodAndStyle}`;
-      const questions = await generateInterviewQuestions(combinedContext);
+      const combinedContext = `Idea base: ${initialContext}. Detalles: ${formData.specificDetails}. Familia: ${formData.familyNames}. Estilo deseado: ${formData.moodAndStyle}`;
+      const { questions, extractedName } = await generateInterviewQuestions(combinedContext);
       setAiQuestions(questions);
+      
+      // Si la IA encontró el nombre, lo guardamos. Si es categoría 'hijo', preservamos childName.
+      if (extractedName) {
+        setFormData(prev => ({
+          ...prev,
+          nombreDestinatario: extractedName,
+          childName: prev.category === 'hijo' && prev.childName ? prev.childName : extractedName
+        }));
+      }
+
       setFormPhase('interview');
       window.scrollTo(0, 0);
     } catch (error) {
@@ -327,12 +337,18 @@ INSTRUCCIONES:
       try {
         const songData = {
           user_id: user?.id,
-          title: formData.childName || formData.nombreDestinatario || 'Canción Personalizada',
+          title: formData.category === 'hijo' ? (formData.childName || 'Canción Personalizada') : (formData.nombreDestinatario || formData.childName || 'Canción Personalizada'),
           lyrics: lyrics,
           status: 'generating_music',
           task_id: taskId,
           style_prompt: cleanedStyle,
-          form_data: { ...formData, finalStylePrompt: cleanedStyle }
+          form_data: { 
+            ...formData, 
+            finalStylePrompt: cleanedStyle,
+            initialContext,
+            interviewAnswers,
+            aiQuestions 
+          }
         };
 
         if (currentSongId) {
