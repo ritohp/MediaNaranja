@@ -247,11 +247,20 @@ INSTRUCCIONES:
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     
     if (signInError) {
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) {
-        alert("Error: " + signUpError.message);
+      if (signInError.message.includes('Invalid login credentials')) {
+        // Podría ser un usuario nuevo o alguien que se equivocó de contraseña
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) {
+          if (signUpError.message.includes('already registered')) {
+            alert("Contraseña incorrecta. Por favor intenta de nuevo.");
+          } else {
+            alert("Error: " + signUpError.message);
+          }
+        } else {
+          alert("¡Cuenta casi lista! Por favor, revisa tu correo y confirma tu registro para poder continuar. No perderás tu progreso.");
+        }
       } else {
-        alert("¡Cuenta casi lista! Por favor, confirma tu correo para crear tu canción. No te preocupes, tus datos están guardados.");
+        alert("Error de inicio de sesión: " + signInError.message);
       }
     }
     setIsLoginLoading(false);

@@ -150,22 +150,22 @@ export async function generateDetailsPrompt(context: string, category: string): 
     const parsed = JSON.parse(jsonStr);
 
     return {
-      title: parsed.title || "Nombres, lugares y la historia",
-      subtitle: parsed.subtitle || "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que mencionar?",
-      placeholder: parsed.placeholder || "Ej: Tienen 3 hijos, se conocieron en la playa...",
+      title: parsed.title || "Nombres y la historia...",
+      subtitle: parsed.subtitle || "¿Cómo se llama la persona principal? ¿Qué detalles, lugares o fechas son importantes?",
+      placeholder: parsed.placeholder || "Ej: Se llama Juan, creció en el campo, siempre ha sido muy trabajador...",
       familyTitle: parsed.familyTitle || "Familiares y personas importantes",
-      familySubtitle: parsed.familySubtitle || "¿Cómo se llaman las personas que giran a su alrededor? (Opcional pero recomendado)",
-      familyPlaceholder: parsed.familyPlaceholder || "Ej: Su pareja, sus hijos o sus mejores amigos..."
+      familySubtitle: parsed.familySubtitle || "¿Hay otros nombres que deban aparecer en la canción? (Opcional)",
+      familyPlaceholder: parsed.familyPlaceholder || "Ej: Sus hijos Leo y Sofía, su mejor amigo..."
     };
   } catch (error) {
     console.error("Error generating details prompt:", error);
     return {
-      title: "Nombres, lugares y la historia",
-      subtitle: "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que mencionar?",
-      placeholder: "Ej: Él se llama Carlos y ella Ana, se conocieron en Madrid. Tienen 3 hijos...",
+      title: "Nombres y la historia...",
+      subtitle: "¿Cómo se llama la persona principal? ¿Qué detalles, lugares o fechas son importantes?",
+      placeholder: "Ej: Se llama Juan, creció en el campo, siempre ha sido muy trabajador...",
       familyTitle: "Familiares y personas importantes",
-      familySubtitle: "¿Cómo se llaman las personas que giran a su alrededor? (Opcional pero recomendado)",
-      familyPlaceholder: "Ej: Su pareja, sus hijos o sus mejores amigos..."
+      familySubtitle: "¿Hay otros nombres que deban aparecer en la canción? (Opcional)",
+      familyPlaceholder: "Ej: Sus hijos Leo y Sofía, su mejor amigo..."
     };
   }
 }
