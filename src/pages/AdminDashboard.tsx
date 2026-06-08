@@ -14,7 +14,9 @@ import {
   AlertCircle, 
   X, 
   Coins, 
-  RotateCcw
+  RotateCcw,
+  Mail,
+  Key
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -26,6 +28,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [xrayData, setXrayData] = useState<any | null>(null);
   
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -135,9 +138,32 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRefundToken = async (userId: string, currentBalance: number) => {
+    if (isProcessing) return;
+    setIsProcessing(`refund-${userId}`);
+    try {
+      const { error } = await supabase
+        .from('mn_profiles')
+        .update({ tokens_balance: currentBalance + 1 })
+        .eq('id', userId);
+      if (!error) {
+        alert("1 crédito devuelto exitosamente.");
+        await fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
   const handleResetSongStatus = async (songId: string) => {
     if (isProcessing) return;
     setIsProcessing(songId);
+    if (!confirm("¿Seguro que quieres borrar el audio y letra, y regresar la canción a modo Borrador?")) {
+      setIsProcessing(null);
+      return;
+    }
     try {
       const { error } = await supabase
         .from('mn_songs')
@@ -149,6 +175,55 @@ export default function AdminDashboard() {
         })
         .eq('id', songId);
       if (!error) await fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleResetToLyrics = async (songId: string) => {
+    if (isProcessing) return;
+    setIsProcessing(`lyrics-${songId}`);
+    try {
+      const { error } = await supabase
+        .from('mn_songs')
+        .update({ 
+           status: 'lyrics_ready',
+           audio_url: null,
+           demo_url: null,
+           task_id: null 
+        })
+        .eq('id', songId);
+      if (!error) await fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleResendConfirmation = async (email: string) => {
+    if (isProcessing) return;
+    setIsProcessing(`email-${email}`);
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email });
+      if (error) alert("Error: " + error.message);
+      else alert("Correo de confirmación reenviado a " + email);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleSendPasswordReset = async (email: string) => {
+    if (isProcessing) return;
+    setIsProcessing(`pwd-${email}`);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) alert("Error: " + error.message);
+      else alert("Enlace de recuperación enviado a " + email);
     } catch (err) {
       console.error(err);
     } finally {
@@ -384,7 +459,15 @@ export default function AdminDashboard() {
                           <td className="py-6 px-8"><span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${u?.statusColor || 'bg-gray-100'}`}>{u?.funnelStatus || 'Unknown'}</span></td>
                           <td className="py-6 px-8 text-right">
                              <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                <button onClick={() => u?.id && handleResetTokens(u.id)} disabled={isProcessing === u?.id} className="p-3 bg-white border border-orange-100 rounded-xl text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm">
+                                {!u?.email_confirmed && (
+                                  <button onClick={() => u?.email && handleResendConfirmation(u.email)} title="Reenviar Confirmación" className="p-3 bg-white border border-indigo-100 rounded-xl text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all shadow-sm">
+                                    <Mail size={16} />
+                                  </button>
+                                )}
+                                <button onClick={() => u?.email && handleSendPasswordReset(u.email)} title="Enviar Reset de Contraseña" className="p-3 bg-white border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-500 hover:text-white transition-all shadow-sm">
+                                  <Key size={16} />
+                                </button>
+                                <button onClick={() => u?.id && handleResetTokens(u.id)} disabled={isProcessing === u?.id} title="Resetear a 3 Créditos" className="p-3 bg-white border border-orange-100 rounded-xl text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm">
                                   {isProcessing === u?.id ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16}/>}
                                 </button>
                                 <div className="p-3 text-naranja-500">{expandedUser === u?.id ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}</div>
@@ -405,10 +488,19 @@ export default function AdminDashboard() {
                                                   ⚠️ AUDIO REPORTADO
                                                 </span>
                                              )}
-                                             <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${s?.status === 'complete' ? 'bg-pink-50 text-pink-500' : 'bg-gray-50'}`}>{s?.status || 'Draft'}</span>
-                                             <button onClick={() => s?.id && handleResetSongStatus(s.id)} className="text-[8px] font-black uppercase text-naranja-400 hover:text-naranja-600 transition-colors flex items-center gap-1">
-                                                {isProcessing === s?.id ? <Loader2 size={10} className="animate-spin" /> : <RotateCcw size={10} />} Regresar a Edición
-                                             </button>
+                                             <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${s?.status === 'complete' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50'}`}>{s?.status || 'Draft'}</span>
+                                             
+                                             <div className="flex items-center gap-2 mt-2">
+                                                <button onClick={() => s?.id && handleResetSongStatus(s.id)} className="text-[8px] font-black uppercase text-red-400 hover:text-red-600 transition-colors flex items-center gap-1" title="Borrar todo y regresar a borrador">
+                                                   {isProcessing === s?.id ? <Loader2 size={10} className="animate-spin" /> : <RotateCcw size={10} />} A Borrador
+                                                </button>
+                                                <button onClick={() => s?.id && handleResetToLyrics(s.id)} className="text-[8px] font-black uppercase text-naranja-400 hover:text-naranja-600 transition-colors flex items-center gap-1" title="Conservar letra, regenerar audio">
+                                                   {isProcessing === `lyrics-${s?.id}` ? <Loader2 size={10} className="animate-spin" /> : <Music size={10} />} A Letra
+                                                </button>
+                                                <button onClick={() => u?.id && handleRefundToken(u.id, u.tokens_balance)} className="text-[8px] font-black uppercase text-amber-500 hover:text-amber-600 transition-colors flex items-center gap-1" title="Devolver 1 Crédito al Usuario">
+                                                   {isProcessing === `refund-${u?.id}` ? <Loader2 size={10} className="animate-spin" /> : <Coins size={10} />} +1 Crédito
+                                                </button>
+                                             </div>
                                           </div>
                                        </div>
                                        <h4 className="text-base font-black truncate">{s?.title || 'Historia Sonora'}</h4>
@@ -433,8 +525,14 @@ export default function AdminDashboard() {
                                           ) : null}
                                        </div>
 
-                                       <div className="pt-4 border-t border-gray-50 flex gap-2">
-                                          {s?.audio_url && <a href={s.audio_url} target="_blank" rel="noreferrer" className="flex-1 py-3 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-black uppercase text-center hover:bg-naranja-500 hover:text-white transition-all flex items-center justify-center gap-2"><Download size={14} /> Descargar Original</a>}
+                                       <div className="pt-4 border-t border-gray-50 grid grid-cols-2 gap-2">
+                                          {s?.audio_url && <a href={s.audio_url} target="_blank" rel="noreferrer" className="col-span-2 py-3 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-black uppercase text-center hover:bg-naranja-500 hover:text-white transition-all flex items-center justify-center gap-2"><Download size={14} /> Descargar Original</a>}
+                                          <button onClick={() => setXrayData(s)} className="py-3 bg-indigo-50 text-indigo-500 rounded-xl text-[9px] font-black uppercase text-center hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm">
+                                             <Search size={14} /> Rayos X
+                                          </button>
+                                          <button onClick={() => window.open(`/tribute/${s.id}`, '_blank')} className="py-3 bg-pink-50 text-pink-500 rounded-xl text-[9px] font-black uppercase text-center hover:bg-pink-500 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm">
+                                             <Play size={14} /> Legado
+                                          </button>
                                        </div>
                                     </div>
                                   )) : <div className="w-full py-10 flex flex-col items-center justify-center text-gray-300 space-y-4"><AlertCircle size={40} className="opacity-20" /><p className="text-xs font-black uppercase tracking-widest italic">Aún no hay creaciones</p></div>}
@@ -503,6 +601,37 @@ export default function AdminDashboard() {
                  </div>
               </div>
            </div>
+        )}
+
+        {/* Modal Rayos X */}
+        {xrayData && (
+          <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-[2rem] w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="sticky top-0 bg-white/80 backdrop-blur-md p-6 border-b border-gray-100 flex justify-between items-center z-10">
+                <div>
+                  <h3 className="text-xl font-black font-outfit text-indigo-900">🔍 Rayos X: {xrayData.title || 'Sin Título'}</h3>
+                  <p className="text-xs text-gray-500 mt-1 font-mono">ID: {xrayData.id}</p>
+                </div>
+                <button onClick={() => setXrayData(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"><X size={20}/></button>
+              </div>
+              
+              <div className="p-8 space-y-8">
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Datos Crudos (Formulario y Entrevista)</h4>
+                  <div className="bg-gray-50 rounded-2xl p-6 font-mono text-[11px] text-gray-600 whitespace-pre-wrap break-all border border-gray-100">
+                    {JSON.stringify(xrayData.form_data || {}, null, 2)}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-naranja-400">Letra Generada (IA)</h4>
+                  <div className="bg-[#FFF9F5] rounded-2xl p-6 font-serif text-sm text-gray-800 whitespace-pre-wrap border border-naranja-100 leading-relaxed">
+                    {xrayData.lyrics || <span className="italic text-gray-400">Letra no generada aún o no disponible.</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
