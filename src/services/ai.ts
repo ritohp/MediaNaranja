@@ -264,11 +264,11 @@ Extrae los datos y RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA 
     {"name": "Valor humano", "icon": "Hammer"}
   ],
   "nameMeaning": {
-    "name": "Primer nombre", 
-    "meaning": "Escribe el origen real primero. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre."
+    "name": "Obligatorio extraer el primer nombre real de la historia (Ej: Si es Juan Carlos, pon Juan)", 
+    "meaning": "Escribe el origen real de su nombre primero. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre."
   },
   "lastNameMeaning": {
-    "lastName": "Primer apellido", 
+    "lastName": "Obligatorio extraer el apellido real de la historia (Ej: Si es Pérez, pon Pérez)", 
     "meaning": "Escribe el origen de su apellido. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo."
   },
   "quote": "Una frase poética de 10 a 15 palabras que resuma su legado o historia.",

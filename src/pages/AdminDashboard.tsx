@@ -157,6 +157,25 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleTogglePaid = async (songId: string, currentPaidStatus: boolean) => {
+    if (isProcessing) return;
+    setIsProcessing(`paid-${songId}`);
+    try {
+      const { error } = await supabase
+        .from('mn_songs')
+        .update({ is_paid: !currentPaidStatus })
+        .eq('id', songId);
+      if (!error) {
+        alert(!currentPaidStatus ? "Canción liberada (PAGADA)." : "Canción devuelta a modo DEMO.");
+        await fetchData();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
   const handleResetSongStatus = async (songId: string) => {
     if (isProcessing) return;
     setIsProcessing(songId);
@@ -488,7 +507,13 @@ export default function AdminDashboard() {
                                                   ⚠️ AUDIO REPORTADO
                                                 </span>
                                              )}
-                                             <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${s?.status === 'complete' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50'}`}>{s?.status || 'Draft'}</span>
+                                             <div className="flex items-center gap-2">
+                                                <button onClick={() => s?.id && handleTogglePaid(s.id, !!s?.is_paid)} className={`text-[9px] font-black uppercase px-3 py-1 rounded-full cursor-pointer hover:opacity-80 transition-opacity ${s?.is_paid ? 'bg-pink-100 text-pink-600' : 'bg-gray-100 text-gray-500'}`} title="Clic para alternar estado de pago">
+                                                   {isProcessing === `paid-${s?.id}` ? <Loader2 size={10} className="animate-spin inline mr-1" /> : null}
+                                                   {s?.is_paid ? '💰 PAGADA' : '⏳ DEMO'}
+                                                </button>
+                                                <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${s?.status === 'complete' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50'}`}>{s?.status || 'Draft'}</span>
+                                             </div>
                                              
                                              <div className="flex items-center gap-2 mt-2">
                                                 <button onClick={() => s?.id && handleResetSongStatus(s.id)} className="text-[8px] font-black uppercase text-red-400 hover:text-red-600 transition-colors flex items-center gap-1" title="Borrar todo y regresar a borrador">
