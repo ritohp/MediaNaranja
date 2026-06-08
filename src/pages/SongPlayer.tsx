@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { 
   Play, Pause, Download, Edit3, Image as ImageIcon, Heart, 
   Share2, Lock, FileText, CheckCircle2, Home, Briefcase, 
-  Hammer, Users, Star, Mountain, Feather, TreeDeciduous, User
+  Hammer, Users, Star, Mountain, Feather, TreeDeciduous, User, Copy, MessageCircle
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toJpeg } from 'html-to-image';
@@ -548,6 +548,31 @@ export default function SongPlayer() {
             {isPaid ? <FileText size={16} className="text-[#B69D74]" /> : <Lock size={16} className="text-[#B69D74]" />}
             {isPaid ? "Descargar Póster PDF para Imprimir" : "Desbloquear Póster PDF"}
           </button>
+          
+          {isPaid && (
+            <div className="pt-4 mt-2 border-t border-[#1C2A39]/10 grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => {
+                  const url = window.location.href;
+                  navigator.clipboard.writeText(url);
+                  alert('¡Enlace copiado al portapapeles!');
+                }}
+                className="py-3 bg-white text-[#1C2A39] border border-[#1C2A39]/20 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors text-[10px] uppercase tracking-widest"
+              >
+                <Copy size={14} /> Copiar Enlace
+              </button>
+              <button 
+                onClick={() => {
+                  const url = window.location.href;
+                  const text = `¡Mira la canción mágica y el legado que me hicieron! 🎧✨%0A%0A${url}`;
+                  window.open(`https://wa.me/?text=${text}`, '_blank');
+                }}
+                className="py-3 bg-[#25D366] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#20bd5a] transition-colors text-[10px] uppercase tracking-widest shadow-sm"
+              >
+                <MessageCircle size={14} /> WhatsApp
+              </button>
+            </div>
+          )}
           
           {isOwner && !isPaid && (
             <button 

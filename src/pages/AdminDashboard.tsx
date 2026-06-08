@@ -551,7 +551,20 @@ export default function AdminDashboard() {
                                        </div>
 
                                        <div className="pt-4 border-t border-gray-50 grid grid-cols-2 gap-2">
-                                          {s?.audio_url && <a href={s.audio_url} target="_blank" rel="noreferrer" className="col-span-2 py-3 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-black uppercase text-center hover:bg-naranja-500 hover:text-white transition-all flex items-center justify-center gap-2"><Download size={14} /> Descargar Original</a>}
+                                          {(s?.audio_url || s?.form_data?.version2?.audio_url) && (
+                                            <div className="col-span-2 flex gap-2">
+                                              {s?.audio_url && (
+                                                <a href={s.audio_url} target="_blank" rel="noreferrer" className="flex-1 py-3 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-black uppercase text-center hover:bg-naranja-500 hover:text-white transition-all flex items-center justify-center gap-2">
+                                                  <Download size={14} /> Opción 1
+                                                </a>
+                                              )}
+                                              {s?.form_data?.version2?.audio_url && (
+                                                <a href={s.form_data.version2.audio_url} target="_blank" rel="noreferrer" className="flex-1 py-3 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-black uppercase text-center hover:bg-naranja-500 hover:text-white transition-all flex items-center justify-center gap-2">
+                                                  <Download size={14} /> Opción 2
+                                                </a>
+                                              )}
+                                            </div>
+                                          )}
                                           <button onClick={() => setXrayData(s)} className="py-3 bg-indigo-50 text-indigo-500 rounded-xl text-[9px] font-black uppercase text-center hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm">
                                              <Search size={14} /> Rayos X
                                           </button>

@@ -350,10 +350,27 @@ export default function MySongs() {
                     </div>
                   ) : (
                     <div className="py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-3">
-                      {song.status === 'draft' ? (
+                      {(song.status === 'draft' || song.status === 'lyrics_ready') ? (
                         <>
                           <RefreshCw className="text-gray-300" />
-                          <p className="text-[10px] font-bold uppercase tracking-widest italic">Borrador Guardado</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest italic mb-2">
+                            {song.status === 'draft' ? 'Borrador Guardado' : 'Falta generar el audio'}
+                          </p>
+                          <button 
+                            onClick={() => {
+                              const draft = {
+                                ...song.form_data,
+                                lyrics: song.lyrics,
+                                step: 2, 
+                                currentSongId: song.id 
+                              };
+                              localStorage.setItem('mediaNaranjaDraft', JSON.stringify(draft));
+                              window.location.href = '/crear-cancion';
+                            }}
+                            className="px-6 py-2 bg-white text-naranja-500 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm"
+                          >
+                            Continuar Creación
+                          </button>
                         </>
                       ) : (
                         <>
@@ -367,6 +384,18 @@ export default function MySongs() {
               </div>
 
               <div className="px-8 pb-8 pt-2 flex flex-col gap-3">
+                
+                {/* Botón Descarga Grande si está pagada */}
+                {song.is_paid && (song.audio_url || song.form_data?.version2?.audio_url) && (
+                  <a 
+                    href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
+                    target="_blank" rel="noreferrer" download 
+                    className="w-full py-3 bg-white text-naranja-600 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-1 shadow-sm"
+                  >
+                    <Download size={14} /> Descargar Canción (MP3)
+                  </a>
+                )}
+
                 {song.form_data?.infographic_data ? (
                   <>
                     <Link 
