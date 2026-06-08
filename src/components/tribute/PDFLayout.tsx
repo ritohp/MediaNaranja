@@ -252,7 +252,7 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
             </div>
             <p className="text-[8px] text-center text-[#555] mb-2 leading-tight">Escanea el código QR para escuchar la canción que cuenta su historia.</p>
             <div className="bg-white p-2 rounded-md shadow-sm border border-gray-200">
-               <QRCodeSVG value={`https://app.medianaranja.com/cancion/${songId}`} size={80} fgColor="#1C2A39" />
+               <QRCodeSVG value={`https://www.medianaranja.mx/cancion/${songId}`} size={80} fgColor="#1C2A39" />
             </div>
             <p className="text-[7px] text-center font-bold uppercase text-[#444] mt-3">
               Guarda, comparte y<br/>celebra su historia.
