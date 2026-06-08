@@ -26,13 +26,15 @@ export async function generateLyrics(prompt: string) {
   }
 }
 
-export async function generateInterviewQuestions(context: string): Promise<{questions: string[], extractedName: string}> {
+export async function generateInterviewQuestions(context: string, category: string): Promise<{questions: string[], extractedName: string}> {
   try {
     const prompt = `Eres un experto entrevistador para "Media Naranja", una plataforma que crea canciones personalizadas ultra-sentimentales.
     A partir de la siguiente idea inicial del usuario: "${context}"
+    Categoría de la canción: "${category}"
     
     Genera exactamente 6 preguntas abiertas y profundas que nos ayuden a extraer los mejores detalles para una canción inolvidable.
     Las preguntas deben enfocarse en: anécdotas, rasgos físicos/personales, palabras clave entre ellos, apodos, momentos difíciles superados, y el sentimiento exacto.
+    IMPORTANTE: Asegúrate de que las preguntas SE ADAPTEN PERFECTAMENTE a la categoría indicada (por ejemplo, si es "papa", NO preguntes de romance o noviazgo).
     
     ADEMÁS, intenta extraer o deducir el nombre principal de la persona a la que va dirigida la canción (el destinatario o festejado). Si no puedes deducirlo, usa un string vacío "".
     
@@ -115,16 +117,17 @@ export async function cleanStylePrompt(rawStyle: string, category?: string): Pro
   }
 }
 
-export async function generateDetailsPrompt(context: string): Promise<{
+export async function generateDetailsPrompt(context: string, category: string): Promise<{
   title: string, subtitle: string, placeholder: string,
   familyTitle: string, familySubtitle: string, familyPlaceholder: string
 }> {
   try {
     const prompt = `Basado en la siguiente idea inicial para una canción: "${context}"
+    Categoría seleccionada por el usuario: "${category}"
     
-    Genera dos conjuntos de textos:
+    Genera dos conjuntos de textos para nuestro formulario web interactivo.
     1. Textos para pedir detalles generales y la historia.
-    2. Textos específicos para pedir nombres de familiares o personas cercanas relevantes a la historia (hijos, esposa, novio, amigos, etc.) adaptado exactamente al tipo de relación.
+    2. Textos específicos para pedir nombres de familiares o personas cercanas relevantes a la historia adaptado exactamente al tipo de relación ("${category}"). ¡Si es "papa", pide por hijos/esposa, si es pareja pide por detalles de la relación!
     
     RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA (SIN TEXTO ANTES NI DESPUÉS):
     {

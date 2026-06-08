@@ -193,7 +193,7 @@ INSTRUCCIONES:
     
     setIsGeneratingDetailsPrompt(true);
     try {
-      const prompt = await generateDetailsPrompt(initialContext);
+      const prompt = await generateDetailsPrompt(initialContext, formData.category);
       setDetailsPrompt({
         title: prompt.title || "Nombres, lugares y la historia",
         subtitle: prompt.subtitle || "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que debemos mencionar?",
@@ -218,7 +218,7 @@ INSTRUCCIONES:
     setIsGeneratingQuestions(true);
     try {
       const combinedContext = `Idea base: ${initialContext}. Detalles: ${formData.specificDetails}. Familia: ${formData.familyNames}. Estilo deseado: ${formData.moodAndStyle}`;
-      const { questions, extractedName } = await generateInterviewQuestions(combinedContext);
+      const { questions, extractedName } = await generateInterviewQuestions(combinedContext, formData.category);
       setAiQuestions(questions);
       
       // Si la IA encontró el nombre, lo guardamos. Si es categoría 'hijo', preservamos childName.

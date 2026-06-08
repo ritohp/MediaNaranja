@@ -352,17 +352,19 @@ export default function SongPlayer() {
         </div>
 
         {/* Línea del Tiempo */}
-        <div className="flex justify-between items-start w-full px-2 md:px-8 mb-12 relative">
-          <div className={`absolute top-6 left-12 right-12 h-[2px] ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'} opacity-40 z-0`}></div>
-          {infoData.timeline.slice(0, 5).map((item, idx) => {
+        <div className="flex flex-col md:flex-row justify-between items-start w-full px-4 md:px-8 mb-12 relative gap-8 md:gap-0">
+          <div className={`absolute top-6 bottom-6 left-10 w-[2px] md:bottom-auto md:w-auto md:top-6 md:left-12 md:right-12 md:h-[2px] ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'} opacity-40 z-0`}></div>
+          {infoData.timeline.slice(0, 5).map((item: any, idx: number) => {
             const Icon = IconMap[item.icon] || Star;
             return (
-              <div key={idx} className="flex flex-col items-center w-[18%] relative z-10">
-                <div className={`w-12 h-12 rounded-full bg-white border ${tokens.border} flex items-center justify-center mb-4 ${tokens.text} shadow-sm`}>
+              <div key={idx} className="flex flex-row md:flex-col items-center md:w-[18%] relative z-10 w-full gap-4 md:gap-0">
+                <div className={`w-12 h-12 shrink-0 rounded-full bg-white border ${tokens.border} flex items-center justify-center md:mb-4 ${tokens.text} shadow-sm`}>
                   <Icon size={20} />
                 </div>
-                <h4 className={`text-[10px] md:text-[11px] font-bold ${tokens.text} mb-2 uppercase text-center`}>{item.title}</h4>
-                <p className="text-[9px] md:text-[10px] text-[#555] text-center leading-tight">{item.subtitle}</p>
+                <div className="flex flex-col items-start md:items-center text-left md:text-center w-full">
+                  <h4 className={`text-[12px] md:text-[11px] font-bold ${tokens.text} mb-1 md:mb-2 uppercase`}>{item.title}</h4>
+                  <p className="text-[11px] md:text-[10px] text-[#555] leading-tight">{item.subtitle}</p>
+                </div>
               </div>
             );
           })}
