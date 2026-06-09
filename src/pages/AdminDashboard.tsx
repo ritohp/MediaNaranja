@@ -202,21 +202,45 @@ export default function AdminDashboard() {
   };
 
   const handleResetToLyrics = async (songId: string) => {
-    if (isProcessing) return;
-    setIsProcessing(`lyrics-${songId}`);
+    if (!confirm('¿Estás seguro de regresar esta canción a Letra? Esto borrará el audio generado y permitirá al usuario volver a intentar desde la fase de Generación de Música.')) return;
     try {
-      const { error } = await supabase
-        .from('mn_songs')
-        .update({ 
-           status: 'lyrics_ready',
-           audio_url: null,
-           demo_url: null,
-           task_id: null 
-        })
-        .eq('id', songId);
-      if (!error) await fetchData();
-    } catch (err) {
-      console.error(err);
+      setIsProcessing(`lyrics-${songId}`);
+      // Borramos audio y video, seteamos status a lyrics_ready
+      const { error } = await supabase.from('mn_songs').update({ 
+        status: 'lyrics_ready',
+        audio_url: null,
+        demo_url: null,
+        video_url: null
+      }).eq('id', songId);
+      
+      if (error) throw error;
+      fetchData();
+    } catch (e) {
+      console.error(e);
+      alert('Error al regresar a letra.');
+    } finally {
+      setIsProcessing(null);
+    }
+  };
+
+  const handleRegenerateLegacy = async (song: any) => {
+    if (!confirm('¿Estás seguro de regenerar SOLO el legado web/PDF con la IA? Esto usará el prompt actualizado de nombres y no afectará el audio ni los créditos.')) return;
+    try {
+      setIsProcessing(`legacy-${song.id}`);
+      const { generateInfographicData } = await import('../services/ai');
+      const infoData = await generateInfographicData(song.form_data);
+      
+      if (!infoData) throw new Error("No se pudo generar");
+
+      const newFormData = { ...song.form_data, infographic_data: infoData };
+      const { error } = await supabase.from('mn_songs').update({ form_data: newFormData }).eq('id', song.id);
+      
+      if (error) throw error;
+      alert('Legado regenerado con éxito.');
+      fetchData();
+    } catch (e) {
+      console.error(e);
+      alert('Hubo un error al regenerar el legado.');
     } finally {
       setIsProcessing(null);
     }
@@ -521,6 +545,9 @@ export default function AdminDashboard() {
                                                 </button>
                                                 <button onClick={() => s?.id && handleResetToLyrics(s.id)} className="text-[8px] font-black uppercase text-naranja-400 hover:text-naranja-600 transition-colors flex items-center gap-1" title="Conservar letra, regenerar audio">
                                                    {isProcessing === `lyrics-${s?.id}` ? <Loader2 size={10} className="animate-spin" /> : <Music size={10} />} A Letra
+                                                </button>
+                                                <button onClick={() => s?.id && handleRegenerateLegacy(s)} className="text-[8px] font-black uppercase text-purple-500 hover:text-purple-600 transition-colors flex items-center gap-1" title="Regenerar solo el PDF y Web con IA">
+                                                   {isProcessing === `legacy-${s?.id}` ? <Loader2 size={10} className="animate-spin" /> : <Feather size={10} />} Regen. Legado
                                                 </button>
                                                 <button onClick={() => u?.id && handleRefundToken(u.id, u.tokens_balance)} className="text-[8px] font-black uppercase text-amber-500 hover:text-amber-600 transition-colors flex items-center gap-1" title="Devolver 1 Crédito al Usuario">
                                                    {isProcessing === `refund-${u?.id}` ? <Loader2 size={10} className="animate-spin" /> : <Coins size={10} />} +1 Crédito
