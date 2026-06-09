@@ -210,8 +210,7 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('mn_songs').update({ 
         status: 'lyrics_ready',
         audio_url: null,
-        demo_url: null,
-        video_url: null
+        demo_url: null
       }).eq('id', songId);
       
       if (error) throw error;
