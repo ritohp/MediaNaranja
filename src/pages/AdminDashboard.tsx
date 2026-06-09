@@ -16,7 +16,8 @@ import {
   Coins, 
   RotateCcw,
   Mail,
-  Key
+  Key,
+  Feather
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
