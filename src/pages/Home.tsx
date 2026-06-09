@@ -83,7 +83,7 @@ export default function Home() {
               Las corbatas pasan de moda y los relojes se olvidan, pero una canción que narre su vida y sacrificios es un tesoro que guardará en el alma para siempre. Dile "gracias" con la melodía que se merece.
             </p>
             <button 
-              onClick={() => navigate('/crear-cancion')}
+              onClick={() => { localStorage.removeItem('mediaNaranjaDraft'); navigate('/crear-cancion'); }}
               className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:shadow-blue-200 transition-all flex items-center justify-center gap-3"
             >
               Crear canción para Papá <User size={18} />
@@ -133,7 +133,7 @@ export default function Home() {
               ))}
             </div>
             <button 
-              onClick={() => navigate('/crear-cancion')}
+              onClick={() => { localStorage.removeItem('mediaNaranjaDraft'); navigate('/crear-cancion'); }}
               className="w-full sm:w-auto px-10 py-5 bg-[#FF6B00] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-[#E66000] transition-all flex items-center justify-center gap-3"
             >
               Comenzar nuestra historia <ArrowRight size={18} />
@@ -160,7 +160,7 @@ export default function Home() {
                "Lloré de emoción al escuchar mi historia hecha arte."
             </div>
             <button 
-              onClick={() => navigate('/crear-cancion')}
+              onClick={() => { localStorage.removeItem('mediaNaranjaDraft'); navigate('/crear-cancion'); }}
               className="w-full sm:w-auto px-10 py-5 bg-[#FF2D55] text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-[#E6284C] transition-all flex items-center justify-center gap-3"
             >
               Crear tributo para Mamá <Heart size={18} />
@@ -204,7 +204,7 @@ export default function Home() {
               ))}
             </div>
             <button 
-              onClick={() => navigate('/crear-cancion')}
+              onClick={() => { localStorage.removeItem('mediaNaranjaDraft'); navigate('/crear-cancion'); }}
               className="w-full sm:w-auto px-10 py-5 bg-indigo-400 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-500 transition-all flex items-center justify-center gap-3"
             >
               Crear arrullo mágico <Baby size={18} />
@@ -228,7 +228,7 @@ export default function Home() {
               Para quienes conocen tus mejores historias porque las vivieron contigo. Celebra esa lealtad incondicional con una canción llena de anécdotas, risas y gratitud.
             </p>
             <button 
-              onClick={() => navigate('/crear-cancion')}
+              onClick={() => { localStorage.removeItem('mediaNaranjaDraft'); navigate('/crear-cancion'); }}
               className="w-full sm:w-auto px-10 py-5 bg-emerald-500 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-3"
             >
               Sorprender a mi cómplice <Users size={18} />
@@ -302,7 +302,7 @@ export default function Home() {
               Tu vida <br /> <span className="text-gradient">hecha canción.</span>
             </h2>
             <button 
-              onClick={() => navigate('/crear-cancion')}
+              onClick={() => { localStorage.removeItem('mediaNaranjaDraft'); navigate('/crear-cancion'); }}
               className="px-16 py-8 bg-brand-gradient text-white rounded-full font-outfit font-black text-sm uppercase tracking-[0.4em] shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-4 mx-auto"
             >
               Comenzar mi canción <ArrowRight />
