@@ -144,7 +144,7 @@ export default function CreateSong() {
 
     const isTribute = data.category === 'papa';
     const basePrompt = `Eres un compositor experto de canciones personalizadas. 
-    Genera la letra de una canción siguiendo estos datos, estructurada rítmicamente con [Verse 1], [Chorus], [Verse 2], [Spoken Word], [Chorus], [Outro], [End].
+    Genera la letra completa de una canción siguiendo estos datos, estructurada con [Verse 1], [Chorus], [Verse 2], [Spoken Word], [Chorus], [Bridge], [Outro].
     
     CONTEXTO Y DETALLES EMOCIONALES:
     ${contextSummary}
@@ -155,14 +155,13 @@ export default function CreateSong() {
     ESTILO DE LA CANCIÓN DESEADO:
     ${data.moodAndStyle}
     
-    INSTRUCCIONES CRÍTICAS DE REDACCIÓN Y ESTRUCTURA:
+    INSTRUCCIONES CRÍTICAS DE REDACCIÓN:
     1. PROHIBICIÓN: No incluyas nunca la frase "Media Naranja" ni menciones a la plataforma en la letra. La canción debe ser 100% personal para el destinatario.
     2. NIÑOS/BEBÉS: Si la categoría es 'hijo', es MANDATORIO que investigues o deduzcas poéticamente el significado de su nombre "${data.childName}" y lo integres en un verso. Debe sentirse como una bendición o un regalo del destino.
-    3. FLUIDEZ Y LONGITUD: Incorpora los detalles de las respuestas de forma poética. IMPORTANTE: LA CANCIÓN NO DEBE SER DEMASIADO LARGA. Limita los versos a 4 líneas cada uno.
+    3. FLUIDEZ: Incorpora los detalles de las respuestas en la lírica de forma natural y poética.
     4. SPOKEN WORD: La sección [Spoken Word] debe contener el mensaje hablado proporcionado.${isTribute ? `\n    5. REGLAS DE FORMATO Y METATAGS (¡CRÍTICO PARA SUNO!): SUNO NO ENTIENDE INSTRUCCIONES DESCRIPTIVAS. NUNCA escribas frases narrativas dentro de los corchetes (por ejemplo, PROHIBIDO escribir: "[Baja la música, entra violín]"). Suno cantará ese texto por error. Si necesitas cambiar la música, usa ÚNICAMENTE metatags estructurales estándar de 1 o 2 palabras en inglés (ejemplo: [Break], [Guitar Solo], [Instrumental Interlude], [Drop], [Build], [Acapella]).
-    6. PERSPECTIVA DEL NARRADOR: Canta desde la perspectiva de un observador ("él era...") o colectivo ("nuestro padre..."). Cuenta su historia en tercera persona, no le cantes directamente ("tú").` : `\n    5. METATAGS DE SUNO: NUNCA uses frases descriptivas en los corchetes (ej. "[Música suave]"). Suno lo cantará por error. Usa solo etiquetas cortas en inglés: [Verse], [Chorus], [Guitar Solo], [Break].`}
-    ${isTribute ? '7' : '6'}. CIERRE OBLIGATORIO: Para evitar que la canción se corte de golpe a los 4 minutos, la letra DEBE terminar siempre con un [Outro] corto y, en la última línea absoluta del texto, poner la etiqueta [End].
-    ${isTribute ? '8' : '7'}. Responde ÚNICAMENTE con la letra estructurada.`;
+    6. PERSPECTIVA DEL NARRADOR: Canta desde la perspectiva de un observador ("él era...") o colectivo ("nuestro padre..."). Cuenta su historia en tercera persona, no le cantes directamente ("tú").` : `\n    5. METATAGS DE SUNO: NUNCA uses frases descriptivas en los corchetes (ej. "[Música suave]"). Suno lo cantará por error. Usa solo etiquetas cortas en inglés: [Verse], [Chorus], [Bridge], [Guitar Solo], [Break].`}
+    ${isTribute ? '7' : '6'}. Responde ÚNICAMENTE con la letra estructurada.`;
 
     if (feedbackText && previousLyrics) {
       return `Eres un compositor experto. REESCRIBE la siguiente canción basándote exclusivamente en el AJUSTE solicitado.
