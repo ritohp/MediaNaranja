@@ -228,7 +228,19 @@ export default function AdminDashboard() {
     try {
       setIsProcessing(`legacy-${song.id}`);
       const { generateInfographicData } = await import('../services/ai');
-      const infoData = await generateInfographicData(song.form_data);
+      
+      const story = song.form_data?.initialContext || "";
+      const answers = song.form_data?.tributeAnswers || [];
+      const recipientName = song.form_data?.recipientName || "Homenajeado";
+      const archetype = song.form_data?.archetype || "El Creador";
+      
+      const infoData = await generateInfographicData(
+        story, 
+        answers, 
+        recipientName, 
+        archetype, 
+        "legacy"
+      );
       
       if (!infoData) throw new Error("No se pudo generar");
 
