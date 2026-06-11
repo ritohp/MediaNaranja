@@ -148,7 +148,7 @@ export default function Header() {
               {user && (
                 <li><Link to="/mis-canciones" className="hover:text-naranja-500 transition-colors">Mis Canciones</Link></li>
               )}
-              <li><a href="/crear-cancion" onClick={() => localStorage.removeItem('mediaNaranjaDraft')} className="px-4 py-2 bg-naranja-500 text-white rounded-xl hover:bg-naranja-600 transition-all shadow-md shadow-naranja-100">Crear Canción</a></li>
+              <li><a href="/crear-cancion" onClick={() => localStorage.removeItem('mn_draft_song')} className="px-4 py-2 bg-naranja-500 text-white rounded-xl hover:bg-naranja-600 transition-all shadow-md shadow-naranja-100">Crear Canción</a></li>
             </ul>
 
             <div className="flex items-center gap-4 text-blush-600">
@@ -253,7 +253,7 @@ export default function Header() {
                     <a 
                       href="/crear-cancion" 
                       onClick={() => {
-                        localStorage.removeItem('mediaNaranjaDraft');
+                        localStorage.removeItem('mn_draft_song');
                         setIsMobileMenuOpen(false);
                       }}
                       className="flex items-center gap-4 p-4 rounded-xl bg-naranja-500 text-white shadow-lg shadow-naranja-200 font-bold uppercase tracking-widest text-sm"

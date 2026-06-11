@@ -179,7 +179,7 @@ export default function MySongs() {
         </div>
         <Link 
           to="/crear-cancion" 
-          onClick={() => localStorage.removeItem('mediaNaranjaDraft')}
+          onClick={() => localStorage.removeItem('mn_draft_song')}
           className="bg-white border-2 border-naranja-500 text-naranja-600 px-6 py-3 rounded-xl font-bold text-sm tracking-widest hover:bg-naranja-500 hover:text-white transition-all shadow-sm flex items-center gap-2"
         >
           NUEVA CANCIÓN <ChevronRight size={16} />
@@ -227,7 +227,7 @@ export default function MySongs() {
           <p className="text-ink-600/70 max-w-md mx-auto mb-10 font-light">El taller está listo y esperando por tu próxima gran historia de amor.</p>
           <Link 
             to="/crear-cancion" 
-            onClick={() => localStorage.removeItem('mediaNaranjaDraft')}
+            onClick={() => localStorage.removeItem('mn_draft_song')}
             className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg tracking-widest hover:brightness-110 transition-all shadow-xl"
           >
             EMPEZAR AHORA
@@ -366,7 +366,7 @@ export default function MySongs() {
                                 step: 2, 
                                 currentSongId: song.id 
                               };
-                              localStorage.setItem('mediaNaranjaDraft', JSON.stringify(draft));
+                              localStorage.setItem('mn_draft_song', JSON.stringify(draft));
                               window.location.href = '/crear-cancion';
                             }}
                             className="px-6 py-2 bg-white text-naranja-500 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm"

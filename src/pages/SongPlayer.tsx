@@ -238,7 +238,7 @@ export default function SongPlayer() {
             Esta canción y su legado aún no han sido desbloqueados públicamente por su creador.
           </p>
           <button 
-            onClick={() => { localStorage.removeItem('mediaNaranjaDraft'); navigate('/crear-cancion'); }}
+            onClick={() => { localStorage.removeItem('mn_draft_song'); navigate('/crear-cancion'); }}
             className="w-full py-4 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all"
           >
             CREAR MI PROPIO LEGADO
