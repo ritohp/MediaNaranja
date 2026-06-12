@@ -249,9 +249,9 @@ export default function SongPlayer() {
   }
 
   const selectedVersion = song.form_data?.selected_version || 1;
-  const currentAudioUrl = isPaid 
-    ? (selectedVersion === 2 && song.form_data?.version2?.audio_url ? song.form_data.version2.audio_url : song.audio_url)
-    : (selectedVersion === 2 && song.form_data?.version2?.demo_url ? song.form_data.version2.demo_url : song.demo_url);
+  const currentAudioUrl = selectedVersion === 2
+    ? (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url)
+    : (song.audio_url || song.demo_url);
     
   const photoUrl = song.form_data?.legacy_photo_url || song.form_data?.custom_photo_url || "/papa-sorpresa.png";
   
@@ -544,15 +544,22 @@ export default function SongPlayer() {
               ${isPaid ? 'bg-[#1C2A39] text-white hover:bg-[#2A3F54]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
           >
             {isPaid ? <Download size={16} /> : <Lock size={16} className="opacity-60" />}
-            {isPaid ? "Descargar Canción MP3" : "Desbloquear MP3 ($199 MXN)"}
+            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción + PDF + Web ($399 MXN)"}
           </button>
           
           <button 
-            onClick={generatePDF}
-            className="w-full py-4 bg-[#FDF8EE] border border-[#B69D74] text-[#1C2A39] rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#F2E8D5] transition-colors shadow-sm tracking-wider text-[10px] md:text-xs uppercase"
+            onClick={() => {
+              if (isPaid) {
+                 generatePDF();
+              } else {
+                 window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
+              }
+            }}
+            className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase
+              ${isPaid ? 'bg-[#FDF8EE] border border-[#B69D74] text-[#1C2A39] hover:bg-[#F2E8D5]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
           >
-            {isPaid ? <FileText size={16} className="text-[#B69D74]" /> : <Lock size={16} className="text-[#B69D74]" />}
-            {isPaid ? "Descargar Póster PDF para Imprimir" : "Desbloquear Póster PDF"}
+            {isPaid ? <FileText size={16} className="text-[#B69D74]" /> : <Lock size={16} className="opacity-60" />}
+            {isPaid ? "Descargar Póster PDF para Imprimir" : "Desbloquear Póster PDF ($399 MXN)"}
           </button>
           
           {isPaid && (
