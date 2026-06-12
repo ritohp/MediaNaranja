@@ -229,10 +229,27 @@ export default function AdminDashboard() {
       setIsProcessing(`legacy-${song.id}`);
       const { generateInfographicData } = await import('../services/ai');
       
-      const story = song.form_data?.initialContext || "";
+      let recipientName = song.form_data?.recipientName || song.form_data?.nombreDestinatario || song.form_data?.childName || "Homenajeado";
+      if (!recipientName.includes(' ')) {
+        const newName = window.prompt(`El nombre actual es "${recipientName}". Para que la IA funcione correctamente, necesita Apellidos. Ingresa el nombre completo:`, recipientName);
+        if (!newName || !newName.trim() || !newName.includes(' ')) {
+          alert('Debes ingresar al menos un nombre y un apellido separados por espacio.');
+          setIsProcessing(null);
+          return;
+        }
+        recipientName = newName.trim();
+      }
+
+      const storyParts = [
+        song.form_data?.initialContext,
+        song.form_data?.specificDetails,
+        song.form_data?.familyNames ? `Familiares: ${song.form_data.familyNames}` : null,
+        song.form_data?.interviewAnswers ? JSON.stringify(song.form_data.interviewAnswers) : null
+      ].filter(Boolean);
+      const story = storyParts.join(". ");
+
       const answers = song.form_data?.tributeAnswers || [];
-      const recipientName = song.form_data?.recipientName || "Homenajeado";
-      const archetype = song.form_data?.archetype || "El Creador";
+      const archetype = song.form_data?.archetype || song.form_data?.category?.toUpperCase() || "LEGACY";
       
       const infoData = await generateInfographicData(
         story, 
