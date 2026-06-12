@@ -66,7 +66,7 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
               <div className="relative mt-2 mb-2">
                  <h3 className={`text-4xl italic ${text}`}>{infoData.nameMeaning.name}</h3>
               </div>
-              <p className="text-[11px] text-[#444] font-medium leading-relaxed mt-2 whitespace-pre-line relative z-10 line-clamp-5">
+              <p className="text-[12px] text-[#444] font-medium leading-snug mt-2 whitespace-pre-line relative z-10">
                 {infoData.nameMeaning.meaning}
               </p>
               <img src="/assets/pluma.png" alt="Pluma" className="absolute bottom-2 right-2 w-12 h-12 opacity-30 pointer-events-none object-contain drop-shadow-sm mix-blend-multiply" crossOrigin="anonymous"/>
@@ -80,7 +80,7 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
               <div className="relative mt-2 mb-2">
                  <h3 className={`text-3xl italic ${text} leading-tight`}>{infoData.lastNameMeaning.lastName}</h3>
               </div>
-              <p className="text-[11px] text-[#444] font-medium leading-relaxed mt-2 whitespace-pre-line relative z-10 line-clamp-6">
+              <p className="text-[12px] text-[#444] font-medium leading-snug mt-2 whitespace-pre-line relative z-10">
                 {infoData.lastNameMeaning.meaning}
               </p>
               <img src="/assets/arbol.png" alt="Árbol" className="absolute bottom-2 right-2 w-14 h-14 opacity-20 pointer-events-none object-contain drop-shadow-sm mix-blend-multiply" crossOrigin="anonymous"/>
@@ -118,7 +118,7 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
                       <div className={`w-8 h-8 rounded-full border-[1.5px] ${border} border-opacity-60 flex items-center justify-center shrink-0 shadow-sm bg-[#FDF8EE]`}>
                         <SIcon size={14} className={text} fill={i === 1 ? 'currentColor' : 'none'} />
                       </div>
-                      <p className="text-[11px] text-[#333] leading-snug font-medium line-clamp-4">
+                      <p className="text-[11px] text-[#333] leading-snug font-medium line-clamp-6">
                         {test.text}
                       </p>
                     </div>
@@ -164,10 +164,10 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
             </div>
             <p className="text-[9px] text-center italic text-[#555] mb-4">Los valores que dejó y que seguirán vivos por siempre.</p>
             <div className="flex justify-center gap-2 lg:gap-4 items-start h-full pt-1">
-              {infoData.shields.slice(0, 5).map((shield, i) => {
+              {infoData.shields.slice(0, 3).map((shield, i) => {
                 const SIcon = IconMap[shield.icon] || Shield;
                 return (
-                  <div key={i} className="flex flex-col items-center w-[18%]">
+                  <div key={i} className="flex flex-col items-center w-[30%]">
                     <div className="relative w-10 h-12 flex items-center justify-center mb-3">
                       <svg viewBox="0 0 48 56" fill="#1C2A39" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full drop-shadow-md">
                         <path d="M24 0L48 10.6667V24C48 38.0133 37.7067 51.1067 24 56C10.2933 51.1067 0 38.0133 0 24V10.6667L24 0Z" stroke={accentHex} strokeWidth="2.5"/>
@@ -187,15 +187,18 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
               Su Legado Vive En
             </div>
             <p className="text-[9px] text-center italic text-[#555] mb-4">Toda historia importante continúa a través de las personas que inspira.</p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {infoData.familyMembers.map((member, idx) => (
-                <div key={idx} className="flex flex-col items-center w-12">
-                  <div className="w-9 h-9 rounded-full border-[1.5px] flex items-center justify-center bg-transparent shadow-sm mb-2" style={{ borderColor: accentHex }}>
-                    <Users size={14} className={text} />
+            <div className="flex flex-nowrap justify-center gap-1 md:gap-3 w-full px-1 overflow-hidden mt-1">
+              {infoData.familyMembers.map((member, idx) => {
+                const isMany = infoData.familyMembers.length > 4;
+                return (
+                  <div key={idx} className="flex flex-col items-center min-w-[32px] max-w-[50px] flex-1">
+                    <div className={`${isMany ? 'w-7 h-7' : 'w-9 h-9'} rounded-full border-[1.5px] flex items-center justify-center bg-transparent shadow-sm mb-1`} style={{ borderColor: accentHex }}>
+                      <Users size={isMany ? 12 : 14} className={text} />
+                    </div>
+                    <span className={`${isMany ? 'text-[7px]' : 'text-[9px]'} font-bold text-[#333] uppercase text-center w-full truncate leading-tight tracking-wider`}>{member}</span>
                   </div>
-                  <span className="text-[9px] font-bold text-[#333] uppercase text-center w-full truncate leading-tight tracking-wider">{member}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <Heart size={12} className={`mx-auto mt-3 ${accent}`} fill="currentColor" />
           </div>
@@ -237,10 +240,10 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
               Mensaje Para Él
             </div>
             <img src="/assets/pluma.png" alt="Pluma" className="w-8 h-8 opacity-50 mb-2" crossOrigin="anonymous"/>
-            <p className="text-[11px] leading-relaxed text-[#333] font-medium">
+            <p className="text-[11px] leading-snug text-[#333] font-medium">
               Hoy celebramos al hombre que ha sido nuestro guía, nuestro ejemplo y nuestro mayor apoyo. Gracias por cada sacrificio silencioso, por cada enseñanza y por el amor incondicional.
             </p>
-            <h4 className={`text-[12px] font-bold uppercase mt-4 tracking-widest ${text}`}>
+            <h4 className={`text-[12px] font-bold uppercase mt-2 tracking-widest ${text}`}>
               Tu historia es única.<br/>Tu legado, eterno.
             </h4>
           </div>

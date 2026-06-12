@@ -300,7 +300,12 @@ export default function SongPlayer() {
   };
 
   // Función para renderizar el contenido infográfico compartido entre Web y PDF
-  const renderInfographicContent = (isPdf = false) => (
+  const renderInfographicContent = (isPdf = false) => {
+    const legacyFullName = (infoData?.nameMeaning?.name && infoData?.lastNameMeaning?.lastName)
+      ? `${infoData.nameMeaning.name} ${infoData.lastNameMeaning.lastName}`.trim()
+      : recipient;
+      
+    return (
     <div className={`relative ${isPdf ? 'w-[800px] p-12' : 'w-full p-6 md:p-12'} mx-auto`} style={{ fontFamily: 'Georgia, serif' }}>
       
       {/* Borde Decorativo */}
@@ -316,7 +321,7 @@ export default function SongPlayer() {
       <div className="relative z-10 text-center">
         {/* Título Principal */}
         <h3 className={`text-[#333] tracking-[0.2em] text-sm md:text-base font-semibold uppercase mb-2 mt-4`}>La Historia de</h3>
-        <h1 className={`text-4xl md:text-6xl ${tokens.text} font-bold uppercase tracking-widest mb-2`}>{recipient}</h1>
+        <h1 className={`text-4xl md:text-6xl ${tokens.text} font-bold uppercase tracking-widest mb-2`}>{legacyFullName}</h1>
         <div className="flex items-center justify-center gap-4 mb-10 opacity-70">
           <div className={`h-[2px] w-12 ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'}`}></div>
           <span className={`${tokens.accent} uppercase tracking-[0.3em] text-xs font-bold`}>Una vida que dejó huella</span>
@@ -496,7 +501,8 @@ export default function SongPlayer() {
 
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#111] py-8 px-4 md:py-12 flex justify-center">
