@@ -14,6 +14,7 @@ export default function TributeWizard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>(['', '', '', '', '']);
+  const [fullName, setFullName] = useState<string>('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
 
@@ -24,16 +25,19 @@ export default function TributeWizard() {
       
       if (data) {
         const recipientName = data.form_data?.nombreDestinatario || data.form_data?.childName || "tu ser querido";
-        const story = data.form_data?.initialContext || data.form_data?.specificDetails || "";
+        setFullName(recipientName);
+
+        // Combinar TODO el contexto para que no se pierdan familiares ni detalles
+        const storyParts = [
+          data.form_data?.initialContext,
+          data.form_data?.specificDetails,
+          data.form_data?.familyNames ? `Familiares mencionados: ${data.form_data.familyNames}` : null
+        ].filter(Boolean);
+        const story = storyParts.join(". ");
         
         let previousAnswers: string[] = [];
         if (data.form_data?.interviewAnswers) {
           previousAnswers = Object.values(data.form_data.interviewAnswers);
-        } else {
-          previousAnswers = [
-            data.form_data?.familyNames,
-            data.form_data?.specificDetails
-          ].filter(Boolean) as string[];
         }
 
         const aiQuestions = await generateTributeQuestions(story, previousAnswers, recipientName);
@@ -78,6 +82,11 @@ export default function TributeWizard() {
   };
 
   const handleGenerate = async () => {
+    if (!fullName.trim() || !fullName.includes(' ')) {
+      alert("Por favor ingresa el nombre y al menos un apellido para poder rastrear el origen de su legado.");
+      return;
+    }
+
     if (answers.some(a => !a.trim())) {
       alert("Por favor completa todas las preguntas para que Naranjín pueda hacer su magia.");
       return;
@@ -85,14 +94,20 @@ export default function TributeWizard() {
     
     setIsGenerating(true);
     try {
-      const recipientName = song.form_data?.recipientName || "Tu Ser Querido";
       const archetype = song.form_data?.category?.toUpperCase() || "LEGACY";
-      const story = song.form_data?.initialContext || "";
+      // Combinamos el contexto nuevamente para enviar la foto completa a la IA
+      const storyParts = [
+        song.form_data?.initialContext,
+        song.form_data?.specificDetails,
+        song.form_data?.familyNames ? `Familiares: ${song.form_data.familyNames}` : null,
+        song.form_data?.interviewAnswers ? JSON.stringify(song.form_data.interviewAnswers) : null
+      ].filter(Boolean);
+      const story = storyParts.join(". ");
       
       const infographicData = await generateInfographicData(
         story, 
         answers, 
-        recipientName, 
+        fullName, 
         archetype, 
         "legacy"
       );
@@ -141,10 +156,22 @@ export default function TributeWizard() {
                 <BookOpen size={32} />
               </div>
               <h1 className="text-4xl md:text-5xl font-serif text-[#1C2A39] mb-4 tracking-tight">Construyendo un <span className="text-[#B69D74] italic">Legado</span></h1>
-              <p className="text-[#1C2A39]/70 text-lg max-w-xl mx-auto">Para generar una línea de tiempo espectacular y extraer los valores clave, necesitamos unos últimos detalles sobre la historia de <strong>{song?.form_data?.recipientName || "tu ser querido"}</strong>.</p>
+              <p className="text-[#1C2A39]/70 text-lg max-w-xl mx-auto">Para generar una línea de tiempo espectacular y extraer los valores clave, necesitamos unos últimos detalles sobre la historia de <strong>{song?.form_data?.nombreDestinatario || "tu ser querido"}</strong>.</p>
             </div>
 
             <div className="space-y-8">
+              <div className="bg-[#B69D74]/10 p-6 md:p-8 rounded-3xl border border-[#B69D74]/30 shadow-inner">
+                <label className="block text-xl font-serif font-bold text-[#1C2A39] mb-2 flex items-center gap-3"><Wand2 className="text-[#B69D74]" size={24} /> Nombre Completo</label>
+                <p className="text-sm text-[#1C2A39]/70 mb-4 italic">El sistema necesita obligatoriamente <strong>nombre y apellidos</strong> para investigar el origen de la familia y el significado del nombre para la heráldica.</p>
+                <input 
+                  type="text" 
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full bg-white border border-[#B69D74]/30 rounded-2xl p-4 text-base outline-none focus:ring-2 focus:ring-[#B69D74] transition-all font-bold"
+                  placeholder="Ej. Rito Herrera Pérez"
+                  required
+                />
+              </div>
               {questions.map((q, idx) => (
                 <div key={idx} className="bg-[#F8F3E9]/50 p-6 rounded-2xl border border-[#E8DCC8]">
                   <label className="block text-base font-bold text-[#1C2A39] mb-4">{idx + 1}. {q}</label>

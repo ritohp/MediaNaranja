@@ -265,11 +265,11 @@ Extrae los datos y RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA 
   ],
   "nameMeaning": {
     "name": "Obligatorio extraer el primer nombre real de la historia (Ej: Si es Juan Carlos, pon Juan)", 
-    "meaning": "Escribe el origen real de su nombre primero. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre."
+    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL de este nombre (ej. origen latino, griego, germánico, etc.). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre. PROHIBIDO usar frases genéricas como 'Tu Ser Querido'."
   },
   "lastNameMeaning": {
-    "lastName": "Obligatorio extraer el apellido real de la historia (Ej: Si es Pérez, pon Pérez)", 
-    "meaning": "Escribe el origen de su apellido. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo."
+    "lastName": "Obligatorio extraer el apellido real de la historia (Ej: Si es Pérez, pon Pérez). Si no se proporcionó apellido, usa el segundo nombre o pon 'La Familia'", 
+    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL de este apellido. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo. PROHIBIDO usar cosas genéricas como 'El Patriarca'."
   },
   "quote": "Una frase poética de 10 a 15 palabras que resuma su legado o historia.",
   "familyMembers": [
