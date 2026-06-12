@@ -129,9 +129,9 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
           </div>
         </div>
 
-        {/* MIDDLE SECTION: LEGADO (75% a la derecha) */}
+        {/* MIDDLE SECTION: LEGADO (65% a la derecha) */}
         <div className="flex justify-end mb-6 mt-4">
-          <div className={`w-[75%] border-[1.5px] ${border} border-opacity-40 p-4 rounded-md bg-white/50 relative flex flex-col justify-center`}>
+          <div className={`w-[65%] border-[1.5px] ${border} border-opacity-40 p-4 rounded-md bg-white/50 relative flex flex-col justify-center`}>
             <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`} style={{ backgroundColor: bg === 'bg-[#FFF0F5]' ? '#FFF0F5' : '#FDF8EE' }}>
               Su Legado
             </div>
