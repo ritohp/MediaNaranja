@@ -102,29 +102,61 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
             <Heart size={14} className={`mx-auto mt-2 ${accent}`} fill="currentColor" />
           </div>
 
-          {/* Columna Derecha: Su Legado Vive En (Familia) */}
+          {/* Columna Derecha: Lo que dicen de el */}
           <div className="w-[28%] flex flex-col">
             <div className={`flex-1 border-[1.5px] ${border} border-opacity-40 p-4 rounded-md bg-white/50 shadow-sm relative flex flex-col justify-start`}>
               <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 bg-[#FDF8EE] px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`}>
-                Su Legado Vive En
+                Lo que dicen de él
               </div>
-              <Users className={`mx-auto mb-4 mt-2 opacity-60 ${accent}`} fill="none" size={18} />
-              <p className="text-[9px] text-center italic text-[#555] mb-5">Toda historia importante continúa a través de las personas que inspira.</p>
+              <Heart className={`mx-auto mb-5 mt-2 opacity-60 ${accent}`} fill="currentColor" size={14} />
               
-              <div className="flex flex-col gap-4 px-2 overflow-hidden h-[240px]">
-                {infoData.familyMembers.map((member, idx) => (
-                  <div key={idx} className="flex items-center gap-3 border-b border-[#B69D74]/20 pb-2 last:border-0">
-                    <Heart size={10} className={`${accent} shrink-0`} fill="currentColor" />
-                    <span className="text-[11px] font-bold text-[#333] uppercase tracking-wider truncate w-full">{member}</span>
-                  </div>
-                ))}
+              <div className="flex flex-col gap-5">
+                {infoData.testimonials?.slice(0, 3).map((test, i) => {
+                  const SIcon = [Star, Heart, Feather, Shield][i % 4];
+                  return (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full border-[1.5px] ${border} border-opacity-60 flex items-center justify-center shrink-0 shadow-sm bg-[#FDF8EE]`}>
+                        <SIcon size={14} className={text} fill={i === 1 ? 'currentColor' : 'none'} />
+                      </div>
+                      <p className="text-[11px] text-[#333] leading-snug font-medium line-clamp-6">
+                        {test.text}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
 
-        {/* MIDDLE SECTION: LÍNEA DEL TIEMPO */}
-        <div className="my-5">
+        {/* MIDDLE SECTION: LEGADO (75% a la derecha) */}
+        <div className="flex justify-end mb-6 mt-4">
+          <div className={`w-[75%] border-[1.5px] ${border} border-opacity-40 p-4 rounded-md bg-white/50 relative flex flex-col justify-center`}>
+            <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`} style={{ backgroundColor: bg === 'bg-[#FFF0F5]' ? '#FFF0F5' : '#FDF8EE' }}>
+              Su Legado
+            </div>
+            <p className="text-[9px] text-center italic text-[#555] mb-4">Los valores que dejó y que seguirán vivos por siempre.</p>
+            <div className="flex justify-center gap-12 items-start h-full pt-1">
+              {infoData.shields.slice(0, 3).map((shield, i) => {
+                const SIcon = IconMap[shield.icon] || Shield;
+                return (
+                  <div key={i} className="flex flex-col items-center w-[25%]">
+                    <div className="relative w-12 h-14 flex items-center justify-center mb-3">
+                      <svg viewBox="0 0 48 56" fill="#1C2A39" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full drop-shadow-md">
+                        <path d="M24 0L48 10.6667V24C48 38.0133 37.7067 51.1067 24 56C10.2933 51.1067 0 38.0133 0 24V10.6667L24 0Z" stroke={accentHex} strokeWidth="2.5"/>
+                      </svg>
+                      <SIcon size={16} className="relative z-10" fill="currentColor" strokeWidth={0} style={{ color: accentHex }} />
+                    </div>
+                    <span className="text-[9px] font-bold uppercase text-[#333] tracking-widest text-center leading-[1.2]">{shield.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM SECTION: LÍNEA DEL TIEMPO */}
+        <div className="my-5 mb-8">
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className={`h-[1px] w-32 ${border} opacity-50`}></div>
             <span className={`text-[12px] font-bold uppercase tracking-widest ${text}`}>Línea del Tiempo</span>
@@ -148,56 +180,20 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
           </div>
         </div>
 
-        {/* BOTTOM SECTION: LEGADO */}
-        <div className="flex gap-4 h-[150px] mb-6">
-          
-          {/* Su Legado (Escudos Ancho Completo) */}
-          <div className={`w-full border-[1.5px] ${border} border-opacity-40 p-4 rounded-md bg-white/50 relative flex flex-col justify-center`}>
-            <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`} style={{ backgroundColor: bg === 'bg-[#FFF0F5]' ? '#FFF0F5' : '#FDF8EE' }}>
-              Su Legado
-            </div>
-            <p className="text-[9px] text-center italic text-[#555] mb-4">Los valores que dejó y que seguirán vivos por siempre.</p>
-            <div className="flex justify-center gap-6 lg:gap-12 items-start h-full pt-1">
-              {infoData.shields.slice(0, 5).map((shield, i) => {
-                const SIcon = IconMap[shield.icon] || Shield;
-                return (
-                  <div key={i} className="flex flex-col items-center w-[15%]">
-                    <div className="relative w-12 h-14 flex items-center justify-center mb-3">
-                      <svg viewBox="0 0 48 56" fill="#1C2A39" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full drop-shadow-md">
-                        <path d="M24 0L48 10.6667V24C48 38.0133 37.7067 51.1067 24 56C10.2933 51.1067 0 38.0133 0 24V10.6667L24 0Z" stroke={accentHex} strokeWidth="2.5"/>
-                      </svg>
-                      <SIcon size={16} className="relative z-10" fill="currentColor" strokeWidth={0} style={{ color: accentHex }} />
-                    </div>
-                    <span className="text-[9px] font-bold uppercase text-[#333] tracking-widest text-center leading-[1.2]">{shield.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* FOOTER SECTION: TESTIMONIOS, MENSAJE, QR */}
+        {/* FOOTER SECTION: FAMILIA, MENSAJE, QR */}
         <div className="flex gap-4 h-[170px]">
           
-          {/* Lo que dicen de el (Testimonios) */}
-          <div className={`w-[38%] border-[1.5px] ${border} border-opacity-40 p-4 rounded-md bg-white/50 relative overflow-hidden flex flex-col justify-start`}>
+          {/* Su Legado Vive En (Familia) */}
+          <div className={`w-[38%] border-[1.5px] ${border} border-opacity-40 p-4 rounded-md bg-white/50 relative overflow-hidden flex flex-col justify-start items-center`}>
             <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`} style={{ backgroundColor: bg === 'bg-[#FFF0F5]' ? '#FFF0F5' : '#FDF8EE' }}>
-              Lo Que Dicen De Él
+              Su Legado Vive En
             </div>
-            <div className="flex flex-col gap-4 mt-3">
-              {infoData.testimonials?.slice(0, 2).map((test, i) => {
-                const SIcon = [Star, Heart][i % 2];
-                return (
-                  <div key={i} className="flex items-start gap-2">
-                    <div className={`w-7 h-7 mt-0.5 rounded-full border-[1.5px] ${border} border-opacity-60 flex items-center justify-center shrink-0 shadow-sm bg-[#FDF8EE]`}>
-                      <SIcon size={10} className={text} fill={i === 1 ? 'currentColor' : 'none'} />
-                    </div>
-                    <p className="text-[10px] text-[#333] leading-snug font-medium line-clamp-4">
-                      {test.text}
-                    </p>
-                  </div>
-                );
-              })}
+            <Heart className={`mx-auto mb-3 mt-4 opacity-60 ${accent}`} fill="currentColor" size={14} />
+            <p className="text-[10px] text-center italic text-[#555] mb-4">Toda historia importante continúa a través de las personas que inspira.</p>
+            <div className="flex justify-center items-center flex-wrap px-2 gap-2 mt-2">
+              <span className="text-[11px] font-bold text-[#333] uppercase tracking-[0.2em] text-center leading-relaxed">
+                {infoData.familyMembers.join(" • ")}
+              </span>
             </div>
           </div>
 

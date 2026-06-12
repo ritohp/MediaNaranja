@@ -277,8 +277,8 @@ Extrae los datos y RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA 
     "Nombre 1", "Nombre 2"
   ], 
   "testimonials": [
-    // REFINA Y MEJORA LO QUE DIJO EL USUARIO. No copies y pegues. Haz que suene muy profesional, pulido y emotivo, como la dedicatoria de un libro.
-    {"text": "Testimonio o anécdota refinada."}
+    // REFINA Y MEJORA LO QUE DIJO EL USUARIO. Haz que suene muy profesional, pulido y emotivo. DEBE SER MUY BREVE (MÁXIMO 15 a 20 palabras por testimonio) para que no se corte en el diseño del PDF.
+    {"text": "Testimonio o anécdota breve y refinada."}
   ]
 }
 
