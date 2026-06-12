@@ -57,34 +57,20 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
         {/* TOP SECTION: 3 COLUMNS */}
         <div className="flex justify-between items-stretch gap-4 h-[320px]">
           
-          {/* Columna Izquierda: Nombres y Apellidos */}
-          <div className="w-[28%] flex flex-col gap-4">
+          {/* Columna Izquierda: Significado del Nombre */}
+          <div className="w-[28%] flex flex-col">
             {/* Box 1: Nombre */}
-            <div className={`border-[1.5px] ${border} border-opacity-40 p-4 rounded-md text-center bg-white/50 shadow-sm relative flex flex-col justify-center min-h-[142px]`}>
+            <div className={`border-[1.5px] ${border} border-opacity-40 p-4 rounded-md text-center bg-white/50 shadow-sm relative flex-1 flex flex-col justify-center`}>
               <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 ${bgOverlay} px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`}>
                 El Significado de su Nombre
               </div>
-              <div className="relative mt-1 mb-1">
+              <div className="relative mt-2 mb-2">
                  <h3 className={`text-3xl italic ${text}`}>{infoData.nameMeaning.name}</h3>
               </div>
-              <p className="text-[11px] text-[#444] font-medium leading-snug mt-1 whitespace-pre-line relative z-10">
+              <p className="text-[11.5px] text-[#444] font-medium leading-relaxed mt-2 whitespace-pre-line relative z-10">
                 {infoData.nameMeaning.meaning}
               </p>
-              <img src="/assets/pluma.png" alt="Pluma" className="absolute bottom-1 right-1 w-10 h-10 opacity-20 pointer-events-none object-contain drop-shadow-sm mix-blend-multiply" crossOrigin="anonymous"/>
-            </div>
-
-            {/* Box 2: Apellidos */}
-            <div className={`border-[1.5px] ${border} border-opacity-40 p-4 rounded-md text-center bg-white/50 shadow-sm relative flex-1 flex flex-col justify-center min-h-[142px]`}>
-              <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 ${bgOverlay} px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`}>
-                Origen de sus Apellidos
-              </div>
-              <div className="relative mt-1 mb-1">
-                 <h3 className={`text-2xl italic ${text} leading-tight`}>{infoData.lastNameMeaning.lastName}</h3>
-              </div>
-              <p className="text-[11px] text-[#444] font-medium leading-snug mt-1 whitespace-pre-line relative z-10">
-                {infoData.lastNameMeaning.meaning}
-              </p>
-              <img src="/assets/arbol.png" alt="Árbol" className="absolute bottom-1 right-1 w-12 h-12 opacity-15 pointer-events-none object-contain drop-shadow-sm mix-blend-multiply" crossOrigin="anonymous"/>
+              <img src="/assets/pluma.png" alt="Pluma" className="absolute bottom-2 right-2 w-12 h-12 opacity-20 pointer-events-none object-contain drop-shadow-sm mix-blend-multiply" crossOrigin="anonymous"/>
             </div>
           </div>
 
@@ -130,9 +116,24 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
           </div>
         </div>
 
-        {/* MIDDLE SECTION: LEGADO (Centrado al 70%) */}
-        <div className="flex justify-center mb-3 mt-2">
-          <div className={`w-[70%] border-[1.5px] ${border} border-opacity-40 p-3.5 rounded-md bg-white/50 relative flex flex-col justify-center`}>
+        {/* MIDDLE SECTION: APELLIDO (32%) & LEGADO (65%) */}
+        <div className="flex justify-between items-stretch gap-4 mb-3 mt-2 px-4 h-[120px]">
+          {/* Box 1: Apellidos (32%) */}
+          <div className={`w-[32%] border-[1.5px] ${border} border-opacity-40 p-3 rounded-md text-center bg-white/50 shadow-sm relative flex flex-col justify-center`}>
+            <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 ${bgOverlay} px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`}>
+              Origen de sus Apellidos
+            </div>
+            <div className="relative mt-1 mb-0.5">
+               <h3 className={`text-xl italic ${text} leading-none`}>{infoData.lastNameMeaning.lastName}</h3>
+            </div>
+            <p className="text-[10px] text-[#444] font-medium leading-snug whitespace-pre-line relative z-10 line-clamp-3">
+              {infoData.lastNameMeaning.meaning}
+            </p>
+            <img src="/assets/arbol.png" alt="Árbol" className="absolute bottom-1.5 right-1.5 w-10 h-10 opacity-15 pointer-events-none object-contain drop-shadow-sm mix-blend-multiply" crossOrigin="anonymous"/>
+          </div>
+
+          {/* Box 2: Legado (65%) */}
+          <div className={`w-[65%] border-[1.5px] ${border} border-opacity-40 p-3.5 rounded-md bg-white/50 relative flex flex-col justify-center`}>
             <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`} style={{ backgroundColor: overlayHex }}>
               Su Legado
             </div>
