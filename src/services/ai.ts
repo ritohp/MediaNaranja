@@ -74,9 +74,9 @@ export async function generateInterviewQuestions(context: string, category: stri
         "¿Cómo describirías su personalidad en 3 palabras?",
         "¿Cuál es el recuerdo más divertido que comparten?",
         "¿Qué es lo que más admiras de esta persona?",
-        "¿Tienen algún lugar que sea 'suyo'?",
-        "¿Hay alguna frase que siempre digan?",
-        "¿Cómo ha cambiado tu vida desde que le conoces?"
+        "¿Cuáles son las virtudes que más lo definen?",
+        "¿Cuál ha sido su mayor reto o logro?",
+        "¿Qué mensaje te gustaría dejarle hoy?"
       ]
     };
   }
@@ -256,7 +256,7 @@ Extrae los datos y RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA 
   "theme": "${theme}",
   "archetype": "${archetype}",
   "timeline": [
-    // ¡DEBES CREAR EXACTAMENTE 5 ELEMENTOS PARA LA LÍNEA DEL TIEMPO, NO MÁS, NO MENOS!
+    // El subtitle DEBE SER MUY CORTO (MÁXIMO 10 A 12 PALABRAS O 70 CARACTERES) PARA EVITAR QUE SE DESBORDE EN EL PDF.
     {"title": "INFANCIA", "subtitle": "Donde empezó su historia...", "icon": "Home"}
   ],
   "shields": [

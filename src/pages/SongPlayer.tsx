@@ -187,10 +187,10 @@ export default function SongPlayer() {
       const elementWidth = element.scrollWidth || 800;
       const elementHeight = element.scrollHeight || 1200;
       
-      // Ajustamos a proporciones verticales (A4)
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      // Ajustamos a proporciones de Tamaño Carta (Letter)
+      const pdf = new jsPDF('p', 'mm', 'letter');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+      const pdfHeight = pdf.internal.pageSize.getHeight();
       
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`Historia_${recipient.replace(/\s+/g, '_')}.pdf`);
