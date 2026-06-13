@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Wand2, RefreshCw, BookOpen, ArrowLeft, Camera, Image as ImageIcon } from 'lucide-react';
+import { Star, Wand2, RefreshCw, BookOpen, ArrowLeft, Camera, Image as ImageIcon, Music, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { generateInfographicData, generateTributeQuestions } from '../services/ai';
 
@@ -17,6 +17,7 @@ export default function TributeWizard() {
   const [fullName, setFullName] = useState<string>('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<number>(1);
 
   useEffect(() => {
     async function loadData() {
@@ -27,22 +28,32 @@ export default function TributeWizard() {
         const recipientName = data.form_data?.nombreDestinatario || data.form_data?.childName || "tu ser querido";
         setFullName(recipientName);
 
-        // Combinar TODO el contexto para que no se pierdan familiares ni detalles
-        const storyParts = [
-          data.form_data?.initialContext,
-          data.form_data?.specificDetails,
-          data.form_data?.familyNames ? `Familiares mencionados: ${data.form_data.familyNames}` : null
-        ].filter(Boolean);
-        const story = storyParts.join(". ");
-        
-        let previousAnswers: string[] = [];
-        if (data.form_data?.interviewAnswers) {
-          previousAnswers = Object.values(data.form_data.interviewAnswers);
+        if (data.form_data?.selected_version) {
+          setSelectedVersion(data.form_data.selected_version);
         }
 
-        const aiQuestions = await generateTributeQuestions(story, previousAnswers, recipientName);
-        setQuestions(aiQuestions);
-        setAnswers(new Array(aiQuestions.length).fill(''));
+        if (data.form_data?.tributeQuestions && data.form_data?.tributeAnswers) {
+          setQuestions(data.form_data.tributeQuestions);
+          setAnswers(data.form_data.tributeAnswers);
+        } else {
+          // Combinar TODO el contexto para que no se pierdan familiares ni detalles
+          const storyParts = [
+            data.form_data?.initialContext,
+            data.form_data?.specificDetails,
+            data.form_data?.familyNames ? `Familiares mencionados: ${data.form_data.familyNames}` : null
+          ].filter(Boolean);
+          const story = storyParts.join(". ");
+          
+          let previousAnswers: string[] = [];
+          if (data.form_data?.interviewAnswers) {
+            previousAnswers = Object.values(data.form_data.interviewAnswers);
+          }
+
+          const aiQuestions = await generateTributeQuestions(story, previousAnswers, recipientName);
+          setQuestions(aiQuestions);
+          setAnswers(new Array(aiQuestions.length).fill(''));
+        }
+
         if (data.form_data?.legacy_photo_url) {
           setPhotoUrl(data.form_data.legacy_photo_url);
         }
@@ -115,7 +126,10 @@ export default function TributeWizard() {
       const newFormData = {
         ...song.form_data,
         infographic_data: infographicData,
-        legacy_photo_url: photoUrl
+        legacy_photo_url: photoUrl,
+        selected_version: selectedVersion,
+        tributeQuestions: questions,
+        tributeAnswers: answers
       };
 
       const { error } = await supabase
@@ -223,6 +237,81 @@ export default function TributeWizard() {
                   </button>
                 )}
               </div>
+
+              {/* Selección de versión de canción */}
+              {(song?.audio_url || song?.demo_url || song?.form_data?.version2?.audio_url || song?.form_data?.version2?.demo_url) && (
+                <div className="bg-[#F8F3E9]/50 p-6 rounded-2xl border border-[#E8DCC8] space-y-6">
+                  <div>
+                    <label className="block text-base font-bold text-[#1C2A39] mb-1 flex items-center gap-2">
+                      <Music className="text-[#B69D74]" size={20} />
+                      Canción Activa del Legado
+                    </label>
+                    <p className="text-sm text-[#1C2A39]/60">
+                      Escucha las versiones disponibles de tu canción y selecciona cuál se escuchará en la mini-web pública de este Legado.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Opción 1 */}
+                    {(song?.audio_url || song?.demo_url) && (
+                      <div 
+                        onClick={() => setSelectedVersion(1)}
+                        className={`cursor-pointer p-5 rounded-2xl border-2 transition-all flex flex-col justify-between space-y-3 bg-white ${
+                          selectedVersion === 1 
+                            ? 'border-[#B69D74] shadow-md ring-2 ring-[#B69D74]/20' 
+                            : 'border-transparent hover:border-[#B69D74]/20 shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-serif font-bold text-[#1C2A39] text-base">Opción 1</span>
+                          {selectedVersion === 1 && (
+                            <span className="bg-[#B69D74]/20 text-[#B69D74] p-1 rounded-full">
+                              <Check size={14} />
+                            </span>
+                          )}
+                        </div>
+                        
+                        <audio 
+                          src={song?.audio_url || song?.demo_url} 
+                          controls 
+                          controlsList="nodownload" 
+                          className="w-full custom-audio-player h-9"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    )}
+
+                    {/* Opción 2 */}
+                    {(song?.form_data?.version2?.audio_url || song?.form_data?.version2?.demo_url) && (
+                      <div 
+                        onClick={() => setSelectedVersion(2)}
+                        className={`cursor-pointer p-5 rounded-2xl border-2 transition-all flex flex-col justify-between space-y-3 bg-white ${
+                          selectedVersion === 2 
+                            ? 'border-[#B69D74] shadow-md ring-2 ring-[#B69D74]/20' 
+                            : 'border-transparent hover:border-[#B69D74]/20 shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-serif font-bold text-[#1C2A39] text-base">Opción 2</span>
+                          {selectedVersion === 2 && (
+                            <span className="bg-[#B69D74]/20 text-[#B69D74] p-1 rounded-full">
+                              <Check size={14} />
+                            </span>
+                          )}
+                        </div>
+                        
+                        <audio 
+                          src={song?.form_data?.version2?.audio_url || song?.form_data?.version2?.demo_url} 
+                          controls 
+                          controlsList="nodownload" 
+                          className="w-full custom-audio-player h-9"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-12 text-center">

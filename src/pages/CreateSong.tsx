@@ -15,11 +15,15 @@ export default function CreateSong() {
   const savedDraft = localStorage.getItem('mn_draft_song');
   const parsedDraft = savedDraft ? JSON.parse(savedDraft) : null;
 
-  const [step, setStep] = useState(parsedDraft?.step || 1); 
-  const [lyrics, setLyrics] = useState(parsedDraft?.lyrics || '');
+  // Adaptar estructura antigua (donde las propiedades del formulario estaban en la raíz)
+  const isOldDraft = parsedDraft && !parsedDraft.formData && parsedDraft.category;
+  const draftData = isOldDraft ? { formData: parsedDraft } : parsedDraft;
+
+  const [step, setStep] = useState(draftData?.step || 1); 
+  const [lyrics, setLyrics] = useState(draftData?.lyrics || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [feedback, setFeedback] = useState('');
-  const [currentSongId, setCurrentSongId] = useState<string | null>(parsedDraft?.currentSongId || null);
+  const [currentSongId, setCurrentSongId] = useState<string | null>(draftData?.currentSongId || null);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -31,8 +35,8 @@ export default function CreateSong() {
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
   // NUEVOS ESTADOS PARA ENTREVISTA DINÁMICA
-  const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>(parsedDraft ? 'interview' : 'spark');
-  const [initialContext, setInitialContext] = useState(parsedDraft?.initialContext || '');
+  const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>(draftData?.formPhase || 'spark');
+  const [initialContext, setInitialContext] = useState(draftData?.initialContext || '');
   const [isGeneratingDetailsPrompt, setIsGeneratingDetailsPrompt] = useState(false);
   const [detailsPrompt, setDetailsPrompt] = useState({
     title: "Nombres, lugares y la historia",
@@ -42,29 +46,39 @@ export default function CreateSong() {
     familySubtitle: "¿Cómo se llaman las personas que giran a su alrededor? (Opcional pero recomendado)",
     familyPlaceholder: "Ej: Su pareja, sus hijos o sus mejores amigos..."
   });
-  const [aiQuestions, setAiQuestions] = useState<string[]>([]);
-  const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(parsedDraft?.interviewAnswers || {});
+  const [aiQuestions, setAiQuestions] = useState<string[]>(draftData?.aiQuestions || []);
+  const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(draftData?.interviewAnswers || {});
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
   const [formData, setFormData] = useState(() => {
-    const parsed = parsedDraft || {};
+    const data = draftData?.formData || {};
     return {
-      category: parsed.category || 'otro',
-      childName: parsed.childName || '',
-      birthDate: parsed.birthDate || '',
-      mensajeHablado: parsed.mensajeHablado || '',
-      specificDetails: parsed.specificDetails || '',
-      familyNames: parsed.familyNames || '',
-      moodAndStyle: parsed.moodAndStyle || '',
-      finalStylePrompt: parsed.finalStylePrompt || ''
+      category: data.category || 'otro',
+      childName: data.childName || '',
+      birthDate: data.birthDate || '',
+      mensajeHablado: data.mensajeHablado || '',
+      specificDetails: data.specificDetails || '',
+      familyNames: data.familyNames || '',
+      moodAndStyle: data.moodAndStyle || '',
+      finalStylePrompt: data.finalStylePrompt || '',
+      nombreDestinatario: data.nombreDestinatario || ''
     };
   });
 
-
-  // AUTO-GUARDADO: Guardar en localStorage cada vez que el form cambie
+  // AUTO-GUARDADO COMPLETO: Guarda todo el estado del borrador para no perder progreso
   useEffect(() => {
-    localStorage.setItem('mn_draft_song', JSON.stringify(formData));
-  }, [formData]);
+    const draft = {
+      formData,
+      step,
+      lyrics,
+      currentSongId,
+      formPhase,
+      initialContext,
+      aiQuestions,
+      interviewAnswers
+    };
+    localStorage.setItem('mn_draft_song', JSON.stringify(draft));
+  }, [formData, step, lyrics, currentSongId, formPhase, initialContext, aiQuestions, interviewAnswers]);
 
   const ensureProfile = async (userId: string, userEmail?: string) => {
     // Intentar traer el perfil
@@ -266,6 +280,15 @@ INSTRUCCIONES:
     setIsLoginLoading(false);
   };
 
+  const handleCheckout = () => {
+    if (!currentSongId) {
+      console.error("No currentSongId available for checkout!");
+      alert("Hubo un problema al procesar el identificador de la canción. Por favor, ve a 'Mis Canciones' para realizar el pago de forma segura.");
+      return;
+    }
+    window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${currentSongId}`;
+  };
+
   const handleStartLyrics = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -278,9 +301,16 @@ INSTRUCCIONES:
       // El borrador se mantiene en localStorage en el useEffect hasta confirmar la música
       setStep(2);
       window.scrollTo(0, 0);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating lyrics:", error);
-      alert("Hubo un error al generar la letra. Inténtalo de nuevo.");
+      const errMsg = error?.message || "";
+      if (errMsg.includes("Bloqueo de Seguridad")) {
+        alert("🔒 Filtro de Seguridad de Google AI:\n\nTu historia o algunas respuestas de la entrevista activaron los filtros de seguridad de la IA (por contener palabras sensibles relacionadas con armas, violencia o autolesión, incluso si son de juguete o anecdóticas).\n\nPor favor, cambia esas respuestas o detalles e inténtalo de nuevo.");
+      } else if (errMsg.includes("GEMINI_ALERT [429]")) {
+        alert("⏳ El servidor de IA está saturado en este momento debido a una alta cantidad de solicitudes.\n\nPor favor, espera unos segundos y vuelve a dar clic en 'COMPONER LETRA AHORA'.");
+      } else {
+        alert(`Hubo un problema al componer la letra:\n${errMsg.replace('Detalle técnico: ', '')}\n\nPor favor, verifica tus respuestas e inténtalo de nuevo.`);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -294,9 +324,14 @@ INSTRUCCIONES:
       const generatedLyrics = await generateLyrics(prompt);
       setLyrics(generatedLyrics);
       setFeedback('');
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Hubo un error reescribiendo la letra.");
+    } catch (error: any) {
+      console.error("Error rewriting lyrics:", error);
+      const errMsg = error?.message || "";
+      if (errMsg.includes("Bloqueo de Seguridad")) {
+        alert("🔒 Filtro de Seguridad de Google AI:\n\nEl ajuste solicitado activó los filtros de seguridad de la IA. Por favor, reformula tu petición evitando palabras sensibles e inténtalo de nuevo.");
+      } else {
+        alert(`Hubo un error al reescribir la letra:\n${errMsg.replace('Detalle técnico: ', '')}`);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -375,6 +410,7 @@ INSTRUCCIONES:
           newSong = data;
         }
         if (newSong) {
+          setCurrentSongId(newSong.id);
           localStorage.removeItem('mn_draft_song');
         }
       } catch (err) {
@@ -788,7 +824,7 @@ INSTRUCCIONES:
                       <button 
                         onClick={() => {
                           setShowDemoModal(false);
-                          window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${currentSongId}`;
+                          handleCheckout();
                         }}
                         className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:scale-105 transition-all"
                       >
@@ -874,7 +910,7 @@ INSTRUCCIONES:
                   </p>
                   <div className="space-y-4 relative z-10">
                     <button 
-                      onClick={() => window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${currentSongId}`}
+                      onClick={handleCheckout}
                       className="w-full px-8 py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg tracking-widest hover:scale-105 transition-all shadow-xl shadow-naranja-200 flex items-center justify-center gap-3"
                     >
                       DESBLOQUEAR CANCIÓN COMPLETA <Sparkles size={20} />

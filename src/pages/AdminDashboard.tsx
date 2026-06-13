@@ -55,7 +55,7 @@ export default function AdminDashboard() {
         let funnelStatus = profile.email_confirmed ? '🔖 Registro' : '📩 SIN CONFIRMAR';
         let statusColor = profile.email_confirmed ? 'bg-gray-100 text-gray-500' : 'bg-red-50 text-red-500 border border-red-100';
         
-        if (userSongs.some(s => s.status === 'complete')) {
+        if (userSongs.some(s => s.status === 'completed')) {
           funnelStatus = '✅ Éxito';
           statusColor = 'bg-emerald-100 text-emerald-600';
         } else if (userSongs.length > 0) {
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
 
       const totalU = profiles?.length || 0;
       const totalS = songs?.length || 0;
-      const activeS = (songs || []).filter(s => s.status !== 'complete').length || 0;
+      const activeS = (songs || []).filter(s => s.status !== 'completed').length || 0;
       
       const { data: payments } = await supabase.from('mn_payments').select('*');
       const realRevenue = (payments || []).filter(p => p.status === 'completed').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
@@ -553,7 +553,7 @@ export default function AdminDashboard() {
                                    {(u?.songs || []).length > 0 ? u.songs.map((s: any) => (
                                     <div key={s?.id || Math.random()} className="min-w-[380px] bg-white p-8 rounded-[2.5rem] border border-orange-100 shadow-lg space-y-6 flex-shrink-0 relative">
                                        <div className="flex justify-between items-start">
-                                          <Music size={24} className={s?.status === 'complete' ? 'text-emerald-500' : 'text-gray-300'} />
+                                          <Music size={24} className={s?.status === 'completed' ? 'text-emerald-500' : 'text-gray-300'} />
                                           <div className="flex flex-col items-end gap-2">
                                              {s?.form_data?.audio_issue_reported && (
                                                 <span className="text-[10px] font-bold uppercase bg-red-500 text-white px-3 py-1 rounded-full animate-pulse shadow-md flex items-center gap-1">
@@ -565,7 +565,7 @@ export default function AdminDashboard() {
                                                    {isProcessing === `paid-${s?.id}` ? <Loader2 size={10} className="animate-spin inline mr-1" /> : null}
                                                    {s?.is_paid ? '💰 PAGADA' : '⏳ DEMO'}
                                                 </button>
-                                                <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${s?.status === 'complete' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50'}`}>{s?.status || 'Draft'}</span>
+                                                <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${s?.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50'}`}>{s?.status || 'Draft'}</span>
                                              </div>
                                              
                                              <div className="flex items-center gap-2 mt-2">
@@ -591,8 +591,8 @@ export default function AdminDashboard() {
                                           {s?.audio_url || s?.demo_url ? (
                                             <div className="space-y-2">
                                               <p className="text-[8px] font-black uppercase text-gray-400">Opción 1</p>
-                                              <audio src={s.demo_url || s.audio_url} controls referrerPolicy="no-referrer" className="w-full h-8" />
-                                              <button onClick={() => window.open(s.demo_url || s.audio_url, '_blank')} className="text-[8px] text-naranja-500 underline">¿No carga? Clic aquí</button>
+                                              <audio src={s.audio_url || s.demo_url} controls referrerPolicy="no-referrer" className="w-full h-8" />
+                                              <button onClick={() => window.open(s.audio_url || s.demo_url, '_blank')} className="text-[8px] text-naranja-500 underline">¿No carga? Clic aquí</button>
                                             </div>
                                           ) : <div className="py-3 bg-gray-50 text-gray-300 rounded-xl text-[9px] font-black uppercase text-center border border-dashed border-gray-200">Sin Audio 1</div>}
 
@@ -600,8 +600,8 @@ export default function AdminDashboard() {
                                           {s?.form_data?.version2 ? (
                                             <div className="space-y-2">
                                               <p className="text-[8px] font-black uppercase text-gray-400">Opción 2</p>
-                                              <audio src={s.form_data.version2.demo_url || s.form_data.version2.audio_url} controls referrerPolicy="no-referrer" className="w-full h-8" />
-                                              <button onClick={() => window.open(s.form_data.version2.demo_url || s.form_data.version2.audio_url, '_blank')} className="text-[8px] text-naranja-500 underline">¿No carga? Clic aquí</button>
+                                              <audio src={s.form_data.version2.audio_url || s.form_data.version2.demo_url} controls referrerPolicy="no-referrer" className="w-full h-8" />
+                                              <button onClick={() => window.open(s.form_data.version2.audio_url || s.form_data.version2.demo_url, '_blank')} className="text-[8px] text-naranja-500 underline">¿No carga? Clic aquí</button>
                                             </div>
                                           ) : null}
                                        </div>
@@ -659,8 +659,8 @@ export default function AdminDashboard() {
                           <span className="text-[8px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse" title="El usuario reportó que el audio no se escucha o está mal">⚠️</span>
                         )}
                       </div>
-                      <audio src={s.demo_url || s.audio_url} controls referrerPolicy="no-referrer" className="w-full h-8" />
-                      <button onClick={() => window.open(s.demo_url || s.audio_url, '_blank')} className="text-[8px] text-naranja-500 underline mt-1">Abrir Audio</button>
+                      <audio src={s.audio_url || s.demo_url} controls referrerPolicy="no-referrer" className="w-full h-8" />
+                      <button onClick={() => window.open(s.audio_url || s.demo_url, '_blank')} className="text-[8px] text-naranja-500 underline mt-1">Abrir Audio</button>
                    </div>
                  ))}
               </div>

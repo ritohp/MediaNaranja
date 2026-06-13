@@ -23,6 +23,8 @@ export default function MySongs() {
   const [user, setUser] = useState<any>(null);
   const [showDemoModal, setShowDemoModal] = useState<string | null>(null);
   const [selectedVersions, setSelectedVersions] = useState<{[key: string]: number}>({});
+  const [unlockingSongId, setUnlockingSongId] = useState<string | null>(null);
+  const [unlockingStatus, setUnlockingStatus] = useState<'checking' | 'success' | 'failed'>('checking');
 
   const handleVersionSelect = async (songId: string, version: number, currentFormData: any) => {
     setSelectedVersions(prev => ({ ...prev, [songId]: version }));
@@ -57,6 +59,59 @@ export default function MySongs() {
         setLoading(false);
       }
     });
+
+    const params = new URLSearchParams(window.location.search);
+    const refId = params.get('client_reference_id');
+    const sessionId = params.get('session_id');
+
+    if (sessionId || refId) {
+      setUnlockingSongId(refId || 'detecting');
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts++;
+        if (sessionId) {
+          // Poll mn_payments to find the associated song_id
+          const { data, error } = await supabase
+            .from('mn_payments')
+            .select('song_id')
+            .eq('external_id', sessionId)
+            .maybeSingle();
+
+          if (data && data.song_id) {
+            clearInterval(interval);
+            setUnlockingSongId(data.song_id);
+            setUnlockingStatus('success');
+            setTimeout(() => {
+              window.location.href = `/cancion/${data.song_id}`;
+            }, 1500);
+            return;
+          }
+        } else if (refId) {
+          // Poll mn_songs directly for is_paid status
+          const { data, error } = await supabase
+            .from('mn_songs')
+            .select('is_paid')
+            .eq('id', refId)
+            .single();
+          
+          if (data && data.is_paid) {
+            clearInterval(interval);
+            setUnlockingStatus('success');
+            setTimeout(() => {
+              window.location.href = `/cancion/${refId}`;
+            }, 1500);
+            return;
+          }
+        }
+
+        if (attempts >= 15) {
+          clearInterval(interval);
+          setUnlockingStatus('failed');
+        }
+      }, 2000);
+      
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const fetchSongs = async (userId: string) => {
@@ -218,6 +273,69 @@ export default function MySongs() {
         </div>
       )}
 
+      {unlockingSongId && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
+          <div className="absolute inset-0 bg-ink-950/60 backdrop-blur-md"></div>
+          <div className="bg-white rounded-[3rem] p-10 md:p-14 max-w-lg w-full shadow-2xl relative z-10 border border-emerald-100 text-center space-y-6">
+            {unlockingStatus === 'checking' && (
+              <>
+                <div className="bg-emerald-50 text-emerald-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <RefreshCw size={40} className="animate-spin" />
+                </div>
+                <h3 className="text-3xl font-serif text-emerald-800">Procesando tu pago...</h3>
+                <p className="text-ink-600 leading-relaxed">
+                  Estamos liberando tu canción completa, póster PDF de alta calidad y la mini web personalizada. Esto tomará solo unos segundos.
+                </p>
+              </>
+            )}
+            {unlockingStatus === 'success' && (
+              <>
+                <div className="bg-emerald-100 text-emerald-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-2 animate-bounce">
+                  <Heart size={40} className="fill-current text-emerald-500" />
+                </div>
+                <h3 className="text-3xl font-serif text-emerald-800">¡Pago Exitoso! 🎉</h3>
+                <p className="text-ink-600 leading-relaxed font-medium">
+                  ¡Tu regalo ha sido completamente desbloqueado! Redirigiéndote a tu canción...
+                </p>
+              </>
+            )}
+            {unlockingStatus === 'failed' && (
+              <>
+                <div className="bg-red-50 text-red-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Lock size={40} />
+                </div>
+                <h3 className="text-3xl font-serif text-red-800">Verificación pendiente</h3>
+                <p className="text-ink-600 leading-relaxed">
+                  El pago aún está procesándose en Stripe o la conexión tardó de más. Si ya pagaste, la canción se desbloqueará sola en unos minutos.
+                </p>
+                <div className="flex flex-col gap-2 pt-2">
+                  {unlockingSongId !== 'detecting' && (
+                    <button 
+                      onClick={() => window.location.href = `/cancion/${unlockingSongId}`}
+                      className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm tracking-widest transition-all"
+                    >
+                      IR A LA CANCIÓN
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      setUnlockingSongId(null);
+                      const url = new URL(window.location.href);
+                      url.searchParams.delete('client_reference_id');
+                      url.searchParams.delete('session_id');
+                      window.history.replaceState({}, '', url.toString());
+                    }}
+                    className="text-ink-400 text-xs font-bold uppercase tracking-widest hover:text-naranja-500 transition-all py-2"
+                  >
+                    VER MIS CANCIONES
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {songs.length === 0 ? (
         <div className="bg-white rounded-[2.5rem] p-16 text-center shadow-xl border border-blush-50">
           <div className="w-24 h-24 bg-naranja-50 text-naranja-400 rounded-full flex items-center justify-center mx-auto mb-8">
@@ -237,8 +355,15 @@ export default function MySongs() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {songs.map((song) => (
             <div key={song.id} className="group relative bg-white rounded-[2rem] overflow-hidden shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-blush-50 flex flex-col">
-              <div className="absolute top-4 right-4 z-10">
+              <div className="absolute top-4 right-4 z-10 flex gap-2">
                 {getStatusBadge(song.status)}
+                {song.status === 'completed' && (
+                  song.is_paid ? (
+                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Liberada</span>
+                  ) : (
+                    <span className="bg-naranja-100 text-naranja-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Demo</span>
+                  )
+                )}
               </div>
               
               <div className="p-8 flex-1">
