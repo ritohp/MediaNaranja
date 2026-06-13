@@ -51,9 +51,11 @@ export default function CreateSong() {
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
   const [formData, setFormData] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlCategory = params.get('category');
     const data = draftData?.formData || {};
     return {
-      category: data.category || 'otro',
+      category: urlCategory || data.category || 'otro',
       childName: data.childName || '',
       birthDate: data.birthDate || '',
       mensajeHablado: data.mensajeHablado || '',
