@@ -169,7 +169,31 @@ export default function MemoryCustomizer() {
     }
   };
 
-  if (loadingMemory) return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="animate-spin text-red-600" /></div>;
+  if (loadingMemory) return (
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center p-6 text-center">
+      <div className="relative mb-6">
+        <img 
+          src="/mascota_loading.png" 
+          alt="Naranjín" 
+          className="w-48 h-48 md:w-56 md:h-56 object-contain animate-pulse mx-auto" 
+        />
+        <div className="absolute inset-0 border-4 border-dashed border-red-600/30 rounded-full animate-spin-slow pointer-events-none"></div>
+      </div>
+      <h2 className="text-2xl font-serif font-bold text-white mb-2">Conectando con Loveflix...</h2>
+      <p className="text-zinc-400 max-w-sm text-sm">
+        Naranjín está abriendo el set de grabación para tu poster especial.
+      </p>
+      <style>{`
+        @keyframes spinSlow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spinSlow 12s linear infinite;
+        }
+      `}</style>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pt-20 pb-20">

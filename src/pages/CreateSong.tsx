@@ -503,8 +503,28 @@ INSTRUCCIONES:
   };
 
   if (loading) return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-naranja-500"></div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFFBF7] p-6 text-center animate-in fade-in duration-500">
+      <div className="relative mb-6">
+        <img 
+          src="/mascota_loading.png" 
+          alt="Naranjín" 
+          className="w-48 h-48 md:w-56 md:h-56 object-contain animate-pulse mx-auto" 
+        />
+        <div className="absolute inset-0 border-4 border-dashed border-naranja-500/20 rounded-full animate-spin-slow pointer-events-none"></div>
+      </div>
+      <h2 className="text-2xl font-serif font-bold text-blush-800 mb-2">Conectando con Naranjín...</h2>
+      <p className="text-ink-600/60 max-w-sm text-sm">
+        Estamos preparando la mecha creativa para iniciar tu composición personalizada.
+      </p>
+      <style>{`
+        @keyframes spinSlow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spinSlow 12s linear infinite;
+        }
+      `}</style>
     </div>
   );
 
@@ -789,8 +809,12 @@ INSTRUCCIONES:
             {generationStatus === 'generating' ? (
               <>
                 <div className="relative inline-block mb-10">
-                  <div className="w-40 h-40 rounded-full border-8 border-naranja-50 border-t-naranja-500 animate-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center text-naranja-500"><Mic size={48} /></div>
+                  <img 
+                    src="/mascota_loading.png" 
+                    alt="Naranjín grabando" 
+                    className="w-48 h-48 md:w-56 md:h-56 object-contain animate-pulse mx-auto" 
+                  />
+                  <div className="absolute inset-0 border-4 border-dashed border-naranja-500/20 rounded-full animate-spin-slow pointer-events-none"></div>
                 </div>
                 <h2 className="text-4xl font-serif text-blush-800 mb-4">Estudio de Grabación</h2>
                 <p className="text-ink-600/70 text-lg max-w-sm mx-auto mb-10 font-light">Kie.ai está grabando los instrumentos y las voces. Estaremos listos en 1-2 minutos.</p>
@@ -841,11 +865,21 @@ INSTRUCCIONES:
                     </div>
                   </div>
                 )}
-                <div className="w-24 h-24 bg-naranja-50 text-naranja-500 rounded-full flex items-center justify-center mx-auto mb-6 relative">
-                  <Music size={40} />
-                  <div className="absolute -bottom-1 -right-1 bg-white p-2 rounded-full shadow-lg text-amber-500">
-                    <Lock size={16} />
-                  </div>
+                <div className="relative inline-block mb-6">
+                  <img 
+                    src="/mascota_success.png" 
+                    alt="Naranjín celebrando" 
+                    className="w-40 h-40 object-contain mx-auto animate-bounce-slow" 
+                  />
+                  <style>{`
+                    @keyframes bounceSlow {
+                      0%, 100% { transform: translateY(0); }
+                      50% { transform: translateY(-10px); }
+                    }
+                    .animate-bounce-slow {
+                      animation: bounceSlow 3s ease-in-out infinite;
+                    }
+                  `}</style>
                 </div>
                 <div>
                   <h2 className="text-4xl font-serif text-blush-800 mb-2">¡Muestra Lista! 🎨</h2>

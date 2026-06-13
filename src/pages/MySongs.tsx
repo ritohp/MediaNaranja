@@ -192,8 +192,28 @@ export default function MySongs() {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-naranja-500"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+        <div className="relative mb-6">
+          <img 
+            src="/mascota_loading.png" 
+            alt="Naranjín" 
+            className="w-40 h-40 object-contain animate-pulse mx-auto" 
+          />
+          <div className="absolute inset-0 border-4 border-dashed border-naranja-500/20 rounded-full animate-spin-slow pointer-events-none"></div>
+        </div>
+        <h2 className="text-xl font-serif font-bold text-blush-800 mb-2">Cargando tus Creaciones...</h2>
+        <p className="text-ink-600/60 max-w-sm text-xs">
+          Naranjín está buscando en la base de datos tus historias musicales.
+        </p>
+        <style>{`
+          @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .animate-spin-slow {
+            animation: spinSlow 12s linear infinite;
+          }
+        `}</style>
       </div>
     );
   }

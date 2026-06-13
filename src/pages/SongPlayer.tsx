@@ -211,7 +211,31 @@ export default function SongPlayer() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#F8F3E9]"><div className="animate-spin text-[#A88B5B]"><Heart /></div></div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8F3E9] p-6 text-center">
+        <div className="relative mb-6">
+          <img 
+            src="/mascota_loading.png" 
+            alt="Naranjín" 
+            className="w-48 h-48 md:w-56 md:h-56 object-contain animate-pulse mx-auto" 
+          />
+          <div className="absolute inset-0 border-4 border-dashed border-[#A88B5B]/30 rounded-full animate-spin-slow pointer-events-none"></div>
+        </div>
+        <h2 className="text-2xl font-serif font-bold text-[#1C2A39] mb-2">Abriendo tu Legado...</h2>
+        <p className="text-[#1C2A39]/60 max-w-sm text-sm">
+          Naranjín está afinando su guitarra y cargando los recuerdos del pergamino.
+        </p>
+        <style>{`
+          @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .animate-spin-slow {
+            animation: spinSlow 12s linear infinite;
+          }
+        `}</style>
+      </div>
+    );
   }
 
   if (!song) {

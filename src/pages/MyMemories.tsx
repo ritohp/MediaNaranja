@@ -84,11 +84,28 @@ export default function MyMemories() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FDF7F8] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-           <Loader2 className="animate-spin text-[#FF6B6B]" size={40} />
-           <p className="text-[#FF6B6B] font-bold animate-pulse">Cargando tu cartelera...</p>
+      <div className="min-h-screen bg-[#FDF7F8] flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
+        <div className="relative mb-6">
+          <img 
+            src="/mascota_loading.png" 
+            alt="Naranjín" 
+            className="w-40 h-40 object-contain animate-pulse mx-auto" 
+          />
+          <div className="absolute inset-0 border-4 border-dashed border-[#FF6B6B]/20 rounded-full animate-spin-slow pointer-events-none"></div>
         </div>
+        <h2 className="text-xl font-serif font-bold text-gray-700 mb-2">Cargando tu Cartelera...</h2>
+        <p className="text-gray-400 max-w-sm text-xs">
+          Naranjín está listando tus recuerdos más especiales.
+        </p>
+        <style>{`
+          @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .animate-spin-slow {
+            animation: spinSlow 12s linear infinite;
+          }
+        `}</style>
       </div>
     );
   }
