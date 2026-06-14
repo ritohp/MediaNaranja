@@ -3,7 +3,7 @@ import Stripe from 'https://esm.sh/stripe@14?target=denonext'
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_API_KEY') || 'sk_dummy_for_webhook_signature_verification_only';
 // Hardcoded fallback Stripe webhook signature key provided by the user in Conversation 0f4d7492
-const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || Deno.env.get('STRIPE_WEBHOOK_SIGNING_SECRET') || 'whsec_ixknlOJofzTNJpStaHqCAMrffaSuvHMX';
+const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || Deno.env.get('STRIPE_WEBHOOK_SIGNING_SECRET');
 
 console.log("Stripe webhook function initialized.");
 if (stripeSecret.startsWith('sk_dummy')) {
