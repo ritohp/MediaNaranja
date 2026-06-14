@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Music, Sparkles, BookOpen, User, Users, Heart, Baby, Mic, Target, CalendarDays, Lock, ArrowLeft, RefreshCw, CheckCircle2, ExternalLink, Loader2, Camera, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt, generateInfographicData } from '../services/ai';
@@ -7,6 +7,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import TributeAddon from '../components/tribute/TributeAddon';
 
 export default function CreateSong() {
+  const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [tokens, setTokens] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -581,11 +582,14 @@ INSTRUCCIONES:
                   form_data: updatedFormData,
                   status: 'completed'
                 }).eq('id', newSong.id);
+
+                navigate(`/cancion/${newSong.id}`);
               } catch (err) {
                 console.error("Error post-procesando audios:", err);
                 setAudioUrl(song1.audioUrl);
                 setAudioUrl2(song2?.audioUrl || null);
                 setGenerationStatus('completed');
+                navigate(`/cancion/${newSong.id}`);
               }
               fetchProfile(user!.id);
             }
@@ -1038,7 +1042,7 @@ INSTRUCCIONES:
                   </div>
                   <h2 className="text-3xl font-serif text-blush-800">Estudio de Grabación</h2>
                   <p className="text-ink-600/70 text-sm max-w-xs mx-auto font-light">
-                    Kie.ai está produciendo la música, grabando los instrumentos y las voces personalizadas. Tardará 1-2 minutos.
+                    Naranjín está afinando los instrumentos, arreglando los acordes y grabando las voces personalizadas. Tardará 1-2 minutos.
                   </p>
                   <div className="w-full max-w-xs mx-auto bg-blush-50 h-3 rounded-full overflow-hidden">
                     <div className="bg-gradient-to-r from-naranja-400 to-naranja-600 h-full animate-pulse" style={{ width: '70%' }}></div>
