@@ -74,6 +74,7 @@ export default function CreateSong() {
       moodAndStyle: data.moodAndStyle || '',
       finalStylePrompt: data.finalStylePrompt || '',
       nombreDestinatario: data.nombreDestinatario || '',
+      apellidoDestinatario: data.apellidoDestinatario || '',
       lugarOrigen: data.lugarOrigen || ''
     };
   });
@@ -350,6 +351,51 @@ INSTRUCCIONES:
     }
   };
 
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Canvas toBlob failed"));
+            }
+          }, 'image/jpeg', 0.8);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentSongId) {
@@ -359,13 +405,16 @@ INSTRUCCIONES:
 
     try {
       setIsUploading(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${currentSongId}-legacy-${Date.now()}.${fileExt}`;
+      
+      const compressedBlob = await compressImage(file);
+      const compressedFile = new File([compressedBlob], `image.jpg`, { type: 'image/jpeg' });
+
+      const fileName = `${currentSongId}-legacy-${Date.now()}.jpg`;
       const path = `${user?.id || 'anonymous'}/${fileName}`;
 
       const { error } = await supabase.storage
         .from('memories')
-        .upload(path, file);
+        .upload(path, compressedFile);
 
       if (error) throw error;
 
@@ -405,6 +454,7 @@ INSTRUCCIONES:
         story,
         combinedAnswers,
         formData.nombreDestinatario || formData.childName || 'Homenajeado',
+        formData.apellidoDestinatario || '',
         formData.category?.toUpperCase() || 'PAPA',
         'legacy'
       );
@@ -788,18 +838,34 @@ INSTRUCCIONES:
                   {formData.category === 'papa' ? (
                     <>
                       {/* Campos Biográficos de Papá */}
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Nombre Completo de Papá</h3>
-                        <p className="text-ink-600/70 text-sm italic mt-2">Lo necesitamos completo para diseñar su escudo heráldico y el certificado biográfico oficial.</p>
-                        <input 
-                          type="text"
-                          name="nombreDestinatario"
-                          value={formData.nombreDestinatario || ''}
-                          onChange={handleChange}
-                          placeholder="Ej: José de la Luz Sánchez Ramírez"
-                          className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
-                          required
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Nombre(s) de Papá *</h3>
+                          <p className="text-ink-600/70 text-xs italic mt-1">Primer y segundo nombre (sin apellidos).</p>
+                          <input 
+                            type="text"
+                            name="nombreDestinatario"
+                            value={formData.nombreDestinatario || ''}
+                            onChange={handleChange}
+                            placeholder="Ej: José de la Luz"
+                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Apellido(s) de Papá *</h3>
+                          <p className="text-ink-600/70 text-xs italic mt-1">Apellido paterno y materno.</p>
+                          <input 
+                            type="text"
+                            name="apellidoDestinatario"
+                            value={formData.apellidoDestinatario || ''}
+                            onChange={handleChange}
+                            placeholder="Ej: Sánchez Ramírez"
+                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                            required
+                          />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

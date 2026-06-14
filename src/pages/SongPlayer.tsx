@@ -55,7 +55,9 @@ export default function SongPlayer() {
       setEditData({
         photoUrl: data.form_data?.custom_photo_url || "/papa-sorpresa.png",
         dedication: data.form_data?.custom_dedication || "Gracias por cada enseñanza y cada sonrisa.",
-        recipient: data.form_data?.recipientName || data.form_data?.nombreDestinatario || "Papá"
+        recipient: data.form_data?.recipientName || 
+                   (data.form_data?.nombreDestinatario ? `${data.form_data.nombreDestinatario} ${data.form_data.apellidoDestinatario || ''}`.trim() : null) || 
+                   "Papá"
       });
     } catch (err) {
       console.error("Error cargando canción:", err);
@@ -114,19 +116,66 @@ export default function SongPlayer() {
     }
   };
 
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Canvas toBlob failed"));
+            }
+          }, 'image/jpeg', 0.8);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
     
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${song.id}-${Math.random()}.${fileExt}`;
+      const compressedBlob = await compressImage(file);
+      const compressedFile = new File([compressedBlob], `image.jpg`, { type: 'image/jpeg' });
+
+      const fileName = `${song.id}-${Math.random()}.jpg`;
       const filePath = `custom_photos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('memories')
-        .upload(filePath, file);
+        .upload(filePath, compressedFile);
 
       if (uploadError) throw uploadError;
 

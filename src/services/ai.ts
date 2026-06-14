@@ -242,11 +242,27 @@ export async function generateInfographicData(
   story: string, 
   answers: string[], 
   recipientName: string, 
-  archetype: string, 
-  theme: string
+  recipientLastName: string = "",
+  archetype: string = "LEGACY", 
+  theme: string = "legacy"
 ): Promise<InfographicData> {
+  let firstName = recipientName.trim();
+  let lastName = recipientLastName.trim();
+  
+  if (!lastName) {
+    const parts = recipientName.trim().split(/\s+/);
+    if (parts.length > 1) {
+      firstName = parts[0];
+      lastName = parts.slice(1).join(' ');
+    } else {
+      firstName = recipientName;
+      lastName = "La Familia";
+    }
+  }
+
   const prompt = `Analiza la historia y las respuestas de esta entrevista para crear una Infografía "Historia de Vida".
-Homenajeado: "${recipientName}"
+Nombre del Homenajeado: "${firstName}"
+Apellido del Homenajeado: "${lastName}"
 Arquetipo: ${archetype}
 Historia Inicial: "${story}"
 Detalles Adicionales (Respuestas de la entrevista): "${answers.join(" | ")}"
@@ -256,28 +272,24 @@ Extrae los datos y RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA 
   "theme": "${theme}",
   "archetype": "${archetype}",
   "timeline": [
-    // El subtitle DEBE SER MUY CORTO (MÁXIMO 10 A 12 PALABRAS O 70 CARACTERES) PARA EVITAR QUE SE DESBORDE EN EL PDF.
     {"title": "INFANCIA", "subtitle": "Donde empezó su historia...", "icon": "Home"}
   ],
   "shields": [
-    // CREA EXACTAMENTE 5 VALORES O VIRTUDES (Ej: TRABAJO, HONESTIDAD, FAMILIA, PERSEVERANCIA, GENEROSIDAD)
     {"name": "Valor humano", "icon": "Hammer"}
   ],
   "nameMeaning": {
-    "name": "Obligatorio extraer el primer nombre real de la historia (Ej: Si es Juan Carlos, pon Juan)", 
-    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL de este nombre (ej. origen latino, griego, germánico, etc.). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre. PROHIBIDO usar frases genéricas como 'Tu Ser Querido'."
+    "name": "${firstName}", 
+    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL del nombre '${firstName}' (ej. su origen etimológico real latino, griego, germánico, etc.). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre. PROHIBIDO usar frases genéricas como 'Tu Ser Querido'."
   },
   "lastNameMeaning": {
-    "lastName": "Obligatorio extraer el apellido real de la historia (Ej: Si es Pérez, pon Pérez). Si no se proporcionó apellido, usa el segundo nombre o pon 'La Familia'", 
-    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL de este apellido. LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo. PROHIBIDO usar cosas genéricas como 'El Patriarca'."
+    "lastName": "${lastName}", 
+    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL del apellido '${lastName}' (ej. origen geográfico, linaje o etimología del apellido). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo. PROHIBIDO usar cosas genéricas como 'El Patriarca'."
   },
   "quote": "Una frase poética de 10 a 15 palabras que resuma su legado o historia.",
   "familyMembers": [
-    // EXTRAE LOS NOMBRES EXACTOS DE LOS FAMILIARES (hijos, esposa, nietos) MENCIONADOS EN LA HISTORIA. Si no hay, pon "Su Familia".
     "Nombre 1", "Nombre 2"
   ], 
   "testimonials": [
-    // REFINA Y MEJORA LO QUE DIJO EL USUARIO. Haz que suene muy profesional, pulido y emotivo. DEBE SER MUY BREVE (MÁXIMO 15 a 20 palabras por testimonio) para que no se corte en el diseño del PDF.
     {"text": "Testimonio o anécdota breve y refinada."}
   ]
 }
@@ -317,8 +329,8 @@ NOTAS:
         {name: "PERSEVERANCIA", icon: "Mountain"},
         {name: "BONDAD", icon: "Sun"}
       ],
-      nameMeaning: {name: recipientName.split(' ')[0] || "Tu Nombre", meaning: "Valioso, de gran estima, digno de alabanza."},
-      lastNameMeaning: {lastName: recipientName.split(' ')[1] || "Tu Apellido", meaning: "De origen noble, lleno de historia."},
+      nameMeaning: {name: firstName, meaning: "Valioso, de gran estima, digno de alabanza."},
+      lastNameMeaning: {lastName: lastName, meaning: "De origen noble, lleno de historia."},
       quote: "Una historia que construyó mucho más que recuerdos, construyó un legado.",
       familyMembers: ["Tu Familia"],
       testimonials: [
