@@ -12,7 +12,8 @@ import {
   Baby,
   Gift,
   MessageSquare,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
