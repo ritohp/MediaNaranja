@@ -620,20 +620,15 @@ export default function SongPlayer() {
             {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción + Biografía PDF + Web ($399 MXN)"}
           </button>
           
-          <button 
-            onClick={() => {
-              if (isPaid) {
-                 generatePDF();
-              } else {
-                 window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
-              }
-            }}
-            className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase
-              ${isPaid ? 'bg-[#FDF8EE] border border-[#B69D74] text-[#1C2A39] hover:bg-[#F2E8D5]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
-          >
-            {isPaid ? <FileText size={16} className="text-[#B69D74]" /> : <Lock size={16} className="opacity-60" />}
-            {isPaid ? "Descargar Biografía PDF para Imprimir" : "Desbloquear Biografía PDF ($399 MXN)"}
-          </button>
+          {isPaid && (
+            <button 
+              onClick={generatePDF}
+              className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase bg-[#FDF8EE] border border-[#B69D74] text-[#1C2A39] hover:bg-[#F2E8D5]"
+            >
+              <FileText size={16} className="text-[#B69D74]" />
+              Descargar Biografía PDF para Imprimir
+            </button>
+          )}
           
           {isPaid && (
             <div className="pt-4 mt-2 border-t border-[#1C2A39]/10 grid grid-cols-2 gap-3">
