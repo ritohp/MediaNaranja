@@ -426,8 +426,8 @@ export default function SongPlayer() {
 
         {/* Escudos / Legado */}
         <div className="mb-12">
-          <span className="text-[#333] tracking-[0.2em] text-xs font-bold uppercase block mb-2">{theme === 'love' ? 'Nuestros Valores' : 'Su Legado'}</span>
-          <p className="text-[10px] text-[#555] mb-8 italic">Los valores que dejaron y que seguirán vivos por siempre.</p>
+          <span className="text-[#333] tracking-[0.2em] text-xs font-bold uppercase block mb-2">{theme === 'love' ? 'Nuestros Valores' : 'Su Biografía'}</span>
+          <p className="text-[10px] text-[#555] mb-8 italic">Los valores que marcaron su vida y que seguirán vivos por siempre.</p>
           <div className="flex justify-center gap-4 md:gap-6 flex-wrap">
             {infoData.shields.slice(0, 5).map((shield, idx) => {
               const Icon = IconMap[shield.icon] || Heart;
@@ -548,10 +548,10 @@ export default function SongPlayer() {
           {!isPaid && (isAdmin || isOwner) && (
             <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-2 text-center shadow-inner">
               <p className="text-[10px] text-orange-800 font-medium uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                <Lock size={12} /> LEGADO RESTRINGIDO
+                <Lock size={12} /> BIOGRAFÍA RESTRINGIDA
               </p>
               <p className="text-xs text-orange-700 leading-relaxed italic">
-                Para descargar la canción completa, obtener el PDF en alta calidad y poder compartir este enlace públicamente, necesitas desbloquear tu regalo.
+                Para descargar la canción completa, obtener la Biografía PDF en alta calidad con QR y compartir este enlace públicamente, necesitas desbloquear tu regalo.
               </p>
             </div>
           )}
@@ -568,7 +568,7 @@ export default function SongPlayer() {
               ${isPaid ? 'bg-[#1C2A39] text-white hover:bg-[#2A3F54]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
           >
             {isPaid ? <Download size={16} /> : <Lock size={16} className="opacity-60" />}
-            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción + PDF + Web ($399 MXN)"}
+            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción + Biografía PDF + Web ($399 MXN)"}
           </button>
           
           <button 
@@ -583,7 +583,7 @@ export default function SongPlayer() {
               ${isPaid ? 'bg-[#FDF8EE] border border-[#B69D74] text-[#1C2A39] hover:bg-[#F2E8D5]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
           >
             {isPaid ? <FileText size={16} className="text-[#B69D74]" /> : <Lock size={16} className="opacity-60" />}
-            {isPaid ? "Descargar Póster PDF para Imprimir" : "Desbloquear Póster PDF ($399 MXN)"}
+            {isPaid ? "Descargar Biografía PDF para Imprimir" : "Desbloquear Biografía PDF ($399 MXN)"}
           </button>
           
           {isPaid && (

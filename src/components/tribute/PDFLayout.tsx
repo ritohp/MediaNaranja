@@ -135,9 +135,9 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
           {/* Box 2: Legado (65%) */}
           <div className={`w-[65%] border-[1.5px] ${border} border-opacity-40 p-3.5 rounded-md bg-white/50 relative flex flex-col justify-center`}>
             <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`} style={{ backgroundColor: overlayHex }}>
-              Su Legado
+              Su Biografía
             </div>
-            <p className="text-[8.5px] text-center italic text-[#555] mb-2 leading-none">Los valores que dejó y que seguirán vivos por siempre.</p>
+            <p className="text-[8.5px] text-center italic text-[#555] mb-2 leading-none">Los valores y pilares que marcaron su historia de vida.</p>
             <div className="flex justify-center gap-10 items-start h-full pt-1">
               {infoData.shields.slice(0, 3).map((shield, i) => {
                 const SIcon = IconMap[shield.icon] || Shield;

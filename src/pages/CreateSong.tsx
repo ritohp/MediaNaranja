@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Music, Sparkles, BookOpen, User, Users, Heart, Baby, Mic, Target, CalendarDays, Lock, ArrowLeft, RefreshCw, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
+import { Music, Sparkles, BookOpen, User, Users, Heart, Baby, Mic, Target, CalendarDays, Lock, ArrowLeft, RefreshCw, CheckCircle2, ExternalLink, Loader2, Camera, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt } from '../services/ai';
+import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt, generateInfographicData } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import TributeAddon from '../components/tribute/TributeAddon';
 
@@ -50,6 +50,15 @@ export default function CreateSong() {
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(draftData?.interviewAnswers || {});
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
+  // Estados para Biografía Digital interactiva durante espera
+  const [photoUrl, setPhotoUrl] = useState(draftData?.formData?.legacy_photo_url || '');
+  const [isUploading, setIsUploading] = useState(false);
+  const [customDedication, setCustomDedication] = useState(draftData?.formData?.custom_dedication || '');
+  const [majorMilestone, setMajorMilestone] = useState(draftData?.formData?.major_milestone || '');
+  const [isGeneratingBiography, setIsGeneratingBiography] = useState(false);
+  const [biographyGenerated, setBiographyGenerated] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const urlCategory = params.get('category');
@@ -63,7 +72,8 @@ export default function CreateSong() {
       familyNames: data.familyNames || '',
       moodAndStyle: data.moodAndStyle || '',
       finalStylePrompt: data.finalStylePrompt || '',
-      nombreDestinatario: data.nombreDestinatario || ''
+      nombreDestinatario: data.nombreDestinatario || '',
+      lugarOrigen: data.lugarOrigen || ''
     };
   });
 
@@ -339,6 +349,97 @@ INSTRUCCIONES:
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentSongId) {
+      alert("Por favor, espera a que se inicie el proceso de creación antes de subir la foto.");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentSongId}-legacy-${Date.now()}.${fileExt}`;
+      const path = `${user?.id || 'anonymous'}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('memories')
+        .upload(path, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('memories')
+        .getPublicUrl(path);
+
+      setPhotoUrl(publicUrl);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Hubo un error al subir la imagen. Intenta con una imagen más pequeña.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleGenerateBiography = async () => {
+    if (!currentSongId) return;
+    setIsGeneratingBiography(true);
+    try {
+      const storyParts = [
+        initialContext,
+        formData.specificDetails,
+        formData.familyNames ? `Familiares mencionados: ${formData.familyNames}` : null,
+        formData.lugarOrigen ? `Origen: ${formData.lugarOrigen}` : null,
+        formData.birthDate ? `Nacimiento: ${formData.birthDate}` : null
+      ].filter(Boolean);
+      const story = storyParts.join(". ");
+
+      const combinedAnswers = [
+        ...Object.values(interviewAnswers),
+        customDedication ? `Dedicatoria especial: ${customDedication}` : null,
+        majorMilestone ? `Mayor logro/hito: ${majorMilestone}` : null
+      ].filter(Boolean) as string[];
+
+      const infoData = await generateInfographicData(
+        story,
+        combinedAnswers,
+        formData.nombreDestinatario || formData.childName || 'Homenajeado',
+        formData.category?.toUpperCase() || 'PAPA',
+        'legacy'
+      );
+
+      // Traer datos de canción actual
+      const { data: song } = await supabase
+        .from('mn_songs')
+        .select('form_data')
+        .eq('id', currentSongId)
+        .single();
+
+      const currentFormData = song?.form_data || {};
+      const updatedFormData = {
+        ...currentFormData,
+        ...formData,
+        legacy_photo_url: photoUrl,
+        custom_dedication: customDedication,
+        major_milestone: majorMilestone,
+        infographic_data: infoData
+      };
+
+      const { error } = await supabase
+        .from('mn_songs')
+        .update({ form_data: updatedFormData })
+        .eq('id', currentSongId);
+
+      if (error) throw error;
+      setBiographyGenerated(true);
+    } catch (err) {
+      console.error("Error generating biography:", err);
+      alert("Hubo un error al generar la Biografía Digital. Por favor, intenta de nuevo.");
+    } finally {
+      setIsGeneratingBiography(false);
+    }
+  };
+
   const handleConfirmLyrics = async () => {
     if (!user) {
       setShowLoginModal(true);
@@ -575,8 +676,20 @@ INSTRUCCIONES:
           <div className="space-y-12">
             <div className="text-center mb-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-naranja-50 text-naranja-500 mb-6 border border-naranja-100"><Music size={32} /></div>
-              <h1 className="text-4xl md:text-5xl mb-4 font-serif text-blush-800">Crea tu <span className="text-naranja-500 italic">Obra Maestra</span></h1>
-              <p className="text-ink-600/70 text-lg font-light max-w-2xl mx-auto">Cuéntanos tu historia y deja que Naranjín, nuestro compositor virtual, diseñe la entrevista perfecta para tu canción.</p>
+              <h1 className="text-4xl md:text-5xl mb-4 font-serif text-blush-800">
+                {formData.category === 'papa' ? (
+                  <>Crea su <span className="text-naranja-500 italic">Biografía Digital</span></>
+                ) : (
+                  <>Crea tu <span className="text-naranja-500 italic">Obra Maestra</span></>
+                )}
+              </h1>
+              <p className="text-ink-600/70 text-lg font-light max-w-2xl mx-auto">
+                {formData.category === 'papa' ? (
+                  "Cuéntanos un poco sobre él y deja que Naranjín organice su portal de recuerdos y su canción personalizada."
+                ) : (
+                  "Cuéntanos tu historia y deja que Naranjín, nuestro compositor virtual, diseñe la entrevista perfecta para tu canción."
+                )}
+              </p>
             </div>
 
             {formPhase === 'spark' ? (
@@ -635,12 +748,25 @@ INSTRUCCIONES:
                     </div>
                   )}
 
-                  <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3 pt-4"><Sparkles className="text-naranja-500" /> ¿Cuál es la chispa inicial?</h3>
-                  <p className="text-ink-600/70 text-sm italic">Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".</p>
+                  <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3 pt-4">
+                    <Sparkles className="text-naranja-500" /> 
+                    {formData.category === 'papa' ? "¿Cuál es la chispa del homenaje?" : "¿Cuál es la chispa inicial?"}
+                  </h3>
+                  <p className="text-ink-600/70 text-sm italic">
+                    {formData.category === 'papa' ? (
+                      "Escribe una breve reseña de papá: a qué se dedica o dedicaba, qué le gusta hacer en su tiempo libre y qué representa para la familia."
+                    ) : (
+                      'Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".'
+                    )}
+                  </p>
                   <textarea 
                     value={initialContext}
                     onChange={(e) => setInitialContext(e.target.value)}
-                    placeholder="Escribe aquí de qué se trata la canción..."
+                    placeholder={
+                      formData.category === 'papa' 
+                        ? "Ej: Es un homenaje para mi papá José, fue maestro de escuela toda su vida, le apasiona la música mexicana y siempre nos enseñó a ser trabajadores..." 
+                        : "Escribe aquí de qué se trata la canción..."
+                    }
                     className="w-full h-40 bg-blush-50/50 border border-blush-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-lg font-medium resize-none transition-all"
                     required
                   ></textarea>
@@ -652,49 +778,142 @@ INSTRUCCIONES:
               </form>
             ) : formPhase === 'details' ? (
               <form onSubmit={handleStartInterview} className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-right-8 duration-700">
-                <button onClick={() => setFormPhase('spark')} type="button" className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-2"><ArrowLeft size={16} /> Volver a chispa inicial</button>
+                <button onClick={() => setFormPhase('spark')} type="button" className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-2"><ArrowLeft size={16} /> Volver a la chispa</button>
                 
                 <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-8">
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> {detailsPrompt.title}</h3>
-                    <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
-                    <textarea 
-                      name="specificDetails"
-                      value={formData.specificDetails || ''}
-                      onChange={handleChange}
-                      placeholder={detailsPrompt.placeholder}
-                      className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
-                      required
-                    ></textarea>
-                  </div>
+                  {formData.category === 'papa' ? (
+                    <>
+                      {/* Campos Biográficos de Papá */}
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Nombre Completo de Papá</h3>
+                        <p className="text-ink-600/70 text-sm italic mt-2">Lo necesitamos completo para diseñar su escudo heráldico y el certificado biográfico oficial.</p>
+                        <input 
+                          type="text"
+                          name="nombreDestinatario"
+                          value={formData.nombreDestinatario || ''}
+                          onChange={handleChange}
+                          placeholder="Ej: José de la Luz Sánchez Ramírez"
+                          className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                          required
+                        />
+                      </div>
 
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> {detailsPrompt.familyTitle}</h3>
-                    <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.familySubtitle}</p>
-                    <input 
-                      type="text"
-                      name="familyNames"
-                      value={formData.familyNames || ''}
-                      onChange={handleChange}
-                      placeholder={detailsPrompt.familyPlaceholder}
-                      className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all"
-                    />
-                  </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><CalendarDays className="text-naranja-500" /> Fecha de Nacimiento</h3>
+                          <p className="text-ink-600/70 text-xs italic mt-1">Para trazar el punto de partida en su línea de tiempo.</p>
+                          <input 
+                            type="text"
+                            name="birthDate"
+                            value={formData.birthDate || ''}
+                            onChange={handleChange}
+                            placeholder="Ej: 12 de Junio de 1950"
+                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><Target className="text-naranja-500" /> Lugar de Origen</h3>
+                          <p className="text-ink-600/70 text-xs italic mt-1">Establece el inicio geográfico de su biografía.</p>
+                          <input 
+                            type="text"
+                            name="lugarOrigen"
+                            value={formData.lugarOrigen || ''}
+                            onChange={handleChange}
+                            placeholder="Ej: Guadalajara, Jalisco"
+                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> ¿Quiénes son los pilares de su vida? (Familia)</h3>
+                        <p className="text-ink-600/70 text-sm italic mt-2">Ingresa el nombre de su esposa, hijos y nietos (separados por comas). Estos nombres se grabarán en el árbol familiar interactivo de su Biografía Digital.</p>
+                        <input 
+                          type="text"
+                          name="familyNames"
+                          value={formData.familyNames || ''}
+                          onChange={handleChange}
+                          placeholder="Ej: Su esposa María, sus hijos Pedro, Laura y Lucía, y su nieto Mateo..."
+                          className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> Historia, Enseñanzas y Anécdotas</h3>
+                        <p className="text-ink-600/70 text-sm italic mt-2">Cuéntanos hitos importantes de su vida, anécdotas divertidas y enseñanzas que te dejó.</p>
+                        <textarea 
+                          name="specificDetails"
+                          value={formData.specificDetails || ''}
+                          onChange={handleChange}
+                          placeholder="Ej: Empezó trabajando desde muy joven en el campo, luego se mudó a la ciudad y fundó su propio taller. Siempre nos enseñó que la familia es lo primero. Un día se cayó de una bicicleta persiguiendo un perro y toda la cuadra se rió con él..."
+                          className="w-full h-36 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all font-medium"
+                          required
+                        ></textarea>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Formulario Estándar para Otras Categorías */}
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> {detailsPrompt.title}</h3>
+                        <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
+                        <textarea 
+                          name="specificDetails"
+                          value={formData.specificDetails || ''}
+                          onChange={handleChange}
+                          placeholder={detailsPrompt.placeholder}
+                          className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
+                          required
+                        ></textarea>
+                      </div>
+
+                      <div>
+                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> {detailsPrompt.familyTitle}</h3>
+                        <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.familySubtitle}</p>
+                        <input 
+                          type="text"
+                          name="familyNames"
+                          value={formData.familyNames || ''}
+                          onChange={handleChange}
+                          placeholder={detailsPrompt.familyPlaceholder}
+                          className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all"
+                        />
+                      </div>
+                    </>
+                  )}
                   
                   <div>
-                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Music className="text-naranja-500" /> Género, tono y emoción</h3>
-                    <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo quieres que suene? (Con humor, cómica, poética, corrido bragado, o estilo Banda MS)</p>
+                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Music className="text-naranja-500" /> Género, tono y emoción de la canción</h3>
+                    <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo quieres que suene? (Con humor, poética, nostálgica, corrido bragado, mariachi tradicional, o banda sinaloense)</p>
                     <textarea 
                       name="moodAndStyle"
                       value={formData.moodAndStyle || ''}
                       onChange={handleChange}
-                      placeholder="Ej: Quiero una cumbia rápida y alegre con un toque de humor, estilo Los Ángeles Azules..."
-                      className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
+                      placeholder={formData.category === 'papa' ? "Ej: Un corrido norteño con acordeón y bajo sexto, con tono alegre y mucho orgullo..." : "Ej: Quiero una cumbia rápida y alegre con un toque de humor, estilo Los Ángeles Azules..."}
+                      className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all font-medium"
                       required
                     ></textarea>
                   </div>
 
-                  <button type="submit" disabled={isGeneratingQuestions || !formData.specificDetails?.trim() || !formData.moodAndStyle?.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                  <button 
+                    type="submit" 
+                    disabled={
+                      isGeneratingQuestions || 
+                      !formData.specificDetails?.trim() || 
+                      !formData.moodAndStyle?.trim() || 
+                      (formData.category === 'papa' && (
+                        !formData.nombreDestinatario?.trim() || 
+                        !formData.birthDate?.trim() || 
+                        !formData.lugarOrigen?.trim() || 
+                        !formData.familyNames?.trim()
+                      ))
+                    } 
+                    className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3"
+                  >
                     {isGeneratingQuestions ? <RefreshCw className="animate-spin" /> : <Sparkles />}
                     {isGeneratingQuestions ? "DISEÑANDO ENTREVISTA..." : "CONTINUAR"}
                   </button>
@@ -807,33 +1026,137 @@ INSTRUCCIONES:
         {step === 3 && (
           <div className="text-center py-16 animate-in zoom-in duration-700">
             {generationStatus === 'generating' ? (
-              <>
-                <div className="relative inline-block mb-10">
-                  <img 
-                    src="/mascota_loading.png" 
-                    alt="Naranjín grabando" 
-                    className="w-48 h-48 md:w-56 md:h-56 object-contain animate-pulse mx-auto" 
-                  />
-                  <div className="absolute inset-0 border-4 border-dashed border-naranja-500/20 rounded-full animate-spin-slow pointer-events-none"></div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-5xl mx-auto">
+                <div className={`${formData.category === 'papa' ? 'lg:col-span-5' : 'lg:col-span-12'} text-center space-y-6`}>
+                  <div className="relative inline-block">
+                    <img 
+                      src="/mascota_loading.png" 
+                      alt="Naranjín grabando" 
+                      className="w-40 h-40 md:w-48 md:h-48 object-contain animate-pulse mx-auto" 
+                    />
+                    <div className="absolute inset-0 border-4 border-dashed border-naranja-500/20 rounded-full animate-spin-slow pointer-events-none"></div>
+                  </div>
+                  <h2 className="text-3xl font-serif text-blush-800">Estudio de Grabación</h2>
+                  <p className="text-ink-600/70 text-sm max-w-xs mx-auto font-light">
+                    Kie.ai está produciendo la música, grabando los instrumentos y las voces personalizadas. Tardará 1-2 minutos.
+                  </p>
+                  <div className="w-full max-w-xs mx-auto bg-blush-50 h-3 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-naranja-400 to-naranja-600 h-full animate-pulse" style={{ width: '70%' }}></div>
+                  </div>
+                  <p className="text-naranja-500 font-bold text-xs tracking-widest animate-pulse uppercase">Componiendo voces e instrumentos...</p>
+                  
+                  <div className="pt-4">
+                    <button 
+                      onClick={() => {
+                        setStep(2);
+                        setGenerationStatus('idle');
+                      }}
+                      className="text-blush-400 hover:text-naranja-500 font-bold text-xs uppercase tracking-[0.2em] transition-colors"
+                    >
+                      × Cancelar y volver
+                    </button>
+                  </div>
                 </div>
-                <h2 className="text-4xl font-serif text-blush-800 mb-4">Estudio de Grabación</h2>
-                <p className="text-ink-600/70 text-lg max-w-sm mx-auto mb-10 font-light">Kie.ai está grabando los instrumentos y las voces. Estaremos listos en 1-2 minutos.</p>
-                <div className="w-full max-w-xs mx-auto bg-blush-50 h-3 rounded-full overflow-hidden">
-                  <div className="bg-gradient-to-r from-naranja-400 to-naranja-600 h-full animate-pulse" style={{ width: '70%' }}></div>
-                </div>
-                <p className="mt-8 text-naranja-500 font-bold text-sm tracking-widest animate-pulse uppercase">Generando Magia...</p>
-                <div className="mt-12">
-                  <button 
-                    onClick={() => {
-                      setStep(2);
-                      setGenerationStatus('idle');
-                    }}
-                    className="text-blush-400 hover:text-naranja-500 font-bold text-xs uppercase tracking-[0.2em] transition-colors"
-                  >
-                    × Cancelar y volver al taller
-                  </button>
-                </div>
-              </>
+
+                {formData.category === 'papa' && (
+                  <div className="lg:col-span-7 bg-gradient-to-br from-blue-50 to-indigo-50/50 p-6 md:p-10 rounded-[2.5rem] border border-blue-100 shadow-xl text-left space-y-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                      <User size={150} />
+                    </div>
+                    <div className="flex items-center gap-4 relative z-10">
+                      <img src="/mascota.png" alt="Naranjín" className="w-14 h-14 object-contain animate-bounce-slow" />
+                      <div>
+                        <h4 className="text-xl font-serif text-blue-900 leading-tight">✨ ¡Paso Extra: Tu Biografía Digital!</h4>
+                        <p className="text-xs text-blue-700/70">Aprovecha este tiempo para subir su foto de portada y personalizar su portal interactivo.</p>
+                      </div>
+                    </div>
+
+                    {!biographyGenerated ? (
+                      <div className="space-y-5 relative z-10">
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Foto de Portada de Papá *</label>
+                          <div className="flex items-center gap-4">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={isUploading}
+                              className="px-4 py-3 bg-white border border-blue-200 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-50 transition-all flex items-center gap-2 shadow-sm"
+                            >
+                              {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Camera size={14} />}
+                              {photoUrl ? "Cambiar Foto" : "Subir Foto Oficial"}
+                            </button>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              onChange={handleFileUpload}
+                              accept="image/*"
+                              className="hidden"
+                            />
+                            {photoUrl && (
+                              <div className="flex items-center gap-2 text-xs text-emerald-600 font-bold">
+                                <CheckCircle2 size={14} /> Foto cargada
+                              </div>
+                            )}
+                          </div>
+                          {photoUrl && (
+                            <img src={photoUrl} alt="Vista previa" className="w-24 h-24 object-cover rounded-2xl border-2 border-white shadow-md mt-2" />
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Dedicatoria Especial *</label>
+                          <p className="text-[10px] text-blue-700/60 italic">Una hermosa frase corta para recibir a toda la familia en su portal biográfico.</p>
+                          <input
+                            type="text"
+                            value={customDedication}
+                            onChange={(e) => setCustomDedication(e.target.value)}
+                            placeholder="Ej: Para el hombre que me enseñó a caminar con la frente en alto. Te amo, papá."
+                            className="w-full bg-white border border-blue-200 rounded-xl p-3.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 font-medium"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Mayor Logro o Hito de su Vida *</label>
+                          <p className="text-[10px] text-blue-700/60 italic">Un orgullo familiar (ej: su carrera, su negocio, sus hijos, un gran viaje o aprendizaje).</p>
+                          <input
+                            type="text"
+                            value={majorMilestone}
+                            onChange={(e) => setMajorMilestone(e.target.value)}
+                            placeholder="Ej: Dedicar 40 años a la enseñanza y construir nuestro hogar con amor y esfuerzo."
+                            className="w-full bg-white border border-blue-200 rounded-xl p-3.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 font-medium"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleGenerateBiography}
+                          disabled={isGeneratingBiography || isUploading || !photoUrl || !customDedication.trim() || !majorMilestone.trim()}
+                          className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm tracking-wider hover:bg-blue-700 transition shadow disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {isGeneratingBiography ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+                          {isGeneratingBiography ? "GENERANDO PORTAL BIOGRÁFICO..." : "¡GENERAR BIOGRAFÍA DIGITAL!"}
+                        </button>
+                        <p className="text-[10px] text-center text-blue-600/60">Todos los campos son obligatorios para diseñar el portal y el QR.</p>
+                      </div>
+                    ) : (
+                      <div className="p-8 bg-white/80 backdrop-blur rounded-3xl border border-emerald-100 text-center space-y-4 shadow-sm animate-in zoom-in duration-500">
+                        <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto">
+                          <CheckCircle2 size={32} />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-emerald-800">¡Biografía Digital Creada con Éxito!</h4>
+                          <p className="text-xs text-emerald-600 mt-1">
+                            El Homenaje Digital Interactivo, el árbol familiar y el PDF descargable de alta calidad con QR personalizado han sido configurados.
+                          </p>
+                        </div>
+                        <p className="text-[10px] font-bold text-blue-600 animate-pulse uppercase tracking-widest pt-2">
+                          Naranjín sigue grabando tu melodía... ¡Espera en esta pantalla!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             ) : generationStatus === 'completed' && audioUrl ? (
               <div className="max-w-2xl mx-auto space-y-10 relative">
                 {showDemoModal && (

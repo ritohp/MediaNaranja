@@ -142,7 +142,7 @@ export default function TributeWizard() {
       navigate(`/cancion/${song.id}`);
     } catch (err) {
       console.error(err);
-      alert("Hubo un error al generar tu Legado Digital. Intenta de nuevo.");
+      alert("Hubo un error al generar tu Biografía Digital. Intenta de nuevo.");
     } finally {
       setIsGenerating(false);
     }
@@ -161,7 +161,7 @@ export default function TributeWizard() {
         </div>
         <h2 className="text-2xl font-serif font-bold text-[#1C2A39] mb-2">Conectando con Naranjín...</h2>
         <p className="text-[#1C2A39]/60 max-w-sm text-sm">
-          Estamos recopilando la historia y preparando el lienzo para tu Legado Digital.
+          Estamos recopilando la historia y preparando el lienzo para tu Biografía Digital.
         </p>
         <style>{`
           @keyframes spinSlow {
@@ -187,7 +187,7 @@ export default function TributeWizard() {
           />
           <div className="absolute inset-0 border-4 border-dashed border-[#B69D74]/30 rounded-full animate-spin-slow pointer-events-none"></div>
         </div>
-        <h2 className="text-3xl font-serif font-bold text-[#1C2A39] mb-2">Diseñando el Pergamino...</h2>
+        <h2 className="text-3xl font-serif font-bold text-[#1C2A39] mb-2">Diseñando la Biografía...</h2>
         <p className="text-[#1C2A39]/60 max-w-sm text-sm">
           Naranjín está redactando la heráldica, la línea de tiempo y los hitos más bellos de esta historia. Tardará solo unos segundos.
         </p>
@@ -221,7 +221,7 @@ export default function TributeWizard() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#B69D74]/20 text-[#B69D74] mb-6">
                 <BookOpen size={32} />
               </div>
-              <h1 className="text-4xl md:text-5xl font-serif text-[#1C2A39] mb-4 tracking-tight">Construyendo un <span className="text-[#B69D74] italic">Legado</span></h1>
+              <h1 className="text-4xl md:text-5xl font-serif text-[#1C2A39] mb-4 tracking-tight">Construyendo una <span className="text-[#B69D74] italic">Biografía</span></h1>
               <p className="text-[#1C2A39]/70 text-lg max-w-xl mx-auto">Para generar una línea de tiempo espectacular y extraer los valores clave, necesitamos unos últimos detalles sobre la historia de <strong>{song?.form_data?.nombreDestinatario || "tu ser querido"}</strong>.</p>
             </div>
 
@@ -373,7 +373,7 @@ export default function TributeWizard() {
                 className="w-full md:w-auto px-12 py-5 bg-[#1C2A39] text-[#B69D74] rounded-2xl font-bold uppercase tracking-widest hover:bg-black transition shadow-xl disabled:opacity-70 inline-flex items-center justify-center gap-3"
               >
                 {isGenerating ? <RefreshCw className="animate-spin" size={24} /> : <Wand2 size={24} />}
-                {isGenerating ? "Diseñando Pergamino..." : "Generar Legado Digital Ahora"}
+                {isGenerating ? "Diseñando Biografía..." : "Generar Biografía Digital Ahora"}
               </button>
             </div>
           </div>

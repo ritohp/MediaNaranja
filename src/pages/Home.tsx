@@ -73,20 +73,33 @@ export default function Home() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="order-2 lg:order-1 space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 text-[10px] font-black uppercase tracking-widest">
-              Edición Especial Día del Padre
+              El Regalo Definitivo
             </div>
             <h2 className="text-6xl md:text-8xl font-playfair leading-[1] text-[#1A1A1A]">
               Para el rey de la casa, <br />
-              <span className="italic text-blue-600">su legado.</span>
+              <span className="italic text-blue-600">su Biografía Digital.</span>
             </h2>
             <p className="text-xl text-gray-500 font-outfit leading-relaxed max-w-lg">
-              Las corbatas pasan de moda y los relojes se olvidan, pero una canción que narre su vida y sacrificios es un tesoro que guardará en el alma para siempre. Dile "gracias" con la melodía que se merece.
+              Mucho más que una canción. Inmortaliza su historia, anécdotas, origen y pilares familiares en un <strong>Homenaje Digital Interactivo</strong> y una composición musical premium hecha a su medida. 
             </p>
+            <div className="p-6 bg-white/70 backdrop-blur border border-blue-100 rounded-3xl space-y-3">
+              <p className="text-sm text-gray-600 font-outfit">
+                ✨ <strong>PDF Premium e Imprimible con QR:</strong> Una vez desbloqueada, descarga un hermoso certificado listo para enmarcar. Cualquiera en la familia podrá escanear el código QR para escuchar su canción y leer su biografía. Listo para compartir por WhatsApp.
+              </p>
+              <p className="text-sm font-bold text-blue-600 font-outfit italic">
+                🎁 Créala 100% gratis en menos de 8 minutos. Paga únicamente si te emociona hasta las lágrimas.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {["Creación Gratis en 8 Min", "Imprimible con Código QR", "Fácil por WhatsApp", "Paga si te encanta"].map((tag, i) => (
+                <span key={i} className="px-3.5 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-bold font-outfit border border-blue-100/50">{tag}</span>
+              ))}
+            </div>
             <button 
               onClick={() => { localStorage.removeItem('mn_draft_song'); navigate('/crear-cancion?category=papa'); }}
-              className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:shadow-blue-200 transition-all flex items-center justify-center gap-3"
+              className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:shadow-blue-200 transition-all flex items-center justify-center gap-3 animate-pulse"
             >
-              Crear canción para Papá <User size={18} />
+              Crear Biografía Gratis <BookOpen size={18} />
             </button>
           </div>
           <div className="order-1 lg:order-2 relative group">
