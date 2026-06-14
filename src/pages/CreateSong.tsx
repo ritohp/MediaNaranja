@@ -94,6 +94,11 @@ export default function CreateSong() {
     localStorage.setItem('mn_draft_song', JSON.stringify(draft));
   }, [formData, step, lyrics, currentSongId, formPhase, initialContext, aiQuestions, interviewAnswers]);
 
+  const handleClearDraft = () => {
+    localStorage.removeItem('mn_draft_song');
+    window.location.reload();
+  };
+
   const ensureProfile = async (userId: string, userEmail?: string) => {
     // Intentar traer el perfil
     const { data: profile, error } = await supabase
@@ -728,6 +733,22 @@ INSTRUCCIONES:
         
         {step === 1 && (
           <div className="space-y-12">
+            {savedDraft && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-naranja-50/70 border border-naranja-100 rounded-3xl p-6 max-w-2xl mx-auto text-sm text-naranja-950 animate-in fade-in duration-500 shadow-sm">
+                <div className="flex items-center gap-3 text-center sm:text-left">
+                  <Sparkles className="text-naranja-500 shrink-0" size={20} />
+                  <span>Continuando con tu borrador anterior. ¿Prefieres comenzar de nuevo?</span>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={handleClearDraft} 
+                  className="px-4 py-2 bg-white hover:bg-naranja-500 hover:text-white text-naranja-600 rounded-xl border border-naranja-200 text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-sm"
+                >
+                  Empezar de nuevo
+                </button>
+              </div>
+            )}
+            
             <div className="text-center mb-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-naranja-50 text-naranja-500 mb-6 border border-naranja-100"><Music size={32} /></div>
               <h1 className="text-4xl md:text-5xl mb-4 font-serif text-blush-800">
