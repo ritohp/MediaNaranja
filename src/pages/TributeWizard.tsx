@@ -140,8 +140,8 @@ export default function TributeWizard() {
       return;
     }
 
-    if (!customDedication.trim() || !majorMilestone.trim() || !photoUrl) {
-      alert("Por favor completa todos los campos (foto, dedicatoria e hito de vida) para diseñar tu Biografía Digital.");
+    if (!customDedication.trim() || !majorMilestone.trim()) {
+      alert("Por favor completa los campos de dedicatoria e hito de vida para diseñar tu Biografía Digital.");
       return;
     }
     
@@ -326,7 +326,7 @@ export default function TributeWizard() {
                 <div>
                   <label className="block text-base font-bold text-[#1C2A39] mb-1 flex items-center gap-2">
                     <Camera className="text-[#B69D74]" size={20} />
-                    Foto de Portada Oficial *
+                    Foto de Portada Oficial (Opcional)
                   </label>
                   <p className="text-sm text-[#1C2A39]/60">Sube una fotografía memorable del homenajeado para ilustrar su pergamino digital de legado.</p>
                 </div>
