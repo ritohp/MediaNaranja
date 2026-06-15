@@ -254,12 +254,12 @@ INSTRUCCIONES:
       const { questions, extractedName } = await generateInterviewQuestions(combinedContext, formData.category);
       setAiQuestions(questions);
       
-      // Si la IA encontró el nombre, lo guardamos. Si es categoría 'hijo', preservamos childName.
+      // Si la IA encontró el nombre, lo guardamos si no está ya especificado por el usuario.
       if (extractedName) {
         setFormData(prev => ({
           ...prev,
-          nombreDestinatario: extractedName,
-          childName: prev.category === 'hijo' && prev.childName ? prev.childName : extractedName
+          nombreDestinatario: prev.nombreDestinatario || extractedName,
+          childName: prev.category === 'hijo' && prev.childName ? prev.childName : (prev.childName || extractedName)
         }));
       }
 
@@ -282,7 +282,13 @@ INSTRUCCIONES:
     if (signInError) {
       if (signInError.message.includes('Invalid login credentials')) {
         // Podría ser un usuario nuevo o alguien que se equivocó de contraseña
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        const { error: signUpError } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/crear-cancion?confirmed=true`
+          }
+        });
         if (signUpError) {
           if (signUpError.message.includes('already registered')) {
             alert("Contraseña incorrecta. Por favor intenta de nuevo.");
@@ -620,7 +626,16 @@ INSTRUCCIONES:
                 setAudioUrl2(finalUrl2);
                 setGenerationStatus('completed');
                 
+                // Traer datos de canción actual en DB para no sobreescribir la biografía digital si ya se generó
+                const { data: latestSong } = await supabase
+                  .from('mn_songs')
+                  .select('form_data')
+                  .eq('id', newSong.id)
+                  .single();
+
+                const currentDbFormData = latestSong?.form_data || {};
                 const updatedFormData = {
+                  ...currentDbFormData,
                   ...formData,
                   finalStylePrompt: formData.finalStylePrompt || cleanedStyle,
                   version2: (song2 && song2.audioUrl) ? { 
@@ -644,6 +659,37 @@ INSTRUCCIONES:
                 setAudioUrl(song1.audioUrl);
                 setAudioUrl2(song2?.audioUrl || null);
                 setGenerationStatus('completed');
+
+                try {
+                  const { data: latestSong } = await supabase
+                    .from('mn_songs')
+                    .select('form_data')
+                    .eq('id', newSong.id)
+                    .single();
+
+                  const currentDbFormData = latestSong?.form_data || {};
+                  const updatedFormData = {
+                    ...currentDbFormData,
+                    ...formData,
+                    finalStylePrompt: formData.finalStylePrompt || cleanedStyle,
+                    version2: song2 ? { 
+                      audio_url: song2.audioUrl, 
+                      demo_url: null,
+                      song_id: song2.id 
+                    } : null
+                  };
+
+                  await supabase.from('mn_songs').update({ 
+                    audio_url: song1.audioUrl,
+                    demo_url: null,
+                    suno_id: song1.id,
+                    form_data: updatedFormData,
+                    status: 'completed'
+                  }).eq('id', newSong.id);
+                } catch (dbErr) {
+                  console.error("Error al guardar estado de fallo en DB:", dbErr);
+                }
+
                 navigate(`/cancion/${newSong.id}`);
               }
               fetchProfile(user!.id);

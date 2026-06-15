@@ -6,6 +6,7 @@ import {
   Share2, Lock, FileText, CheckCircle2, Home, Briefcase, 
   Hammer, Users, Star, Mountain, Feather, TreeDeciduous, User, Copy, MessageCircle
 } from 'lucide-react';
+import { checkMusicStatus } from '../services/music';
 import { QRCodeSVG } from 'qrcode.react';
 import { toJpeg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
@@ -33,14 +34,33 @@ export default function SongPlayer() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ photoUrl: '', dedication: '', recipient: '' });
   const [isUploading, setIsUploading] = useState(false);
+  const [activePreviewVersion, setActivePreviewVersion] = useState<1 | 2>(1);
+  const [isAudioLoading, setIsAudioLoading] = useState(true);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pdfRef = useRef<HTMLDivElement | null>(null);
+
+  const isOwner = user?.id === song?.user_id;
+  const isAdmin = user?.email === 'ritohp@gmail.com';
+  const isPaid = song?.is_paid || isAdmin;
+  
+  const activeVersionToPlay = (isOwner || isAdmin) ? activePreviewVersion : (song?.form_data?.selected_version || 1);
+  const currentAudioUrl = song ? (
+    activeVersionToPlay === 2
+      ? (isPaid ? (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url) : (song.form_data?.version2?.demo_url || song.form_data?.version2?.audio_url))
+      : (isPaid ? (song.audio_url || song.demo_url) : (song.demo_url || song.audio_url))
+  ) : '';
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
     loadSong();
   }, [id]);
+
+  useEffect(() => {
+    if (song?.form_data?.selected_version) {
+      setActivePreviewVersion(song.form_data.selected_version);
+    }
+  }, [song]);
 
   async function loadSong() {
     try {
@@ -66,11 +86,105 @@ export default function SongPlayer() {
     }
   };
 
+  // Polling para recuperar el audio de Kie.ai si está en estado 'generating_music'
+  useEffect(() => {
+    if (!song || song.status !== 'generating_music') return;
+
+    let pollInterval: NodeJS.Timeout;
+    let attempts = 0;
+    const maxAttempts = 120; // 10 minutos máx
+
+    const checkStatus = async () => {
+      attempts++;
+      try {
+        const response = await checkMusicStatus(song.task_id);
+        const sunoData = response?.data?.response?.sunoData || response?.response?.sunoData;
+
+        if (sunoData && sunoData.length > 0 && sunoData[0].audioUrl) {
+          clearInterval(pollInterval);
+          
+          const song1 = sunoData[0];
+          const song2 = sunoData.length > 1 ? sunoData[1] : null;
+          const audioUrl = song1.audioUrl;
+          
+          let demoUrl = audioUrl;
+          let finalUrl2 = null;
+          try {
+            const { data: treatmentData } = await supabase.functions.invoke('process-audio', {
+              body: { originalUrl: audioUrl, songId: song.id, taskId: song.task_id }
+            });
+            demoUrl = treatmentData?.demoUrl || audioUrl;
+
+            if (song2 && song2.audioUrl) {
+               try {
+                  const { data: treatmentData2 } = await supabase.functions.invoke('process-audio', {
+                    body: { originalUrl: song2.audioUrl, songId: song.id, taskId: song.task_id }
+                  });
+                  finalUrl2 = treatmentData2?.demoUrl || song2.audioUrl;
+               } catch (e) {
+                  finalUrl2 = song2.audioUrl;
+               }
+            }
+          } catch (err) {
+            console.error("Error post-procesando audios en SongPlayer:", err);
+          }
+
+          const updatedFormData = {
+            ...(song.form_data || {}),
+            version2: (song2 && song2.audioUrl) ? { 
+              audio_url: song2.audioUrl, 
+              demo_url: finalUrl2,
+              song_id: song2.id 
+            } : null
+          };
+
+          const { data: updatedSong, error: updateError } = await supabase
+            .from('mn_songs')
+            .update({ 
+              audio_url: audioUrl, 
+              demo_url: demoUrl, 
+              form_data: updatedFormData, 
+              status: 'completed' 
+            })
+            .eq('id', song.id)
+            .select()
+            .single();
+
+          if (!updateError && updatedSong) {
+            setSong(updatedSong);
+          } else {
+            setSong((prev: any) => ({
+              ...prev,
+              audio_url: audioUrl,
+              demo_url: demoUrl,
+              form_data: updatedFormData,
+              status: 'completed'
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Error consultando estado de canción en SongPlayer:", err);
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(pollInterval);
+      }
+    };
+
+    checkStatus();
+    pollInterval = setInterval(checkStatus, 5000);
+
+    return () => clearInterval(pollInterval);
+  }, [song?.status, song?.id]);
+
   useEffect(() => {
     if (audioRef.current && song) {
       const audio = audioRef.current;
       const isAdminUser = user?.email === 'ritohp@gmail.com';
       const isSongPaid = song.is_paid || isAdminUser;
+
+      // Reset loading state on track change
+      setIsAudioLoading(true);
 
       const updateProgress = () => {
         if (!isSongPaid && audio.currentTime >= 90) {
@@ -80,22 +194,52 @@ export default function SongPlayer() {
           alert("Has alcanzado el límite de la versión de prueba (1.5 min). ¡Desbloquea tu regalo para escucharla completa!");
         }
         setCurrentTime(audio.currentTime);
-        setProgress((audio.currentTime / audio.duration) * 100);
+        setProgress((audio.currentTime / (audio.duration || 1)) * 100);
       };
-      const updateDuration = () => setDuration(audio.duration);
+
+      const updateDuration = () => {
+        setDuration(audio.duration || 0);
+        setIsAudioLoading(false);
+        
+        // Autoplay logic: try to play the song immediately when loaded
+        audio.play().then(() => {
+          setIsPlaying(true);
+        }).catch((err) => {
+          console.log("Autoplay block or delay:", err);
+        });
+      };
+
       const onEnded = () => setIsPlaying(false);
+      const onLoadStart = () => setIsAudioLoading(true);
+      const onWaiting = () => setIsAudioLoading(true);
+      const onPlaying = () => {
+        setIsAudioLoading(false);
+        setIsPlaying(true);
+      };
+      const onPause = () => setIsPlaying(false);
 
       audio.addEventListener('timeupdate', updateProgress);
       audio.addEventListener('loadedmetadata', updateDuration);
       audio.addEventListener('ended', onEnded);
+      audio.addEventListener('loadstart', onLoadStart);
+      audio.addEventListener('waiting', onWaiting);
+      audio.addEventListener('playing', onPlaying);
+      audio.addEventListener('pause', onPause);
+
+      // Force load the audio when url changes or component mounts
+      audio.load();
 
       return () => {
         audio.removeEventListener('timeupdate', updateProgress);
         audio.removeEventListener('loadedmetadata', updateDuration);
         audio.removeEventListener('ended', onEnded);
+        audio.removeEventListener('loadstart', onLoadStart);
+        audio.removeEventListener('waiting', onWaiting);
+        audio.removeEventListener('playing', onPlaying);
+        audio.removeEventListener('pause', onPause);
       };
     }
-  }, [song, user]);
+  }, [song, user, currentAudioUrl]);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -217,6 +361,31 @@ export default function SongPlayer() {
     }
   };
 
+  const saveSelectedVersion = async (version: 1 | 2) => {
+    if (!song) return;
+    try {
+      setIsUploading(true);
+      const newFormData = {
+        ...song.form_data,
+        selected_version: version
+      };
+
+      const { error } = await supabase
+        .from('mn_songs')
+        .update({ form_data: newFormData })
+        .eq('id', song.id);
+
+      if (error) throw error;
+      setSong({ ...song, form_data: newFormData });
+      setActivePreviewVersion(version);
+    } catch (err) {
+      console.error("Error guardando versión seleccionada:", err);
+      alert("Hubo un error al guardar tu selección.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const generatePDF = async () => {
     if (!pdfRef.current || !isPaid) {
       if (!isPaid) alert("Debes desbloquear la canción para descargar la Infografía en alta calidad.");
@@ -291,10 +460,6 @@ export default function SongPlayer() {
     return <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8F3E9]">Canción no encontrada.</div>;
   }
 
-  const isOwner = user?.id === song.user_id;
-  const isAdmin = user?.email === 'ritohp@gmail.com';
-  const isPaid = song.is_paid || isAdmin;
-  
   // Bloqueo de acceso público
   if (!isPaid && !isOwner && !isAdmin) {
     return (
@@ -321,11 +486,6 @@ export default function SongPlayer() {
     );
   }
 
-  const selectedVersion = song.form_data?.selected_version || 1;
-  const currentAudioUrl = selectedVersion === 2
-    ? (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url)
-    : (song.audio_url || song.demo_url);
-    
   const photoUrl = song.form_data?.legacy_photo_url || song.form_data?.custom_photo_url || "/papa-sorpresa.png";
   
   // Extraer datos infográficos
@@ -527,42 +687,103 @@ export default function SongPlayer() {
           <div className="mt-8 mb-16 px-4 pb-8">
             <span className="text-[#333] tracking-[0.2em] text-xs font-bold uppercase block mb-2">Su Canción</span>
             <p className="text-[10px] text-[#555] mb-6 italic">Cada palabra cuenta su historia, cada nota su esencia.</p>
-            <div className="bg-[#1C2A39] p-6 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54]">
-               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
-               
-               <div className="relative z-10 flex gap-4 items-center">
-                  <img src={photoUrl} className="w-16 h-16 rounded-lg object-cover shadow-md border border-[#B69D74]/30" crossOrigin="anonymous"/>
-                  <div className="flex-1 text-left">
-                    <h4 className="text-white text-xs md:text-sm tracking-widest font-bold mb-1 opacity-90 truncate">{title}</h4>
-                    <p className="text-[#B69D74] text-[9px] uppercase tracking-widest">Una canción creada especialmente para él.</p>
-                  </div>
-               </div>
-               
-               <div className="relative z-10 mt-6">
-                  <div className="flex items-center justify-between text-[9px] text-[#B69D74] font-mono mb-1">
-                    <span>{formatTime(currentTime)}</span>
-                    <span>{formatTime(duration)}</span>
-                  </div>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={progress}
-                    onChange={handleSeek}
-                    className="w-full h-1 bg-[#2A3F54] rounded-lg appearance-none cursor-pointer accent-[#B69D74]"
-                  />
-                  <div className="flex items-center justify-center gap-6 mt-4">
-                    <button className="text-gray-400 hover:text-[#B69D74] transition"><Share2 size={16} /></button>
-                    <button 
-                      onClick={togglePlay}
-                      className="w-12 h-12 rounded-full border border-[#B69D74] text-[#B69D74] flex items-center justify-center hover:bg-[#B69D74] hover:text-[#1C2A39] transition-colors shadow-lg"
-                    >
-                      {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
-                    </button>
-                    <button className="text-gray-400 hover:text-[#B69D74] transition"><Heart size={16} /></button>
-                  </div>
-               </div>
-            </div>
+            
+            {song.status === 'generating_music' ? (
+              <div className="bg-[#1C2A39] p-8 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54] text-center py-10 animate-pulse">
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
+                <div className="relative z-10 flex flex-col items-center justify-center gap-4">
+                  <div className="animate-spin w-8 h-8 border-4 border-[#B69D74] border-t-transparent rounded-full mb-2"></div>
+                  <h4 className="text-white text-xs md:text-sm tracking-widest font-bold opacity-90 uppercase">Naranjín está componiendo tu melodía...</h4>
+                  <p className="text-[#B69D74] text-[9px] uppercase tracking-widest leading-relaxed">
+                    Afinando guitarras y grabando las voces. Tu canción estará lista en aproximadamente 1 minuto. No cierres esta pestaña.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#1C2A39] p-6 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54]">
+                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
+                 
+                 <div className="relative z-10 flex gap-4 items-center">
+                    <img src={photoUrl} className="w-16 h-16 rounded-lg object-cover shadow-md border border-[#B69D74]/30" crossOrigin="anonymous"/>
+                    <div className="flex-1 text-left">
+                       <h4 className="text-white text-xs md:text-sm tracking-widest font-bold mb-1 opacity-90 truncate">{title}</h4>
+                       <p className="text-[#B69D74] text-[9px] uppercase tracking-widest">Una canción creada especialmente para él.</p>
+                    </div>
+                 </div>
+
+                 {/* Selector de Versiones (Exclusivo para el creador) */}
+                 {song.form_data?.version2 && (isOwner || isAdmin) && (
+                    <div className="relative z-10 mt-4 p-3 bg-[#2A3F54]/30 rounded-xl border border-[#B69D74]/10 text-center">
+                       <span className="text-[#B69D74] text-[9px] tracking-wider uppercase block mb-2 font-bold opacity-80">
+                          ¿Qué versión escuchará al compartir el link?
+                       </span>
+                       <div className="flex gap-2 mb-2">
+                          <button
+                            onClick={() => setActivePreviewVersion(1)}
+                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
+                              ${activePreviewVersion === 1 
+                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
+                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
+                          >
+                            Opción A {song.form_data?.selected_version !== 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
+                          </button>
+                          <button
+                            onClick={() => setActivePreviewVersion(2)}
+                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
+                              ${activePreviewVersion === 2 
+                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
+                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
+                          >
+                            Opción B {song.form_data?.selected_version === 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
+                          </button>
+                       </div>
+                       {song.form_data?.selected_version !== activePreviewVersion && (
+                          <button
+                            onClick={() => saveSelectedVersion(activePreviewVersion)}
+                            className="w-full py-1.5 bg-[#B69D74]/20 hover:bg-[#B69D74]/35 text-[#B69D74] border border-[#B69D74]/30 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all animate-pulse"
+                          >
+                            Fijar Opción {activePreviewVersion === 1 ? 'A' : 'B'} como la definitiva
+                          </button>
+                       )}
+                    </div>
+                 )}
+                 
+                 <div className="relative z-10 mt-6">
+                    {/* Leyenda de carga si el audio aún está cargándose en el reproductor */}
+                    {isAudioLoading && (
+                       <div className="mb-4 flex items-center justify-center gap-2 bg-[#2A3F54]/30 p-2.5 rounded-xl border border-[#B69D74]/10 animate-pulse">
+                          <div className="animate-spin w-3 h-3 border-2 border-[#B69D74] border-t-transparent rounded-full"></div>
+                          <p className="text-[#B69D74] text-[8px] tracking-wider uppercase font-semibold">
+                             Cargando melodía... Se reproducirá al instante.
+                          </p>
+                       </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[9px] text-[#B69D74] font-mono mb-1">
+                       <span>{formatTime(currentTime)}</span>
+                       <span>{formatTime(duration)}</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={progress}
+                      onChange={handleSeek}
+                      className="w-full h-1 bg-[#2A3F54] rounded-lg appearance-none cursor-pointer accent-[#B69D74]"
+                    />
+                    <div className="flex items-center justify-center gap-6 mt-4">
+                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Share2 size={16} /></button>
+                      <button 
+                        onClick={togglePlay}
+                        className="w-12 h-12 rounded-full border border-[#B69D74] text-[#B69D74] flex items-center justify-center hover:bg-[#B69D74] hover:text-[#1C2A39] transition-colors shadow-lg"
+                      >
+                        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                      </button>
+                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Heart size={16} /></button>
+                    </div>
+                 </div>
+              </div>
+            )}
             
             <p className="text-[9px] text-center italic font-medium mt-8 text-[#555] max-w-sm mx-auto leading-relaxed">
               Gracias por enseñarnos con tu ejemplo que el verdadero éxito<br/>
@@ -584,7 +805,22 @@ export default function SongPlayer() {
       <div className={`w-full max-w-2xl ${tokens.bg} shadow-2xl relative overflow-hidden rounded-md transition-colors duration-500`}>
         
         {!hasTributeData && song.form_data?.category === 'papa' ? (
-          <div className="w-full">
+          <div className="w-full p-6 md:p-12 space-y-8">
+            {song.status === 'generating_music' && (
+              <div className="bg-[#1C2A39] p-8 rounded-3xl border-2 border-[#B69D74]/30 text-center shadow-xl relative overflow-hidden animate-pulse">
+                <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
+                <div className="relative z-10 flex flex-col items-center justify-center gap-4">
+                  <div className="animate-spin w-8 h-8 border-4 border-[#B69D74] border-t-transparent rounded-full"></div>
+                  <h3 className="text-[#B69D74] font-serif text-lg md:text-xl font-bold uppercase tracking-wider">Estudio de Grabación</h3>
+                  <p className="text-white/80 text-xs md:text-sm max-w-sm leading-relaxed">
+                    Naranjín está componiendo tu canción en este momento. ¡El reproductor de música se activará automáticamente al terminar!
+                  </p>
+                  <p className="text-[#B69D74]/70 text-[10px] uppercase tracking-widest italic font-mono">
+                    Tiempo estimado: ~1 minuto
+                  </p>
+                </div>
+              </div>
+            )}
             <TributeAddon song={song} />
           </div>
         ) : (
@@ -681,7 +917,7 @@ export default function SongPlayer() {
         </div>
       </div>
       
-      {currentAudioUrl && <audio ref={audioRef} src={currentAudioUrl} />}
+      <audio ref={audioRef} src={currentAudioUrl || undefined} />
       
       {/* Modal de Edición */}
       {isEditing && (

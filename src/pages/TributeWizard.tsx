@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Wand2, RefreshCw, BookOpen, ArrowLeft, Camera, Image as ImageIcon, Music, Check } from 'lucide-react';
+import { Star, Wand2, RefreshCw, BookOpen, ArrowLeft, Camera, Image as ImageIcon, Music, Check, Sparkles, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { generateInfographicData, generateTributeQuestions } from '../services/ai';
+import { generateInfographicData } from '../services/ai';
 
 export default function TributeWizard() {
   const { id } = useParams();
@@ -12,53 +12,47 @@ export default function TributeWizard() {
   const [song, setSong] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [questions, setQuestions] = useState<string[]>([]);
-  const [answers, setAnswers] = useState<string[]>(['', '', '', '', '']);
+  
   const [fullName, setFullName] = useState<string>('');
+  const [customDedication, setCustomDedication] = useState<string>('');
+  const [majorMilestone, setMajorMilestone] = useState<string>('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<number>(1);
 
   useEffect(() => {
     async function loadData() {
-      const { data } = await supabase.from('mn_songs').select('*').eq('id', id).single();
-      setSong(data);
-      
-      if (data) {
-        const recipientName = data.form_data?.nombreDestinatario || data.form_data?.childName || "tu ser querido";
-        setFullName(recipientName);
+      try {
+        const { data, error } = await supabase.from('mn_songs').select('*').eq('id', id).single();
+        if (error) throw error;
+        setSong(data);
+        
+        if (data) {
+          const recipientName = data.form_data?.nombreDestinatario || data.form_data?.childName || "";
+          const recipientLastName = data.form_data?.apellidoDestinatario || "";
+          setFullName(`${recipientName} ${recipientLastName}`.trim());
 
-        if (data.form_data?.selected_version) {
-          setSelectedVersion(data.form_data.selected_version);
-        }
-
-        if (data.form_data?.tributeQuestions && data.form_data?.tributeAnswers) {
-          setQuestions(data.form_data.tributeQuestions);
-          setAnswers(data.form_data.tributeAnswers);
-        } else {
-          // Combinar TODO el contexto para que no se pierdan familiares ni detalles
-          const storyParts = [
-            data.form_data?.initialContext,
-            data.form_data?.specificDetails,
-            data.form_data?.familyNames ? `Familiares mencionados: ${data.form_data.familyNames}` : null
-          ].filter(Boolean);
-          const story = storyParts.join(". ");
-          
-          let previousAnswers: string[] = [];
-          if (data.form_data?.interviewAnswers) {
-            previousAnswers = Object.values(data.form_data.interviewAnswers);
+          if (data.form_data?.selected_version) {
+            setSelectedVersion(data.form_data.selected_version);
           }
 
-          const aiQuestions = await generateTributeQuestions(story, previousAnswers, recipientName);
-          setQuestions(aiQuestions);
-          setAnswers(new Array(aiQuestions.length).fill(''));
-        }
+          if (data.form_data?.custom_dedication) {
+            setCustomDedication(data.form_data.custom_dedication);
+          }
 
-        if (data.form_data?.legacy_photo_url) {
-          setPhotoUrl(data.form_data.legacy_photo_url);
+          if (data.form_data?.major_milestone) {
+            setMajorMilestone(data.form_data.major_milestone);
+          }
+
+          if (data.form_data?.legacy_photo_url) {
+            setPhotoUrl(data.form_data.legacy_photo_url);
+          }
         }
+      } catch (err) {
+        console.error("Error al cargar datos en TributeWizard:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     loadData();
   }, [id]);
@@ -146,15 +140,44 @@ export default function TributeWizard() {
       return;
     }
 
-    if (answers.some(a => !a.trim())) {
-      alert("Por favor completa todas las preguntas para que Naranjín pueda hacer su magia.");
+    if (!customDedication.trim() || !majorMilestone.trim() || !photoUrl) {
+      alert("Por favor completa todos los campos (foto, dedicatoria e hito de vida) para diseñar tu Biografía Digital.");
       return;
     }
     
     setIsGenerating(true);
     try {
       const archetype = song.form_data?.category?.toUpperCase() || "LEGACY";
-      // Combinamos el contexto nuevamente para enviar la foto completa a la IA
+      
+      // Separación inteligente de nombre y apellido
+      const clean = fullName.trim();
+      let firstName = clean;
+      let lastName = "";
+
+      const originalFirstName = song.form_data?.nombreDestinatario || "";
+      if (originalFirstName && clean.toLowerCase().startsWith(originalFirstName.toLowerCase())) {
+        firstName = clean.substring(0, originalFirstName.length).trim();
+        lastName = clean.substring(originalFirstName.length).trim();
+      } else {
+        const parts = clean.split(/\s+/);
+        if (parts.length > 1) {
+          const firstLower = parts[0].toLowerCase().replace(/\./g, '');
+          const isAbbreviation = parts[0].length <= 2 || ['ma', 'maria', 'jose', 'juan', 'luis', 'ana'].includes(firstLower);
+          
+          if (parts.length === 3 && isAbbreviation) {
+            firstName = `${parts[0]} ${parts[1]}`;
+            lastName = parts[2];
+          } else if (parts.length >= 4) {
+            firstName = `${parts[0]} ${parts[1]}`;
+            lastName = parts.slice(2).join(' ');
+          } else {
+            firstName = parts[0];
+            lastName = parts.slice(1).join(' ');
+          }
+        }
+      }
+
+      // Reconstruir la historia a partir del contexto del tema original
       const storyParts = [
         song.form_data?.initialContext,
         song.form_data?.specificDetails,
@@ -162,22 +185,32 @@ export default function TributeWizard() {
         song.form_data?.interviewAnswers ? JSON.stringify(song.form_data.interviewAnswers) : null
       ].filter(Boolean);
       const story = storyParts.join(". ");
-      
+
+      // Las respuestas combinadas para la IA
+      const combinedAnswers = [
+        ...Object.values(song.form_data?.interviewAnswers || {}),
+        customDedication ? `Dedicatoria especial: ${customDedication}` : null,
+        majorMilestone ? `Mayor logro/hito: ${majorMilestone}` : null
+      ].filter(Boolean) as string[];
+
       const infographicData = await generateInfographicData(
         story, 
-        answers, 
-        fullName, 
+        combinedAnswers, 
+        firstName, 
+        lastName, 
         archetype, 
         "legacy"
       );
 
       const newFormData = {
         ...song.form_data,
+        nombreDestinatario: firstName,
+        apellidoDestinatario: lastName,
         infographic_data: infographicData,
         legacy_photo_url: photoUrl,
-        selected_version: selectedVersion,
-        tributeQuestions: questions,
-        tributeAnswers: answers
+        custom_dedication: customDedication,
+        major_milestone: majorMilestone,
+        selected_version: selectedVersion
       };
 
       const { error } = await supabase
@@ -253,7 +286,7 @@ export default function TributeWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F3E9] text-[#1C2A39] py-12 px-4 md:px-8">
+    <div className="min-h-screen bg-[#F8F3E9] text-[#1C2A39] py-12 px-4 md:px-8 animate-in fade-in duration-500">
       <div className="max-w-3xl mx-auto">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#B69D74] hover:text-[#1C2A39] transition font-bold uppercase tracking-widest text-xs mb-8">
           <ArrowLeft size={16} /> Volver
@@ -269,11 +302,12 @@ export default function TributeWizard() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#B69D74]/20 text-[#B69D74] mb-6">
                 <BookOpen size={32} />
               </div>
-              <h1 className="text-4xl md:text-5xl font-serif text-[#1C2A39] mb-4 tracking-tight">Construyendo una <span className="text-[#B69D74] italic">Biografía</span></h1>
-              <p className="text-[#1C2A39]/70 text-lg max-w-xl mx-auto">Para generar una línea de tiempo espectacular y extraer los valores clave, necesitamos unos últimos detalles sobre la historia de <strong>{song?.form_data?.nombreDestinatario || "tu ser querido"}</strong>.</p>
+              <h1 className="text-4xl md:text-5xl font-serif text-[#1C2A39] mb-4 tracking-tight">Crea su <span className="text-[#B69D74] italic">Biografía Digital</span></h1>
+              <p className="text-[#1C2A39]/70 text-lg max-w-xl mx-auto">Completa los siguientes campos para que Naranjín diseñe el portal web interactivo de homenaje.</p>
             </div>
 
             <div className="space-y-8">
+              {/* Nombre Completo */}
               <div className="bg-[#B69D74]/10 p-6 md:p-8 rounded-3xl border border-[#B69D74]/30 shadow-inner">
                 <label className="block text-xl font-serif font-bold text-[#1C2A39] mb-2 flex items-center gap-3"><Wand2 className="text-[#B69D74]" size={24} /> Nombre Completo</label>
                 <p className="text-sm text-[#1C2A39]/70 mb-4 italic">El sistema necesita obligatoriamente <strong>nombre y apellidos</strong> para investigar el origen de la familia y el significado del nombre para la heráldica.</p>
@@ -286,27 +320,16 @@ export default function TributeWizard() {
                   required
                 />
               </div>
-              {questions.map((q, idx) => (
-                <div key={idx} className="bg-[#F8F3E9]/50 p-6 rounded-2xl border border-[#E8DCC8]">
-                  <label className="block text-base font-bold text-[#1C2A39] mb-4">{idx + 1}. {q}</label>
-                  <textarea 
-                    value={answers[idx]}
-                    onChange={e => {
-                      const newAnswers = [...answers];
-                      newAnswers[idx] = e.target.value;
-                      setAnswers(newAnswers);
-                    }}
-                    className="w-full bg-white border border-[#E8DCC8] rounded-xl p-4 outline-none focus:border-[#B69D74] resize-none text-base shadow-sm"
-                    rows={3}
-                    placeholder="Escribe tu respuesta aquí..."
-                  ></textarea>
+
+              {/* Fotografía de Portada */}
+              <div className="bg-[#F8F3E9]/50 p-6 rounded-2xl border border-[#E8DCC8] space-y-4">
+                <div>
+                  <label className="block text-base font-bold text-[#1C2A39] mb-1 flex items-center gap-2">
+                    <Camera className="text-[#B69D74]" size={20} />
+                    Foto de Portada Oficial *
+                  </label>
+                  <p className="text-sm text-[#1C2A39]/60">Sube una fotografía memorable del homenajeado para ilustrar su pergamino digital de legado.</p>
                 </div>
-              ))}
-              
-              {/* Sección de carga de fotografía */}
-              <div className="bg-[#F8F3E9]/50 p-6 rounded-2xl border border-[#E8DCC8]">
-                <label className="block text-base font-bold text-[#1C2A39] mb-2">Una fotografía para la historia (Opcional)</label>
-                <p className="text-sm text-[#1C2A39]/60 mb-4">Sube una foto memorable de {song?.form_data?.recipientName || "él"} para que luzca en la cabecera del pergamino de legado.</p>
                 
                 <input 
                   type="file" 
@@ -317,17 +340,19 @@ export default function TributeWizard() {
                 />
                 
                 {photoUrl ? (
-                  <div className="relative rounded-xl overflow-hidden border-2 border-[#B69D74] aspect-video max-w-sm">
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-[#B69D74] aspect-video max-w-sm shadow-md">
                     <img src={photoUrl} alt="Foto Legado" className="w-full h-full object-cover" />
                     <button 
+                      type="button"
                       onClick={() => setPhotoUrl('')}
-                      className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-2 hover:bg-black/80 transition"
+                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-2 hover:bg-black/80 transition text-xs font-bold px-3"
                     >
-                      Cambiar
+                      Cambiar Foto
                     </button>
                   </div>
                 ) : (
                   <button 
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
                     className="w-full sm:w-auto px-6 py-4 border-2 border-dashed border-[#B69D74] text-[#B69D74] rounded-xl font-bold uppercase tracking-widest hover:bg-[#B69D74]/10 transition flex items-center justify-center gap-3"
@@ -336,6 +361,40 @@ export default function TributeWizard() {
                     {isUploading ? "Subiendo..." : "Subir Fotografía"}
                   </button>
                 )}
+              </div>
+
+              {/* Dedicatoria Especial */}
+              <div className="bg-[#F8F3E9]/50 p-6 rounded-2xl border border-[#E8DCC8] space-y-2">
+                <label className="block text-base font-bold text-[#1C2A39] flex items-center gap-2">
+                  <Sparkles className="text-[#B69D74]" size={20} />
+                  Dedicatoria Especial *
+                </label>
+                <p className="text-sm text-[#1C2A39]/60 italic">Una hermosa frase corta para recibir a toda la familia en su portal biográfico.</p>
+                <input
+                  type="text"
+                  value={customDedication}
+                  onChange={(e) => setCustomDedication(e.target.value)}
+                  placeholder="Ej: Para el hombre que me enseñó a caminar con la frente en alto. Te amo, papá."
+                  className="w-full bg-white border border-[#E8DCC8] rounded-xl p-4 text-base outline-none focus:border-[#B69D74] shadow-sm font-medium"
+                  required
+                />
+              </div>
+
+              {/* Mayor Logro o Hito */}
+              <div className="bg-[#F8F3E9]/50 p-6 rounded-2xl border border-[#E8DCC8] space-y-2">
+                <label className="block text-base font-bold text-[#1C2A39] flex items-center gap-2">
+                  <BookOpen className="text-[#B69D74]" size={20} />
+                  Mayor Logro o Hito de su Vida *
+                </label>
+                <p className="text-sm text-[#1C2A39]/60 italic">Un orgullo familiar (ej: su carrera, su negocio, sus hijos, un gran aprendizaje).</p>
+                <input
+                  type="text"
+                  value={majorMilestone}
+                  onChange={(e) => setMajorMilestone(e.target.value)}
+                  placeholder="Ej: Dedicar 40 años a la enseñanza y construir nuestro hogar con amor y esfuerzo."
+                  className="w-full bg-white border border-[#E8DCC8] rounded-xl p-4 text-base outline-none focus:border-[#B69D74] shadow-sm font-medium"
+                  required
+                />
               </div>
 
               {/* Selección de versión de canción */}
@@ -365,7 +424,7 @@ export default function TributeWizard() {
                         <div className="flex items-center justify-between">
                           <span className="font-serif font-bold text-[#1C2A39] text-base">Opción 1</span>
                           {selectedVersion === 1 && (
-                            <span className="bg-[#B69D74]/20 text-[#B69D74] p-1 rounded-full">
+                            <span className="bg-[#B69D74]/20 text-[#B69D74] p-1 rounded-full animate-in zoom-in duration-300">
                               <Check size={14} />
                             </span>
                           )}
@@ -394,7 +453,7 @@ export default function TributeWizard() {
                         <div className="flex items-center justify-between">
                           <span className="font-serif font-bold text-[#1C2A39] text-base">Opción 2</span>
                           {selectedVersion === 2 && (
-                            <span className="bg-[#B69D74]/20 text-[#B69D74] p-1 rounded-full">
+                            <span className="bg-[#B69D74]/20 text-[#B69D74] p-1 rounded-full animate-in zoom-in duration-300">
                               <Check size={14} />
                             </span>
                           )}
@@ -416,9 +475,10 @@ export default function TributeWizard() {
 
             <div className="mt-12 text-center">
               <button 
+                type="button"
                 onClick={handleGenerate}
-                disabled={isGenerating || isUploading}
-                className="w-full md:w-auto px-12 py-5 bg-[#1C2A39] text-[#B69D74] rounded-2xl font-bold uppercase tracking-widest hover:bg-black transition shadow-xl disabled:opacity-70 inline-flex items-center justify-center gap-3"
+                disabled={isGenerating || isUploading || !fullName.trim() || !customDedication.trim() || !majorMilestone.trim() || !photoUrl}
+                className="w-full md:w-auto px-12 py-5 bg-[#1C2A39] text-[#B69D74] rounded-2xl font-bold uppercase tracking-widest hover:bg-black transition shadow-xl disabled:opacity-50 inline-flex items-center justify-center gap-3 cursor-pointer"
               >
                 {isGenerating ? <RefreshCw className="animate-spin" size={24} /> : <Wand2 size={24} />}
                 {isGenerating ? "Diseñando Biografía..." : "Generar Biografía Digital Ahora"}

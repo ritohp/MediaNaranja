@@ -14,6 +14,7 @@ export default function Header() {
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showConfirmedModal, setShowConfirmedModal] = useState(false);
   const location = useLocation();
 
   const fetchProfile = async (userId: string) => {
@@ -55,6 +56,19 @@ export default function Header() {
     setIsMenuOpen(false);
   }, [location]);
 
+  // Detectar y procesar confirmación de email
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('confirmed') === 'true') {
+      setShowConfirmedModal(true);
+      const newParams = new URLSearchParams(location.search);
+      newParams.delete('confirmed');
+      const paramStr = newParams.toString();
+      const newUrl = location.pathname + (paramStr ? '?' + paramStr : '') + location.hash;
+      window.history.replaceState(null, '', newUrl);
+    }
+  }, [location.search, location.pathname, location.hash]);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
@@ -66,7 +80,13 @@ export default function Header() {
         if (error) throw error;
         setIsLoginModalOpen(false);
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}${location.pathname}?confirmed=true`
+          }
+        });
         if (error) throw error;
         
         if (data.session) {
@@ -389,6 +409,36 @@ export default function Header() {
             
             <button 
               onClick={() => setIsLoginModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-blush-400 hover:text-naranja-500 transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Modal de Confirmación de Correo Exitoso */}
+      {showConfirmedModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-blush-950/40 backdrop-blur-md" onClick={() => setShowConfirmedModal(false)} />
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden border border-blush-100 p-8 md:p-10 text-center animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-naranja-50 text-naranja-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+              <span className="text-4xl">🍊</span>
+            </div>
+            <h2 className="text-3xl font-serif text-blush-800 mb-4">
+              ¡Email Confirmado! 🎉
+            </h2>
+            <p className="text-ink-600 leading-relaxed mb-8">
+              Tu cuenta ha sido activada con éxito. Ya eres parte de <strong>Media Naranja</strong>. Tu sesión se encuentra activa y tu progreso en el estudio está a salvo.
+            </p>
+            <button
+              onClick={() => setShowConfirmedModal(false)}
+              className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:scale-[1.02] transition-all animate-pulse"
+            >
+              ¡A COMPONER! 🚀
+            </button>
+            
+            <button 
+              onClick={() => setShowConfirmedModal(false)}
               className="absolute top-6 right-6 p-2 text-blush-400 hover:text-naranja-500 transition-colors"
             >
               <X size={20} />

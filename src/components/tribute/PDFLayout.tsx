@@ -117,7 +117,7 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
         </div>
 
         {/* MIDDLE SECTION: APELLIDO (32%) & LEGADO (65%) */}
-        <div className="flex justify-between items-stretch gap-4 mb-3 mt-2 px-4 h-[120px]">
+        <div className="flex justify-between items-stretch gap-4 mb-3 mt-2 px-4 h-[155px]">
           {/* Box 1: Apellidos (32%) */}
           <div className={`w-[32%] border-[1.5px] ${border} border-opacity-40 p-3 rounded-md text-center bg-white/50 shadow-sm relative flex flex-col justify-center`}>
             <div className={`absolute -top-[10px] left-1/2 -translate-x-1/2 ${bgOverlay} px-3 text-[9px] font-bold uppercase tracking-widest ${text} whitespace-nowrap`}>
@@ -126,7 +126,7 @@ export default function PDFLayout({ infoData, recipient, photoUrl, songId, theme
             <div className="relative mt-1 mb-0.5">
                <h3 className={`text-xl italic ${text} leading-none`}>{infoData.lastNameMeaning.lastName}</h3>
             </div>
-            <p className="text-[10px] text-[#444] font-medium leading-snug whitespace-pre-line relative z-10 line-clamp-3">
+            <p className="text-[10px] text-[#444] font-medium leading-snug whitespace-pre-line relative z-10 line-clamp-6">
               {infoData.lastNameMeaning.meaning}
             </p>
             <img src="/assets/arbol.png" alt="Árbol" className="absolute bottom-1.5 right-1.5 w-10 h-10 opacity-15 pointer-events-none object-contain drop-shadow-sm mix-blend-multiply" crossOrigin="anonymous"/>

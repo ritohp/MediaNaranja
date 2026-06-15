@@ -279,11 +279,11 @@ Extrae los datos y RESPONDE EXACTAMENTE CON UN JSON VÁLIDO CON ESTA ESTRUCTURA 
   ],
   "nameMeaning": {
     "name": "${firstName}", 
-    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL del nombre '${firstName}' (ej. su origen etimológico real latino, griego, germánico, etc.). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre. PROHIBIDO usar frases genéricas como 'Tu Ser Querido'."
+    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL del nombre '${firstName}' (ej. su origen etimológico real latino, griego, germánico, etc.). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase poética sobre cómo él honra ese nombre. PROHIBIDO usar frases genéricas como 'Tu Ser Querido'. EL TEXTO COMPLETO NO DEBE SUPERAR LOS 200 CARACTERES (muy importante, mantén el texto conciso)."
   },
   "lastNameMeaning": {
     "lastName": "${lastName}", 
-    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL del apellido '${lastName}' (ej. origen geográfico, linaje o etimología del apellido). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo. PROHIBIDO usar cosas genéricas como 'El Patriarca'."
+    "meaning": "Busca la ETIMOLOGÍA HISTÓRICA REAL del apellido '${lastName}' (ej. origen geográfico, linaje o etimología del apellido). LUEGO AGREGA UN SALTO DE LÍNEA DOBLE (\\n\\n). Luego escribe una frase sobre cómo lo lleva con orgullo. PROHIBIDO usar cosas genéricas como 'El Patriarca'. EL TEXTO COMPLETO NO DEBE SUPERAR LOS 240 CARACTERES (escríbelo muy conciso y breve para que quepa perfectamente)."
   },
   "quote": "Una frase poética de 10 a 15 palabras que resuma su legado o historia.",
   "familyMembers": [
