@@ -20,6 +20,15 @@ export default function CreateSong() {
   const isOldDraft = parsedDraft && !parsedDraft.formData && parsedDraft.category;
   const draftData = isOldDraft ? { formData: parsedDraft } : parsedDraft;
 
+  // Determinar si el borrador guardado tiene progreso real
+  const hasSavedProgress = !!(draftData && (
+    (draftData.step && draftData.step > 1) ||
+    (draftData.initialContext && draftData.initialContext.trim() !== '') ||
+    (draftData.formData?.nombreDestinatario && draftData.formData.nombreDestinatario.trim() !== '') ||
+    (draftData.formData?.specificDetails && draftData.formData.specificDetails.trim() !== '') ||
+    (draftData.lyrics && draftData.lyrics.trim() !== '')
+  ));
+
   const [step, setStep] = useState(draftData?.step || 1); 
   const [lyrics, setLyrics] = useState(draftData?.lyrics || '');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -81,17 +90,27 @@ export default function CreateSong() {
 
   // AUTO-GUARDADO COMPLETO: Guarda todo el estado del borrador para no perder progreso
   useEffect(() => {
-    const draft = {
-      formData,
-      step,
-      lyrics,
-      currentSongId,
-      formPhase,
-      initialContext,
-      aiQuestions,
-      interviewAnswers
-    };
-    localStorage.setItem('mn_draft_song', JSON.stringify(draft));
+    const hasProgress = step > 1 || 
+                        initialContext.trim() !== '' || 
+                        formData.nombreDestinatario.trim() !== '' || 
+                        formData.specificDetails.trim() !== '' ||
+                        lyrics.trim() !== '';
+
+    if (hasProgress) {
+      const draft = {
+        formData,
+        step,
+        lyrics,
+        currentSongId,
+        formPhase,
+        initialContext,
+        aiQuestions,
+        interviewAnswers
+      };
+      localStorage.setItem('mn_draft_song', JSON.stringify(draft));
+    } else {
+      localStorage.removeItem('mn_draft_song');
+    }
   }, [formData, step, lyrics, currentSongId, formPhase, initialContext, aiQuestions, interviewAnswers]);
 
   const handleClearDraft = () => {
@@ -779,7 +798,7 @@ INSTRUCCIONES:
         
         {step === 1 && (
           <div className="space-y-12">
-            {savedDraft && (
+            {hasSavedProgress && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-naranja-50/70 border border-naranja-100 rounded-3xl p-6 max-w-2xl mx-auto text-sm text-naranja-950 animate-in fade-in duration-500 shadow-sm">
                 <div className="flex items-center gap-3 text-center sm:text-left">
                   <Sparkles className="text-naranja-500 shrink-0" size={20} />
