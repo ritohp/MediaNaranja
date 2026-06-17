@@ -81,6 +81,15 @@ export default function MySongs() {
             clearInterval(interval);
             setUnlockingSongId(data.song_id);
             setUnlockingStatus('success');
+            
+            // Trigger pixels purchase conversion
+            if (window.fbq) {
+              window.fbq('track', 'Purchase', { value: 149.00, currency: 'MXN' });
+            }
+            if (window.ttq) {
+              window.ttq.track('CompletePayment', { value: 149.00, currency: 'MXN' });
+            }
+
             setTimeout(() => {
               window.location.href = `/cancion/${data.song_id}`;
             }, 1500);
@@ -97,6 +106,15 @@ export default function MySongs() {
           if (data && data.is_paid) {
             clearInterval(interval);
             setUnlockingStatus('success');
+
+            // Trigger pixels purchase conversion
+            if (window.fbq) {
+              window.fbq('track', 'Purchase', { value: 149.00, currency: 'MXN' });
+            }
+            if (window.ttq) {
+              window.ttq.track('CompletePayment', { value: 149.00, currency: 'MXN' });
+            }
+
             setTimeout(() => {
               window.location.href = `/cancion/${refId}`;
             }, 1500);
