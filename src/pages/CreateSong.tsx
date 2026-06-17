@@ -67,6 +67,10 @@ export default function CreateSong() {
   const [majorMilestone, setMajorMilestone] = useState(draftData?.formData?.major_milestone || '');
   const [isGeneratingBiography, setIsGeneratingBiography] = useState(false);
   const [biographyGenerated, setBiographyGenerated] = useState(false);
+  const biographyGeneratedRef = useRef(biographyGenerated);
+  useEffect(() => {
+    biographyGeneratedRef.current = biographyGenerated;
+  }, [biographyGenerated]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState(() => {
@@ -512,7 +516,16 @@ INSTRUCCIONES:
         .eq('id', currentSongId);
 
       if (error) throw error;
+      
+      setFormData(prev => ({
+        ...prev,
+        ...updatedFormData
+      }));
       setBiographyGenerated(true);
+
+      // Una vez generada la biografía digital, navegamos de inmediato al portal.
+      // Si la canción sigue grabándose, la página destino manejará el polling en segundo plano.
+      navigate(`/cancion/${currentSongId}`);
     } catch (err) {
       console.error("Error generating biography:", err);
       alert("Hubo un error al generar la Biografía Digital. Por favor, intenta de nuevo.");
@@ -672,7 +685,9 @@ INSTRUCCIONES:
                   status: 'completed'
                 }).eq('id', newSong.id);
 
-                navigate(`/cancion/${newSong.id}`);
+                if (formData.category !== 'papa' || biographyGeneratedRef.current) {
+                  navigate(`/cancion/${newSong.id}`);
+                }
               } catch (err) {
                 console.error("Error post-procesando audios:", err);
                 setAudioUrl(song1.audioUrl);
@@ -709,7 +724,9 @@ INSTRUCCIONES:
                   console.error("Error al guardar estado de fallo en DB:", dbErr);
                 }
 
-                navigate(`/cancion/${newSong.id}`);
+                if (formData.category !== 'papa' || biographyGeneratedRef.current) {
+                  navigate(`/cancion/${newSong.id}`);
+                }
               }
               fetchProfile(user!.id);
             }
@@ -1181,37 +1198,57 @@ INSTRUCCIONES:
 
         {step === 3 && (
           <div className="text-center py-16 animate-in zoom-in duration-700">
-            {generationStatus === 'generating' ? (
+            {(generationStatus === 'generating' || (formData.category === 'papa' && !biographyGenerated)) ? (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-5xl mx-auto">
                 <div className={`${formData.category === 'papa' ? 'lg:col-span-5' : 'lg:col-span-12'} text-center space-y-6`}>
-                  <div className="relative inline-block">
-                    <img 
-                      src="/mascota_loading.png" 
-                      alt="Naranjín grabando" 
-                      className="w-40 h-40 md:w-48 md:h-48 object-contain animate-pulse mx-auto" 
-                    />
-                    <div className="absolute inset-0 border-4 border-dashed border-naranja-500/20 rounded-full animate-spin-slow pointer-events-none"></div>
-                  </div>
-                  <h2 className="text-3xl font-serif text-blush-800">Estudio de Grabación</h2>
-                  <p className="text-ink-600/70 text-sm max-w-xs mx-auto font-light">
-                    Naranjín está afinando los instrumentos, arreglando los acordes y grabando las voces personalizadas. Tardará 1-2 minutos.
-                  </p>
-                  <div className="w-full max-w-xs mx-auto bg-blush-50 h-3 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-naranja-400 to-naranja-600 h-full animate-pulse" style={{ width: '70%' }}></div>
-                  </div>
-                  <p className="text-naranja-500 font-bold text-xs tracking-widest animate-pulse uppercase">Componiendo voces e instrumentos...</p>
-                  
-                  <div className="pt-4">
-                    <button 
-                      onClick={() => {
-                        setStep(2);
-                        setGenerationStatus('idle');
-                      }}
-                      className="text-blush-400 hover:text-naranja-500 font-bold text-xs uppercase tracking-[0.2em] transition-colors"
-                    >
-                      × Cancelar y volver
-                    </button>
-                  </div>
+                  {generationStatus === 'completed' || audioUrl ? (
+                    <div className="space-y-4">
+                      <div className="relative inline-block">
+                        <img 
+                          src="/mascota_success.png" 
+                          alt="Naranjín listo" 
+                          className="w-40 h-40 md:w-48 md:h-48 object-contain mx-auto animate-bounce-slow" 
+                        />
+                      </div>
+                      <h2 className="text-2xl md:text-3xl font-serif text-emerald-800">¡Tu Canción está Lista! 🎵</h2>
+                      <p className="text-ink-600/70 text-sm max-w-xs mx-auto font-light leading-relaxed">
+                        Naranjín ha terminado de componer y grabar tu canción personalizada.
+                        <br /><br />
+                        <strong>Completa la biografía digital a la derecha</strong> para guardar tu regalo y escuchar la melodía de inmediato.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative inline-block">
+                        <img 
+                          src="/mascota_loading.png" 
+                          alt="Naranjín grabando" 
+                          className="w-40 h-40 md:w-48 md:h-48 object-contain animate-pulse mx-auto" 
+                        />
+                        <div className="absolute inset-0 border-4 border-dashed border-naranja-500/20 rounded-full animate-spin-slow pointer-events-none"></div>
+                      </div>
+                      <h2 className="text-3xl font-serif text-blush-800">Estudio de Grabación</h2>
+                      <p className="text-ink-600/70 text-sm max-w-xs mx-auto font-light">
+                        Naranjín está afinando los instrumentos, arreglando los acordes y grabando las voces personalizadas. Tardará 1-2 minutos.
+                      </p>
+                      <div className="w-full max-w-xs mx-auto bg-blush-50 h-3 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-naranja-400 to-naranja-600 h-full animate-pulse" style={{ width: '70%' }}></div>
+                      </div>
+                      <p className="text-naranja-500 font-bold text-xs tracking-widest animate-pulse uppercase">Componiendo voces e instrumentos...</p>
+                      
+                      <div className="pt-4">
+                        <button 
+                          onClick={() => {
+                            setStep(2);
+                            setGenerationStatus('idle');
+                          }}
+                          className="text-blush-400 hover:text-naranja-500 font-bold text-xs uppercase tracking-[0.2em] transition-colors"
+                        >
+                          × Cancelar y volver
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {formData.category === 'papa' && (
@@ -1230,7 +1267,7 @@ INSTRUCCIONES:
                     {!biographyGenerated ? (
                       <div className="space-y-5 relative z-10">
                         <div className="space-y-2">
-                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Foto de Portada de Papá *</label>
+                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Foto de Portada de Papá (Opcional)</label>
                           <div className="flex items-center gap-4">
                             <button
                               type="button"
@@ -1286,13 +1323,13 @@ INSTRUCCIONES:
                         <button
                           type="button"
                           onClick={handleGenerateBiography}
-                          disabled={isGeneratingBiography || isUploading || !photoUrl || !customDedication.trim() || !majorMilestone.trim()}
+                          disabled={isGeneratingBiography || isUploading || !customDedication.trim() || !majorMilestone.trim()}
                           className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm tracking-wider hover:bg-blue-700 transition shadow disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                           {isGeneratingBiography ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
                           {isGeneratingBiography ? "GENERANDO PORTAL BIOGRÁFICO..." : "¡GENERAR BIOGRAFÍA DIGITAL!"}
                         </button>
-                        <p className="text-[10px] text-center text-blue-600/60">Todos los campos son obligatorios para diseñar el portal y el QR.</p>
+                        <p className="text-[10px] text-center text-blue-600/60">Dedicatoria e hito de vida son obligatorios. La foto es opcional.</p>
                       </div>
                     ) : (
                       <div className="p-8 bg-white/80 backdrop-blur rounded-3xl border border-emerald-100 text-center space-y-4 shadow-sm animate-in zoom-in duration-500">

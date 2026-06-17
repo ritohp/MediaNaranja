@@ -36,6 +36,7 @@ export default function SongPlayer() {
   const [isUploading, setIsUploading] = useState(false);
   const [activePreviewVersion, setActivePreviewVersion] = useState<1 | 2>(1);
   const [isAudioLoading, setIsAudioLoading] = useState(true);
+  const [showDemoModal, setShowDemoModal] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pdfRef = useRef<HTMLDivElement | null>(null);
@@ -191,7 +192,7 @@ export default function SongPlayer() {
           audio.pause();
           audio.currentTime = 0;
           setIsPlaying(false);
-          alert("Has alcanzado el límite de la versión de prueba (1.5 min). ¡Desbloquea tu regalo para escucharla completa!");
+          setShowDemoModal(true);
         }
         setCurrentTime(audio.currentTime);
         setProgress((audio.currentTime / (audio.duration || 1)) * 100);
@@ -217,6 +218,16 @@ export default function SongPlayer() {
         setIsPlaying(true);
       };
       const onPause = () => setIsPlaying(false);
+      
+      const onError = (e: Event) => {
+        console.error("Audio Load Error in SongPlayer:", e);
+        if (audio && !audio.getAttribute('data-retried')) {
+          audio.setAttribute('data-retried', 'true');
+          audio.load();
+        } else {
+          setIsAudioLoading(false);
+        }
+      };
 
       audio.addEventListener('timeupdate', updateProgress);
       audio.addEventListener('loadedmetadata', updateDuration);
@@ -225,6 +236,7 @@ export default function SongPlayer() {
       audio.addEventListener('waiting', onWaiting);
       audio.addEventListener('playing', onPlaying);
       audio.addEventListener('pause', onPause);
+      audio.addEventListener('error', onError);
 
       // Force load the audio when url changes or component mounts
       audio.load();
@@ -237,6 +249,7 @@ export default function SongPlayer() {
         audio.removeEventListener('waiting', onWaiting);
         audio.removeEventListener('playing', onPlaying);
         audio.removeEventListener('pause', onPause);
+        audio.removeEventListener('error', onError);
       };
     }
   }, [song, user, currentAudioUrl]);
@@ -806,7 +819,7 @@ export default function SongPlayer() {
         
         {!hasTributeData && song.form_data?.category === 'papa' ? (
           <div className="w-full p-6 md:p-12 space-y-8">
-            {song.status === 'generating_music' && (
+            {song.status === 'generating_music' ? (
               <div className="bg-[#1C2A39] p-8 rounded-3xl border-2 border-[#B69D74]/30 text-center shadow-xl relative overflow-hidden animate-pulse">
                 <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
                 <div className="relative z-10 flex flex-col items-center justify-center gap-4">
@@ -819,6 +832,88 @@ export default function SongPlayer() {
                     Tiempo estimado: ~1 minuto
                   </p>
                 </div>
+              </div>
+            ) : (
+              <div className="bg-[#1C2A39] p-6 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54] text-center">
+                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
+                 
+                 <div className="relative z-10 flex gap-4 items-center mb-4">
+                    <img src={photoUrl} className="w-16 h-16 rounded-lg object-cover shadow-md border border-[#B69D74]/30" crossOrigin="anonymous"/>
+                    <div className="flex-1 text-left">
+                       <h4 className="text-white text-xs md:text-sm tracking-widest font-bold mb-1 opacity-90 truncate">{title}</h4>
+                       <p className="text-[#B69D74] text-[9px] uppercase tracking-widest">Muestra de 1.5 minutos de tu canción personalizada.</p>
+                    </div>
+                 </div>
+
+                 {song.form_data?.version2 && (isOwner || isAdmin) && (
+                    <div className="relative z-10 mt-2 mb-4 p-3 bg-[#2A3F54]/30 rounded-xl border border-[#B69D74]/10 text-center">
+                       <span className="text-[#B69D74] text-[9px] tracking-wider uppercase block mb-2 font-bold opacity-80">
+                          ¿Qué versión escucharás?
+                       </span>
+                       <div className="flex gap-2 mb-2">
+                          <button
+                            onClick={() => setActivePreviewVersion(1)}
+                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
+                              ${activePreviewVersion === 1 
+                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
+                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
+                          >
+                            Opción A {song.form_data?.selected_version !== 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
+                          </button>
+                          <button
+                            onClick={() => setActivePreviewVersion(2)}
+                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
+                              ${activePreviewVersion === 2 
+                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
+                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
+                          >
+                            Opción B {song.form_data?.selected_version === 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
+                          </button>
+                       </div>
+                       {song.form_data?.selected_version !== activePreviewVersion && (
+                          <button
+                            onClick={() => saveSelectedVersion(activePreviewVersion)}
+                            className="w-full py-1.5 bg-[#B69D74]/20 hover:bg-[#B69D74]/35 text-[#B69D74] border border-[#B69D74]/30 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all animate-pulse"
+                          >
+                            Fijar Opción {activePreviewVersion === 1 ? 'A' : 'B'} como la definitiva
+                          </button>
+                       )}
+                    </div>
+                 )}
+
+                 <div className="relative z-10 text-left">
+                    {isAudioLoading && (
+                       <div className="mb-4 flex items-center justify-center gap-2 bg-[#2A3F54]/30 p-2.5 rounded-xl border border-[#B69D74]/10 animate-pulse">
+                          <div className="animate-spin w-3 h-3 border-2 border-[#B69D74] border-t-transparent rounded-full"></div>
+                          <p className="text-[#B69D74] text-[8px] tracking-wider uppercase font-semibold">
+                             Cargando melodía...
+                          </p>
+                       </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[9px] text-[#B69D74] font-mono mb-1">
+                       <span>{formatTime(currentTime)}</span>
+                       <span>{formatTime(duration)}</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={progress}
+                      onChange={handleSeek}
+                      className="w-full h-1 bg-[#2A3F54] rounded-lg appearance-none cursor-pointer accent-[#B69D74]"
+                    />
+                    <div className="flex items-center justify-center gap-6 mt-4">
+                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Share2 size={16} /></button>
+                      <button 
+                        onClick={togglePlay}
+                        className="w-12 h-12 rounded-full border border-[#B69D74] text-[#B69D74] flex items-center justify-center hover:bg-[#B69D74] hover:text-[#1C2A39] transition-colors shadow-lg"
+                      >
+                        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                      </button>
+                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Heart size={16} /></button>
+                    </div>
+                 </div>
               </div>
             )}
             <TributeAddon song={song} />
@@ -917,7 +1012,12 @@ export default function SongPlayer() {
         </div>
       </div>
       
-      <audio ref={audioRef} src={currentAudioUrl || undefined} />
+      <audio 
+        key={currentAudioUrl}
+        ref={audioRef} 
+        src={currentAudioUrl || undefined} 
+        referrerPolicy="no-referrer"
+      />
       
       {/* Modal de Edición */}
       {isEditing && (
@@ -977,6 +1077,37 @@ export default function SongPlayer() {
                 <button onClick={saveEdits} disabled={isUploading} className="flex-1 py-3 bg-[#1C2A39] text-white font-bold rounded-xl hover:bg-[#2A3F54] transition disabled:opacity-50 text-xs uppercase tracking-widest">Guardar</button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Demostración Completa (Límite 1.5 min alcanzado) */}
+      {showDemoModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowDemoModal(false)}></div>
+          <div className={`${tokens.bg} rounded-[2rem] p-10 md:p-12 max-w-lg w-full shadow-2xl relative z-10 border ${tokens.border} border-opacity-30 text-center space-y-6`}>
+            <div className="w-20 h-20 bg-naranja-50 text-naranja-500 rounded-full flex items-center justify-center mx-auto mb-2 border border-naranja-100 shadow-inner">
+              <Lock size={40} className="text-[#B69D74]" />
+            </div>
+            <h3 className={`text-2xl md:text-3xl font-serif ${tokens.text}`}>¡La magia continúa! ✨</h3>
+            <p className="text-ink-600/80 leading-relaxed text-sm">
+              Has escuchado la muestra de 1.5 minutos de tu regalo. La versión completa de la canción contiene toda la letra personalizada sin interrupciones y con la máxima calidad de audio.
+            </p>
+            <button 
+              onClick={() => {
+                setShowDemoModal(false);
+                window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
+              }}
+              className="w-full py-5 bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white rounded-2xl font-bold text-base shadow-xl hover:scale-[1.02] transition-all uppercase tracking-widest text-xs"
+            >
+              DESBLOQUEAR AHORA
+            </button>
+            <button 
+              onClick={() => setShowDemoModal(false)}
+              className="text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:text-[#B69D74] transition-all block mx-auto animate-pulse"
+            >
+              SEGUIR EXPLORANDO LA BIOGRAFÍA
+            </button>
           </div>
         </div>
       )}
