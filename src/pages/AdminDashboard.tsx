@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('panel'); // panel, seguimiento, recientes, marketing
   const [searchQuery, setSearchQuery] = useState('');
+  const [sessionSearch, setSessionSearch] = useState('');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [xrayData, setXrayData] = useState<any | null>(null);
@@ -312,6 +313,153 @@ export default function AdminDashboard() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 20);
 
+  const getSessionsTimeline = () => {
+    if (!analyticsData || analyticsData.length === 0) return [];
+
+    // Agrupar por session_id
+    const groups: Record<string, any[]> = {};
+    analyticsData.forEach(ev => {
+      if (!ev.session_id) return;
+      if (!groups[ev.session_id]) groups[ev.session_id] = [];
+      groups[ev.session_id].push(ev);
+    });
+
+    // Crear lista de sesiones
+    const sessions = Object.entries(groups).map(([sessionId, events]) => {
+      // Ordenar eventos de la sesión cronológicamente ascendente
+      const sortedEvents = [...events].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      
+      const firstEvent = sortedEvents[0];
+      const lastEvent = sortedEvents[sortedEvents.length - 1];
+      const startTime = new Date(firstEvent.created_at).getTime();
+      const endTime = new Date(lastEvent.created_at).getTime();
+      const durationSecs = Math.floor((endTime - startTime) / 1000);
+
+      // Buscar si hay email asociado en los eventos
+      let email = null;
+      for (const ev of sortedEvents) {
+        if (ev.event_details?.email) {
+          email = ev.event_details.email;
+          break;
+        }
+      }
+
+      // Origen de tráfico
+      let source = 'Directo / Anuncio';
+      const pathWithSearch = firstEvent.path || '';
+      if (pathWithSearch.includes('flow=papa') || pathWithSearch.includes('c=papa')) {
+        source = 'Campaña Papá (Facebook Ads)';
+      } else if (firstEvent.referrer && firstEvent.referrer !== 'Direct') {
+        if (firstEvent.referrer.toLowerCase().includes('facebook') || firstEvent.referrer.toLowerCase().includes('fb.com')) {
+          source = 'Facebook Referrer';
+        } else {
+          try {
+            source = new URL(firstEvent.referrer).hostname;
+          } catch (e) {
+            source = String(firstEvent.referrer).substring(0, 30);
+          }
+        }
+      }
+
+      // Dispositivo
+      const device = `${firstEvent.device_type || 'Desconocido'} (${firstEvent.os || 'OS'} - ${firstEvent.browser || 'Browser'})`;
+
+      // Formatear acciones
+      const actions = sortedEvents.map(ev => {
+        const timeStr = new Date(ev.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        let label = '';
+        if (ev.event_type === 'pageview') {
+          if (ev.path.includes('flow=papa') || ev.path.includes('c=papa')) {
+            label = `📥 Landed on Father's Day Landing Page (?flow=papa)`;
+          } else {
+            label = `📥 Pageview: ${ev.path}`;
+          }
+        } else {
+          const btnText = ev.event_details?.text || '';
+          if (btnText.toUpperCase().includes('CONTINUAR') && ev.path.includes('flow=papa')) {
+            label = `✍️ Completed Name form step (Micro-commitment)`;
+          } else {
+            label = `⚡ Clicked: "${btnText}"`;
+          }
+        }
+        return { time: timeStr, label, raw: ev };
+      });
+
+      return {
+        sessionId,
+        visitorId: firstEvent.visitor_id,
+        startTime,
+        firstEventDate: new Date(firstEvent.created_at),
+        durationSecs,
+        email,
+        source,
+        device,
+        actions
+      };
+    });
+
+    // Ordenar sesiones por startTime ascendente para asignar número correlativo
+    sessions.sort((a, b) => a.startTime - b.startTime);
+
+    // Asignar número consecutivo de visitante (ej. Visitante #001)
+    const sessionsWithNumbers = sessions.map((s, index) => {
+      const numStr = String(index + 1).padStart(3, '0');
+      return {
+        ...s,
+        visitorNumber: `Visitante #${numStr}`
+      };
+    });
+
+    // Devolver ordenados por más reciente primero
+    return sessionsWithNumbers.sort((a, b) => b.startTime - a.startTime);
+  };
+
+  const getAdFunnelStats = () => {
+    const sessions = getSessionsTimeline();
+    // Filtrar sesiones de campaña de Papá/Facebook
+    const adSessions = sessions.filter(s => 
+      s.source.includes('Campaña Papá') || 
+      s.source.toLowerCase().includes('facebook') ||
+      s.actions.some(a => a.raw.path?.includes('flow=papa') || a.raw.path?.includes('c=papa'))
+    );
+
+    const totalAdSessions = adSessions.length;
+
+    // Paso 2: Escribió nombre y dio Continuar en micro-compromiso
+    const wroteName = adSessions.filter(s => 
+      s.actions.some(a => a.label.includes('Completed Name form step') || a.label.toUpperCase().includes('CONTINUAR'))
+    ).length;
+
+    // Paso 3: Completó formulario largo y dio continuar a preguntas
+    const completedDetails = adSessions.filter(s => 
+      s.actions.some(a => a.label.toLowerCase().includes('entrevista') || a.label.toUpperCase().includes('CONTINUAR') || a.label.toUpperCase().includes('DISEÑANDO ENTREVISTA'))
+    ).length;
+
+    // Paso 4: Generó la letra
+    const generatedLyrics = adSessions.filter(s => 
+      s.actions.some(a => a.label.toUpperCase().includes('COMPONER') || a.label.toUpperCase().includes('CREAR'))
+    ).length;
+
+    // Paso 5: Intento de pago (Clic en Stripe / Comprar / Desbloquear)
+    const paymentAttempts = adSessions.filter(s => 
+      s.actions.some(a => a.label.toUpperCase().includes('PAGAR') || a.label.toUpperCase().includes('DESBLOQUEAR') || a.label.toUpperCase().includes('STRIPE') || a.label.toUpperCase().includes('COMPRAR'))
+    ).length;
+
+    // Paso 6: Pagados reales del flujo (buscamos en canciones si hay alguna con landing_flow = 'direct-papa' y is_paid = true)
+    const paidSongs = masterData.flatMap(u => u.songs || []).filter(song => 
+      (song.form_data?.landing_flow === 'direct-papa') && song.is_paid
+    ).length;
+
+    return {
+      totalAdSessions,
+      wroteName,
+      completedDetails,
+      generatedLyrics,
+      paymentAttempts,
+      paidSongs
+    };
+  };
+
   if (checking || loading) {
     return (
       <div className="min-h-screen bg-[#FDF9F8] flex items-center justify-center p-6">
@@ -363,130 +511,179 @@ export default function AdminDashboard() {
                   <p className="text-4xl font-black font-outfit text-blush-800">{m.value}</p>
                </div>
              ))}
-          </div>
+           </div>
         )}
+            {activeTab === 'trafico' && (() => {
+          const funnel = getAdFunnelStats();
+          const sessions = getSessionsTimeline();
+          
+          const filteredSessions = sessions.filter(s => {
+            if (!sessionSearch) return true;
+            const q = sessionSearch.toLowerCase();
+            return (
+              s.visitorNumber.toLowerCase().includes(q) ||
+              (s.email && s.email.toLowerCase().includes(q)) ||
+              s.sessionId.toLowerCase().includes(q) ||
+              s.source.toLowerCase().includes(q) ||
+              s.device.toLowerCase().includes(q)
+            );
+          });
 
-        {activeTab === 'trafico' && (
-          <div className="animate-in slide-in-from-right-8 duration-500 space-y-8">
-            <header className="flex justify-between items-center gap-6">
-              <div>
-                <h2 className="text-3xl font-black font-outfit text-indigo-900">Inteligencia de Tráfico</h2>
-                <p className="text-sm text-indigo-400 font-bold uppercase tracking-widest mt-1">Monitor "Modo Espía" Activo</p>
+          // Helper percentage function
+          const pct = (val: number, base: number) => {
+            if (!base) return '0%';
+            return `${((val / base) * 100).toFixed(1)}%`;
+          };
+
+          return (
+            <div className="animate-in slide-in-from-right-8 duration-500 space-y-10">
+              <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-3xl font-black font-outfit text-indigo-900">Inteligencia de Tráfico</h2>
+                  <p className="text-sm text-indigo-500 font-bold uppercase tracking-widest mt-1">Embudo de Campañas y Modo Espía Cronológico</p>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="Filtrar sesiones por email o #..." 
+                    value={sessionSearch} 
+                    onChange={(e) => setSessionSearch(e.target.value)}
+                    className="pl-11 pr-4 py-3 bg-white border border-indigo-100 rounded-xl text-xs font-bold w-64 outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm"
+                  />
+                </div>
+              </header>
+
+              {/* Embudo de Conversión de Campaña */}
+              <div className="bg-white p-8 rounded-[2.5rem] border border-indigo-50 shadow-sm space-y-6">
+                <h3 className="text-xs font-black uppercase text-indigo-500 tracking-widest flex items-center gap-2">
+                  <TrendingUp size={16} /> Embudo CRO: Campaña Direct-Papa / Facebook
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                  {[
+                    { title: "1. Landing (Visita)", val: funnel.totalAdSessions, conversion: "100%", desc: "Entraron al link directo", color: "bg-indigo-500" },
+                    { title: "2. Nombre (Micro)", val: funnel.wroteName, conversion: pct(funnel.wroteName, funnel.totalAdSessions), desc: "Escribió el nombre de papá", color: "bg-indigo-600" },
+                    { title: "3. Detalles Biográficos", val: funnel.completedDetails, conversion: pct(funnel.completedDetails, funnel.wroteName), desc: "Completó la biografía larga", color: "bg-indigo-700" },
+                    { title: "4. Creó Letras", val: funnel.generatedLyrics, conversion: pct(funnel.generatedLyrics, funnel.completedDetails), desc: "Avanzó al paso de la letra", color: "bg-indigo-800" },
+                    { title: "5. Intento Pago", val: funnel.paymentAttempts, conversion: pct(funnel.paymentAttempts, funnel.generatedLyrics), desc: "Clic en pagar o Stripe", color: "bg-orange-500" },
+                    { title: "6. Compra Real", val: funnel.paidSongs, conversion: pct(funnel.paidSongs, funnel.totalAdSessions), desc: "Canciones pagadas en base", color: "bg-emerald-500" },
+                  ].map((step, idx) => (
+                    <div key={idx} className="relative bg-[#FDF9F8]/50 p-5 rounded-2xl border border-indigo-50 flex flex-col justify-between">
+                      <div>
+                        <div className="text-[10px] font-black uppercase text-gray-400 tracking-wider mb-1">{step.title}</div>
+                        <div className="text-3xl font-black font-outfit text-indigo-900">{step.val}</div>
+                        <div className="text-[11px] font-bold text-gray-500 mt-1">{step.desc}</div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-indigo-50/50 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">Conv.</span>
+                        <span className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-black">{step.conversion}</span>
+                      </div>
+                      {/* Línea de progreso interna */}
+                      <div className="absolute bottom-0 left-0 right-0 h-1 rounded-b-2xl overflow-hidden bg-gray-100">
+                        <div 
+                          className={`h-full ${step.color}`} 
+                          style={{ width: step.conversion === '0%' ? '0%' : step.conversion.includes('%') ? step.conversion : '100%' }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               {/* Orígenes */}
-               <div className="bg-white p-6 rounded-[2rem] border border-indigo-50 shadow-sm">
-                 <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-4">Top Referidores</h3>
-                 <div className="space-y-3">
-                   {Object.entries(
-                     analyticsData.filter(a => a.event_type === 'pageview').reduce((acc, a) => {
-                       let ref = 'Tráfico Directo';
-                       if (a.referrer && a.referrer !== 'Direct') {
-                         try {
-                           ref = new URL(a.referrer).hostname;
-                         } catch (e) {
-                           ref = String(a.referrer).substring(0, 30);
-                         }
-                       }
-                       acc[ref] = (acc[ref] || 0) + 1;
-                       return acc;
-                     }, {} as any)
-                   ).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([ref, count]: any) => (
-                     <div key={ref} className="flex justify-between items-center text-sm">
-                       <span className="font-bold text-gray-700 truncate">{ref}</span>
-                       <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-black text-xs">{count}</span>
-                     </div>
-                   ))}
-                 </div>
-               </div>
+              {/* Lista de Sesiones - Modo Espía */}
+              <div className="space-y-6">
+                <h3 className="text-xs font-black uppercase text-indigo-500 tracking-widest flex items-center gap-2">
+                  <Search size={16} /> Caminos de Usuario en Tiempo Real (Mostrando {filteredSessions.length} de {sessions.length} sesiones)
+                </h3>
 
-               {/* Dispositivos */}
-               <div className="bg-white p-6 rounded-[2rem] border border-indigo-50 shadow-sm">
-                 <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-4">Dispositivos y SO</h3>
-                 <div className="space-y-3">
-                   {Object.entries(
-                     analyticsData.filter(a => a.event_type === 'pageview').reduce((acc, a) => {
-                       const dev = `${a.device_type} - ${a.os}`;
-                       acc[dev] = (acc[dev] || 0) + 1;
-                       return acc;
-                     }, {} as any)
-                   ).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([dev, count]: any) => (
-                     <div key={dev} className="flex justify-between items-center text-sm">
-                       <span className="font-bold text-gray-700 truncate">{dev}</span>
-                       <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full font-black text-xs">{count}</span>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-
-               {/* Clics Clave */}
-               <div className="bg-white p-6 rounded-[2rem] border border-indigo-50 shadow-sm">
-                 <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-4">Interacciones (Embudos)</h3>
-                 <div className="space-y-3">
-                   {Object.entries(
-                     analyticsData.filter(a => a.event_type === 'click').reduce((acc, a) => {
-                       const btn = a.event_details?.text || 'Clic Desconocido';
-                       acc[btn] = (acc[btn] || 0) + 1;
-                       return acc;
-                     }, {} as any)
-                   ).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([btn, count]: any) => (
-                     <div key={btn} className="flex justify-between items-center text-sm">
-                       <span className="font-bold text-gray-700 truncate max-w-[150px]">{btn}</span>
-                       <span className="bg-naranja-50 text-naranja-600 px-3 py-1 rounded-full font-black text-xs">{count}</span>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-            </div>
-
-            <div className="bg-white rounded-[2rem] border border-indigo-50 shadow-sm overflow-hidden p-6">
-               <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-6">Últimas 20 Acciones Detectadas</h3>
-               <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-[9px] font-black uppercase text-gray-400 border-b border-gray-50">
-                      <th className="py-3 px-4">Fecha/Hora</th>
-                      <th className="py-3 px-4">Duración</th>
-                      <th className="py-3 px-4">Usuario/ID</th>
-                      <th className="py-3 px-4">Tipo</th>
-                      <th className="py-3 px-4">Detalle / Ruta</th>
-                      <th className="py-3 px-4">Navegador</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {analyticsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 20).map(a => {
-                      const sessionEvents = analyticsData.filter(ev => ev.session_id === a.session_id);
-                      const sessionStart = Math.min(...sessionEvents.map(ev => new Date(ev.created_at).getTime()));
-                      const sessionEnd = Math.max(...sessionEvents.map(ev => new Date(ev.created_at).getTime()));
-                      const durationSecs = Math.floor((sessionEnd - sessionStart) / 1000);
-                      const durationText = durationSecs > 60 ? `${Math.floor(durationSecs / 60)}m ${durationSecs % 60}s` : `${durationSecs}s`;
+                <div className="space-y-6">
+                  {filteredSessions.length === 0 ? (
+                    <div className="bg-white p-12 rounded-[2rem] border border-indigo-50 text-center text-gray-400 font-medium text-sm">
+                      No se encontraron sesiones con el filtro actual.
+                    </div>
+                  ) : (
+                    filteredSessions.map((session, sIdx) => {
+                      const durationText = session.durationSecs > 60 
+                        ? `${Math.floor(session.durationSecs / 60)}m ${session.durationSecs % 60}s` 
+                        : `${session.durationSecs}s`;
 
                       return (
-                      <tr key={a.id} className="text-xs hover:bg-gray-50/50">
-                        <td className="py-3 px-4 text-gray-500 font-medium whitespace-nowrap">
-                          {new Date(a.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}<br/>
-                          <span className="text-[10px] opacity-70">{new Date(a.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}</span>
-                        </td>
-                        <td className="py-3 px-4 font-mono text-[10px] text-gray-400">{durationText}</td>
-                        <td className="py-3 px-4 text-indigo-600 font-mono text-[10px]">{a.visitor_id?.substring(0,8)}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase ${a.event_type === 'click' ? 'bg-naranja-50 text-naranja-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                            {a.event_type}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-bold text-gray-700 truncate max-w-[200px]">
-                          {a.event_type === 'click' ? a.event_details?.text : a.path}
-                        </td>
-                        <td className="py-3 px-4 text-gray-400">{a.browser} en {a.device_type}</td>
-                      </tr>
+                        <div key={session.sessionId} className="bg-white rounded-[2rem] border border-indigo-50 shadow-sm overflow-hidden hover:border-indigo-200 transition-all">
+                          {/* Cabecera de la sesión */}
+                          <div className="bg-indigo-50/30 px-6 py-5 border-b border-indigo-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full">{session.visitorNumber}</span>
+                              <span className="text-xs text-gray-500 font-bold">
+                                {session.firstEventDate.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })} a las {session.firstEventDate.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                                Duración: {durationText}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3">
+                              {session.email && (
+                                <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black px-3 py-1 rounded-full flex items-center gap-1">
+                                  ✉️ {session.email}
+                                </span>
+                              )}
+                              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded ${session.source.includes('Campaña') ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-gray-100 text-gray-600'}`}>
+                                {session.source}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Cuerpo: Detalles del camino del usuario */}
+                          <div className="p-6">
+                            <div className="text-[10px] font-black uppercase text-indigo-400 tracking-wider mb-4">Camino del usuario:</div>
+                            
+                            <div className="relative border-l-2 border-indigo-50 pl-6 space-y-4 ml-2">
+                              {session.actions.map((action, aIdx) => (
+                                <div key={aIdx} className="relative flex items-start gap-4">
+                                  {/* Punto en el timeline */}
+                                  <div className="absolute -left-[31px] top-1.5 w-4.5 h-4.5 rounded-full bg-white border-2 border-indigo-300 flex items-center justify-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                                  </div>
+                                  
+                                  <div className="flex-1 bg-gray-50/50 p-3 rounded-xl border border-gray-50 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
+                                    <span className="text-xs font-bold text-gray-700 leading-relaxed">
+                                      {action.label}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] font-mono text-gray-400 font-medium">
+                                        {action.time}
+                                      </span>
+                                      {action.raw.event_type === 'click' && (
+                                        <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase">
+                                          CLICK
+                                        </span>
+                                      )}
+                                      {action.raw.event_type === 'pageview' && (
+                                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase">
+                                          PAGINA
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="mt-5 pt-4 border-t border-gray-50 flex items-center justify-between text-[10px] text-gray-400 font-bold">
+                              <span>Dispositivo: {session.device}</span>
+                              <span className="font-mono text-[9px]">Session ID: {session.sessionId}</span>
+                            </div>
+                          </div>
+                        </div>
                       );
-                    })}
-                  </tbody>
-               </table>
+                    })
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {activeTab === 'seguimiento' && (
           <div className="animate-in slide-in-from-bottom-5 duration-500 space-y-6">

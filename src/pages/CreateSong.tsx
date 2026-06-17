@@ -44,8 +44,35 @@ export default function CreateSong() {
   const [password, setPassword] = useState('');
   const [isLoginLoading, setIsLoginLoading] = useState(false);
 
+  // NUEVO: Tipo de embudo por el que entra el usuario (CRO)
+  const [landingFlow, setLandingFlow] = useState<'standard' | 'direct-papa'>(() => {
+    if (draftData?.landingFlow) return draftData.landingFlow;
+    const params = new URLSearchParams(window.location.search);
+    const urlFlow = params.get('flow') || params.get('c');
+    const urlCategory = params.get('category');
+    if (urlFlow === 'papa' || urlCategory === 'papa') {
+      return 'direct-papa';
+    }
+    return 'standard';
+  });
+
+  const [showFullDetailsForm, setShowFullDetailsForm] = useState<boolean>(() => {
+    if (draftData?.showFullDetailsForm !== undefined) return draftData.showFullDetailsForm;
+    if (draftData?.formData?.nombreDestinatario) return true;
+    return false;
+  });
+
   // NUEVOS ESTADOS PARA ENTREVISTA DINÁMICA
-  const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>(draftData?.formPhase || 'spark');
+  const [formPhase, setFormPhase] = useState<'spark' | 'details' | 'interview'>(() => {
+    if (draftData?.formPhase) return draftData.formPhase;
+    const params = new URLSearchParams(window.location.search);
+    const urlFlow = params.get('flow') || params.get('c');
+    const urlCategory = params.get('category');
+    if (urlFlow === 'papa' || urlCategory === 'papa') {
+      return 'details';
+    }
+    return 'spark';
+  });
   const [initialContext, setInitialContext] = useState(draftData?.initialContext || '');
   const [isGeneratingDetailsPrompt, setIsGeneratingDetailsPrompt] = useState(false);
   const [detailsPrompt, setDetailsPrompt] = useState({
@@ -76,9 +103,10 @@ export default function CreateSong() {
   const [formData, setFormData] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const urlCategory = params.get('category');
+    const urlFlow = params.get('flow') || params.get('c');
     const data = draftData?.formData || {};
     return {
-      category: urlCategory || data.category || 'otro',
+      category: (urlFlow === 'papa' || urlCategory === 'papa') ? 'papa' : (urlCategory || data.category || 'otro'),
       childName: data.childName || '',
       birthDate: data.birthDate || '',
       mensajeHablado: data.mensajeHablado || '',
@@ -109,13 +137,15 @@ export default function CreateSong() {
         formPhase,
         initialContext,
         aiQuestions,
-        interviewAnswers
+        interviewAnswers,
+        landingFlow,
+        showFullDetailsForm
       };
       localStorage.setItem('mn_draft_song', JSON.stringify(draft));
     } else {
       localStorage.removeItem('mn_draft_song');
     }
-  }, [formData, step, lyrics, currentSongId, formPhase, initialContext, aiQuestions, interviewAnswers]);
+  }, [formData, step, lyrics, currentSongId, formPhase, initialContext, aiQuestions, interviewAnswers, landingFlow, showFullDetailsForm]);
 
   const handleClearDraft = () => {
     localStorage.removeItem('mn_draft_song');
@@ -269,11 +299,24 @@ INSTRUCCIONES:
 
   const handleStartInterview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!initialContext.trim() || !formData.specificDetails.trim() || !formData.moodAndStyle.trim()) return;
+    if (landingFlow === 'direct-papa') {
+      if (!formData.nombreDestinatario.trim() || !formData.apellidoDestinatario.trim() || !formData.specificDetails.trim() || !formData.moodAndStyle.trim()) {
+        alert("Por favor completa los campos obligatorios (*)");
+        return;
+      }
+    } else {
+      if (!initialContext.trim() || !formData.specificDetails.trim() || !formData.moodAndStyle.trim()) return;
+    }
     
     setIsGeneratingQuestions(true);
     try {
-      const combinedContext = `Idea base: ${initialContext}. Detalles: ${formData.specificDetails}. Familia: ${formData.familyNames}. Estilo deseado: ${formData.moodAndStyle}`;
+      let finalContext = initialContext;
+      if (landingFlow === 'direct-papa') {
+        finalContext = `Homenaje de vida e historia para mi papá ${formData.nombreDestinatario} ${formData.apellidoDestinatario}, nacido en ${formData.lugarOrigen || 'México'} el ${formData.birthDate || 'desconocido'}. Sus seres queridos y familia: ${formData.familyNames || 'desconocido'}. Detalles e hitos de su vida: ${formData.specificDetails}`;
+        setInitialContext(finalContext);
+      }
+
+      const combinedContext = `Idea base: ${finalContext}. Detalles: ${formData.specificDetails}. Familia: ${formData.familyNames}. Estilo deseado: ${formData.moodAndStyle}`;
       const { questions, extractedName } = await generateInterviewQuestions(combinedContext, formData.category);
       setAiQuestions(questions);
       
@@ -507,7 +550,8 @@ INSTRUCCIONES:
         legacy_photo_url: photoUrl,
         custom_dedication: customDedication,
         major_milestone: majorMilestone,
-        infographic_data: infoData
+        infographic_data: infoData,
+        landing_flow: currentFormData.landing_flow || landingFlow
       };
 
       const { error } = await supabase
@@ -588,7 +632,8 @@ INSTRUCCIONES:
             finalStylePrompt: cleanedStyle,
             initialContext,
             interviewAnswers,
-            aiQuestions 
+            aiQuestions,
+            landing_flow: landingFlow
           }
         };
 
@@ -935,161 +980,222 @@ INSTRUCCIONES:
               </form>
             ) : formPhase === 'details' ? (
               <form onSubmit={handleStartInterview} className="max-w-2xl mx-auto space-y-8 animate-in slide-in-from-right-8 duration-700">
-                <button onClick={() => setFormPhase('spark')} type="button" className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-2"><ArrowLeft size={16} /> Volver a la chispa</button>
+                {landingFlow === 'direct-papa' ? (
+                  showFullDetailsForm && (
+                    <button onClick={() => setShowFullDetailsForm(false)} type="button" className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-2"><ArrowLeft size={16} /> Cambiar nombre</button>
+                  )
+                ) : (
+                  <button onClick={() => setFormPhase('spark')} type="button" className="flex items-center gap-2 text-blush-500 hover:text-naranja-500 transition-colors font-bold text-xs uppercase tracking-widest mb-2"><ArrowLeft size={16} /> Volver a la chispa</button>
+                )}
                 
                 <div className="bg-white p-6 md:p-10 rounded-3xl md:rounded-[3rem] border-2 border-naranja-100 shadow-xl space-y-8">
-                  {formData.category === 'papa' ? (
-                    <>
-                      {/* Campos Biográficos de Papá */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Nombre(s) de Papá *</h3>
-                          <p className="text-ink-600/70 text-xs italic mt-1">Primer y segundo nombre (sin apellidos).</p>
+                  {landingFlow === 'direct-papa' && !showFullDetailsForm ? (
+                    <div className="space-y-6 animate-in fade-in duration-500">
+                      <div className="text-center py-4">
+                        <span className="inline-block px-3 py-1 bg-naranja-50 text-naranja-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4">Homenaje a Papá</span>
+                        <h3 className="text-3xl font-serif text-blush-900 font-bold mb-2">¿Cómo se llama tu papá?</h3>
+                        <p className="text-sm text-ink-600/60">Escribe su nombre completo para comenzar.</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Nombre(s) *</label>
                           <input 
                             type="text"
                             name="nombreDestinatario"
                             value={formData.nombreDestinatario || ''}
                             onChange={handleChange}
                             placeholder="Ej: José de la Luz"
-                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                            className="w-full bg-blush-50/50 border border-blush-200 rounded-xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium text-center"
                             required
                           />
                         </div>
 
-                        <div>
-                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Apellido(s) de Papá *</h3>
-                          <p className="text-ink-600/70 text-xs italic mt-1">Apellido paterno y materno.</p>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-widest text-gray-500">Apellido(s) *</label>
                           <input 
                             type="text"
                             name="apellidoDestinatario"
                             value={formData.apellidoDestinatario || ''}
                             onChange={handleChange}
                             placeholder="Ej: Sánchez Ramírez"
-                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                            className="w-full bg-blush-50/50 border border-blush-200 rounded-xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium text-center"
                             required
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><CalendarDays className="text-naranja-500" /> Fecha de Nacimiento</h3>
-                          <p className="text-ink-600/70 text-xs italic mt-1">Para trazar el punto de partida en su línea de tiempo.</p>
-                          <input 
-                            type="text"
-                            name="birthDate"
-                            value={formData.birthDate || ''}
-                            onChange={handleChange}
-                            placeholder="Ej: 12 de Junio de 1950"
-                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><Target className="text-naranja-500" /> Lugar de Origen</h3>
-                          <p className="text-ink-600/70 text-xs italic mt-1">Establece el inicio geográfico de su biografía.</p>
-                          <input 
-                            type="text"
-                            name="lugarOrigen"
-                            value={formData.lugarOrigen || ''}
-                            onChange={handleChange}
-                            placeholder="Ej: Guadalajara, Jalisco"
-                            className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> ¿Quiénes son los pilares de su vida? (Familia)</h3>
-                        <p className="text-ink-600/70 text-sm italic mt-2">Ingresa el nombre de su esposa, hijos y nietos (separados por comas). Estos nombres se grabarán en el árbol familiar interactivo de su Biografía Digital.</p>
-                        <input 
-                          type="text"
-                          name="familyNames"
-                          value={formData.familyNames || ''}
-                          onChange={handleChange}
-                          placeholder="Ej: Su esposa María, sus hijos Pedro, Laura y Lucía, y su nieto Mateo..."
-                          className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> Historia, Enseñanzas y Anécdotas</h3>
-                        <p className="text-ink-600/70 text-sm italic mt-2">Cuéntanos hitos importantes de su vida, anécdotas divertidas y enseñanzas que te dejó.</p>
-                        <textarea 
-                          name="specificDetails"
-                          value={formData.specificDetails || ''}
-                          onChange={handleChange}
-                          placeholder="Ej: Empezó trabajando desde muy joven en el campo, luego se mudó a la ciudad y fundó su propio taller. Siempre nos enseñó que la familia es lo primero. Un día se cayó de una bicicleta persiguiendo un perro y toda la cuadra se rió con él..."
-                          className="w-full h-36 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all font-medium"
-                          required
-                        ></textarea>
-                      </div>
-                    </>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          if (formData.nombreDestinatario.trim() && formData.apellidoDestinatario.trim()) {
+                            setShowFullDetailsForm(true);
+                          } else {
+                            alert("Por favor escribe el nombre y apellido de tu papá.");
+                          }
+                        }}
+                        className="w-full py-4 bg-naranja-500 text-white rounded-xl font-bold text-base tracking-widest hover:bg-naranja-600 transition shadow-lg flex items-center justify-center gap-2"
+                      >
+                        CONTINUAR <Sparkles size={16} />
+                      </button>
+                    </div>
                   ) : (
-                    <>
-                      {/* Formulario Estándar para Otras Categorías */}
+                    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-700">
+                      {formData.category === 'papa' ? (
+                        <>
+                          {/* Campos Biográficos de Papá */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Nombre(s) de Papá *</h3>
+                              <p className="text-ink-600/70 text-xs italic mt-1">Primer y segundo nombre (sin apellidos).</p>
+                              <input 
+                                type="text"
+                                name="nombreDestinatario"
+                                value={formData.nombreDestinatario || ''}
+                                onChange={handleChange}
+                                placeholder="Ej: José de la Luz"
+                                className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                                required
+                              />
+                            </div>
+
+                            <div>
+                              <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><User className="text-naranja-500" /> Apellido(s) de Papá *</h3>
+                              <p className="text-ink-600/70 text-xs italic mt-1">Apellido paterno y materno.</p>
+                              <input 
+                                type="text"
+                                name="apellidoDestinatario"
+                                value={formData.apellidoDestinatario || ''}
+                                onChange={handleChange}
+                                placeholder="Ej: Sánchez Ramírez"
+                                className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><CalendarDays className="text-naranja-500" /> Fecha de Nacimiento</h3>
+                              <p className="text-ink-600/70 text-xs italic mt-1">Para trazar el punto de partida en su línea de tiempo.</p>
+                              <input 
+                                type="text"
+                                name="birthDate"
+                                value={formData.birthDate || ''}
+                                onChange={handleChange}
+                                placeholder="Ej: 12 de Junio de 1950"
+                                className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                                required
+                              />
+                            </div>
+
+                            <div>
+                              <h3 className="text-lg font-serif text-blush-800 flex items-center gap-3"><Target className="text-naranja-500" /> Lugar de Origen</h3>
+                              <p className="text-ink-600/70 text-xs italic mt-1">Establece el inicio geográfico de su biografía.</p>
+                              <input 
+                                type="text"
+                                name="lugarOrigen"
+                                value={formData.lugarOrigen || ''}
+                                onChange={handleChange}
+                                placeholder="Ej: Guadalajara, Jalisco"
+                                className="w-full mt-3 bg-blush-50/50 border border-blush-200 rounded-2xl p-4 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> ¿Quiénes son los pilares de su vida? (Familia)</h3>
+                            <p className="text-ink-600/70 text-sm italic mt-2">Ingresa el nombre de su esposa, hijos y nietos (separados por comas). Estos nombres se grabarán en el árbol familiar interactivo de su Biografía Digital.</p>
+                            <input 
+                              type="text"
+                              name="familyNames"
+                              value={formData.familyNames || ''}
+                              onChange={handleChange}
+                              placeholder="Ej: Su esposa María, sus hijos Pedro, Laura y Lucía, y su nieto Mateo..."
+                              className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all font-medium"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> Historia, Enseñanzas y Anécdotas</h3>
+                            <p className="text-ink-600/70 text-sm italic mt-2">Cuéntanos hitos importantes de su vida, anécdotas divertidas y enseñanzas que te dejó.</p>
+                            <textarea 
+                              name="specificDetails"
+                              value={formData.specificDetails || ''}
+                              onChange={handleChange}
+                              placeholder="Ej: Empezó trabajando desde muy joven en el campo, luego se mudó a la ciudad y fundó su propio taller. Siempre nos enseñó que la familia es lo primero. Un día se cayó de una bicicleta persiguiendo un perro y toda la cuadra se rió con él..."
+                              className="w-full h-36 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all font-medium"
+                              required
+                            ></textarea>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {/* Formulario Estándar para Otras Categorías */}
+                          <div>
+                            <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> {detailsPrompt.title}</h3>
+                            <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
+                            <textarea 
+                              name="specificDetails"
+                              value={formData.specificDetails || ''}
+                              onChange={handleChange}
+                              placeholder={detailsPrompt.placeholder}
+                              className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
+                              required
+                            ></textarea>
+                          </div>
+
+                          <div>
+                            <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> {detailsPrompt.familyTitle}</h3>
+                            <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.familySubtitle}</p>
+                            <input 
+                              type="text"
+                              name="familyNames"
+                              value={formData.familyNames || ''}
+                              onChange={handleChange}
+                              placeholder={detailsPrompt.familyPlaceholder}
+                              className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all"
+                            />
+                          </div>
+                        </>
+                      )}
+                      
                       <div>
-                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> {detailsPrompt.title}</h3>
-                        <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
+                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Music className="text-naranja-500" /> Género, tono y emoción de la canción</h3>
+                        <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo quieres que suene? (Con humor, poética, nostálgica, corrido bragado, mariachi tradicional, o banda sinaloense)</p>
                         <textarea 
-                          name="specificDetails"
-                          value={formData.specificDetails || ''}
+                          name="moodAndStyle"
+                          value={formData.moodAndStyle || ''}
                           onChange={handleChange}
-                          placeholder={detailsPrompt.placeholder}
-                          className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
+                          placeholder={formData.category === 'papa' ? "Ej: Un corrido norteño con acordeón y bajo sexto, con tono alegre y mucho orgullo..." : "Ej: Quiero una cumbia rápida y alegre con un toque de humor, estilo Los Ángeles Azules..."}
+                          className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all font-medium"
                           required
                         ></textarea>
                       </div>
 
-                      <div>
-                        <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Users className="text-naranja-500" /> {detailsPrompt.familyTitle}</h3>
-                        <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.familySubtitle}</p>
-                        <input 
-                          type="text"
-                          name="familyNames"
-                          value={formData.familyNames || ''}
-                          onChange={handleChange}
-                          placeholder={detailsPrompt.familyPlaceholder}
-                          className="w-full mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base transition-all"
-                        />
-                      </div>
-                    </>
+                      <button 
+                        type="submit" 
+                        disabled={
+                          isGeneratingQuestions || 
+                          !formData.specificDetails?.trim() || 
+                          !formData.moodAndStyle?.trim() || 
+                          (formData.category === 'papa' && (
+                            !formData.nombreDestinatario?.trim() || 
+                            !formData.apellidoDestinatario?.trim() || 
+                            !formData.birthDate?.trim() || 
+                            !formData.lugarOrigen?.trim() || 
+                            !formData.familyNames?.trim()
+                          ))
+                        } 
+                        className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3"
+                      >
+                        {isGeneratingQuestions ? <RefreshCw className="animate-spin" /> : <Sparkles />}
+                        {isGeneratingQuestions ? "DISEÑANDO ENTREVISTA..." : "CONTINUAR"}
+                      </button>
+                    </div>
                   )}
-                  
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><Music className="text-naranja-500" /> Género, tono y emoción de la canción</h3>
-                    <p className="text-ink-600/70 text-sm italic mt-2">¿Cómo quieres que suene? (Con humor, poética, nostálgica, corrido bragado, mariachi tradicional, o banda sinaloense)</p>
-                    <textarea 
-                      name="moodAndStyle"
-                      value={formData.moodAndStyle || ''}
-                      onChange={handleChange}
-                      placeholder={formData.category === 'papa' ? "Ej: Un corrido norteño con acordeón y bajo sexto, con tono alegre y mucho orgullo..." : "Ej: Quiero una cumbia rápida y alegre con un toque de humor, estilo Los Ángeles Azules..."}
-                      className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all font-medium"
-                      required
-                    ></textarea>
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    disabled={
-                      isGeneratingQuestions || 
-                      !formData.specificDetails?.trim() || 
-                      !formData.moodAndStyle?.trim() || 
-                      (formData.category === 'papa' && (
-                        !formData.nombreDestinatario?.trim() || 
-                        !formData.birthDate?.trim() || 
-                        !formData.lugarOrigen?.trim() || 
-                        !formData.familyNames?.trim()
-                      ))
-                    } 
-                    className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3"
-                  >
-                    {isGeneratingQuestions ? <RefreshCw className="animate-spin" /> : <Sparkles />}
-                    {isGeneratingQuestions ? "DISEÑANDO ENTREVISTA..." : "CONTINUAR"}
-                  </button>
                 </div>
               </form>
             ) : (

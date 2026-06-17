@@ -52,16 +52,20 @@ export default function AnalyticsTracker() {
 
     const trackPageview = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const email = session?.user?.email || null;
+
         await supabase.from('mn_analytics').insert({
           visitor_id: visitorId,
           session_id: sessionId,
-          path: location.pathname,
+          path: location.pathname + location.search,
           user_agent: navigator.userAgent,
           device_type: deviceType,
           os,
           browser,
           referrer,
-          event_type: 'pageview'
+          event_type: 'pageview',
+          event_details: email ? { email } : {}
         });
       } catch (error) {
         console.error('Analytics pageview failed:', error);
@@ -78,28 +82,35 @@ export default function AnalyticsTracker() {
       const text = clickable.textContent?.trim().substring(0, 50) || 'Icon/Image';
       const type = clickable.tagName.toLowerCase();
       
-      const importantKeywords = ['desbloquear', 'siguiente', 'completar', 'comprar', 'empezar', 'crear', 'registrar', 'entrar'];
+      const importantKeywords = ['desbloquear', 'siguiente', 'completar', 'comprar', 'empezar', 'crear', 'registrar', 'entrar', 'continuar', 'generar', 'componer'];
       const isImportant = importantKeywords.some(kw => text.toLowerCase().includes(kw));
       
       if (!isImportant) return; // Solo rastrear botones importantes de embudo para no saturar DB
 
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const email = session?.user?.email || null;
+
         await supabase.from('mn_analytics').insert({
           visitor_id: visitorId,
           session_id: sessionId,
-          path: location.pathname,
+          path: location.pathname + location.search,
           device_type: deviceType,
           os,
           browser,
           event_type: 'click',
-          event_details: { element: type, text: text }
+          event_details: { 
+            element: type, 
+            text: text,
+            ...(email ? { email } : {})
+          }
         });
       } catch (err) {}
     };
 
     document.addEventListener('click', handleGlobalClick);
     return () => document.removeEventListener('click', handleGlobalClick);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   return null;
 }
