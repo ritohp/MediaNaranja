@@ -81,8 +81,12 @@ export default function AdminDashboard() {
       const { data: payments } = await supabase.from('mn_payments').select('*');
       const realRevenue = (payments || []).filter(p => p.status === 'completed').reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
-      // Analytics Fetching
-      const { data: analytics } = await supabase.from('mn_analytics').select('*');
+      // Analytics Fetching (obtenemos los últimos 3000 eventos ordenados para asegurar los datos recientes y evitar el límite de 1000 de PostgREST)
+      const { data: analytics } = await supabase
+        .from('mn_analytics')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(3000);
       setAnalyticsData(analytics || []);
       const uniqueVisitors = new Set((analytics || []).map(a => a.visitor_id)).size;
       const pageViews = (analytics || []).filter(a => a.event_type === 'pageview').length;
@@ -357,7 +361,7 @@ export default function AdminDashboard() {
       // Origen de tráfico
       let source = 'Directo / Anuncio';
       const pathWithSearch = firstEvent.path || '';
-      if (pathWithSearch.includes('flow=papa') || pathWithSearch.includes('c=papa')) {
+      if (pathWithSearch.includes('flow=papa') || pathWithSearch.includes('c=papa') || pathWithSearch.includes('category=papa')) {
         source = 'Campaña Papá (Facebook Ads)';
       } else if (firstEvent.referrer && firstEvent.referrer !== 'Direct') {
         if (firstEvent.referrer.toLowerCase().includes('facebook') || firstEvent.referrer.toLowerCase().includes('fb.com')) {
@@ -379,14 +383,14 @@ export default function AdminDashboard() {
         const timeStr = new Date(ev.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         let label = '';
         if (ev.event_type === 'pageview') {
-          if (ev.path.includes('flow=papa') || ev.path.includes('c=papa')) {
+          if (ev.path.includes('flow=papa') || ev.path.includes('c=papa') || ev.path.includes('category=papa')) {
             label = `📥 Landed on Father's Day Landing Page (?flow=papa)`;
           } else {
             label = `📥 Pageview: ${ev.path}`;
           }
         } else {
           const btnText = ev.event_details?.text || '';
-          if (btnText.toUpperCase().includes('CONTINUAR') && ev.path.includes('flow=papa')) {
+          if (btnText.toUpperCase().includes('CONTINUAR') && (ev.path.includes('flow=papa') || ev.path.includes('category=papa'))) {
             label = `✍️ Completed Name form step (Micro-commitment)`;
           } else {
             label = `⚡ Clicked: "${btnText}"`;
