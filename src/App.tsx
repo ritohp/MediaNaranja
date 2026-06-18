@@ -10,6 +10,7 @@ import MemoryCustomizer from './pages/MemoryCustomizer';
 import AdminDashboard from './pages/AdminDashboard';
 import SongPlayer from './pages/SongPlayer';
 import TributeWizard from './pages/TributeWizard';
+import FatherLanding from './pages/FatherLanding';
 
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/crear-cancion" element={<CreateSong />} />
+          <Route path="/regalo-papa" element={<FatherLanding />} />
+          <Route path="/cancion-para-papa" element={<FatherLanding />} />
           <Route path="/mis-canciones" element={<MySongs />} />
           <Route path="/cancion/:id" element={<SongPlayer />} />
           <Route path="/legado/:id" element={<TributeWizard />} />
