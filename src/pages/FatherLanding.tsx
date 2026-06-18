@@ -467,19 +467,21 @@ export default function FatherLanding() {
                   </div>
 
                   {/* Contenido Pantalla (Fiel al estilo real de la biografía) */}
-                  <div className="w-full h-full bg-[#F8F3E9] text-[#1C2A39] rounded-[2.5rem] overflow-y-auto px-4 pt-10 pb-8 space-y-6 font-serif selection:bg-orange-200 scrollbar-none relative">
+                  <div className="w-full h-full bg-[#F8F3E9] text-[#1C2A39] rounded-[2.5rem] relative overflow-hidden font-serif selection:bg-orange-200">
                     
-                    {/* Bordes Decorativos del Sistema */}
-                    <div className="absolute inset-2 border-[1.2px] border-[#B69D74]/60 z-0 pointer-events-none rounded-[2rem]"></div>
-                    <div className="absolute inset-3.5 border-[0.4px] border-[#B69D74]/40 z-0 pointer-events-none rounded-[1.8rem]"></div>
+                    {/* Bordes Decorativos del Sistema (Fijos sobre la pantalla) */}
+                    <div className="absolute inset-2 border-[1.2px] border-[#B69D74]/60 z-20 pointer-events-none rounded-[2rem]"></div>
+                    <div className="absolute inset-3.5 border-[0.4px] border-[#B69D74]/40 z-20 pointer-events-none rounded-[1.8rem]"></div>
 
-                    {/* Ornamentos Esquinas */}
-                    <div className="absolute top-3 left-3 w-4 h-4 border-t border-l border-[#B69D74]/80 z-0 pointer-events-none"></div>
-                    <div className="absolute top-3 right-3 w-4 h-4 border-t border-r border-[#B69D74]/80 z-0 pointer-events-none"></div>
-                    <div className="absolute bottom-3 left-3 w-4 h-4 border-b border-l border-[#B69D74]/80 z-0 pointer-events-none"></div>
-                    <div className="absolute bottom-3 right-3 w-4 h-4 border-b border-r border-[#B69D74]/80 z-0 pointer-events-none"></div>
+                    {/* Ornamentos Esquinas (Fijos sobre la pantalla) */}
+                    <div className="absolute top-3.5 left-3.5 w-4 h-4 border-t border-l border-[#B69D74]/80 z-20 pointer-events-none"></div>
+                    <div className="absolute top-3.5 right-3.5 w-4 h-4 border-t border-r border-[#B69D74]/80 z-20 pointer-events-none"></div>
+                    <div className="absolute bottom-3.5 left-3.5 w-4 h-4 border-b border-l border-[#B69D74]/80 z-20 pointer-events-none"></div>
+                    <div className="absolute bottom-3.5 right-3.5 w-4 h-4 border-b border-r border-[#B69D74]/80 z-20 pointer-events-none"></div>
 
-                    <div className="relative z-10 text-center space-y-6 pt-2">
+                    {/* Contenido Desplazable (Debajo de los bordes) */}
+                    <div className="w-full h-full overflow-y-auto px-6 pt-11 pb-8 scrollbar-none relative z-10">
+                      <div className="text-center space-y-6 pt-2">
                       {/* Título Principal */}
                       <div className="text-center">
                         <span className="text-[7.5px] font-bold tracking-[0.25em] uppercase text-[#1C2A39]/65 block">La Historia de</span>
@@ -677,7 +679,8 @@ export default function FatherLanding() {
 
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
               {/* VISTA PREVIA 2: CERTIFICADO IMPRESO (Efecto Cuadro de Madera Realista - Fiel a la foto) */}
               {previewTab === 'pdf' && (
