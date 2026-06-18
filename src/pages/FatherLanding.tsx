@@ -451,9 +451,9 @@ export default function FatherLanding() {
           </div>
 
           {/* Lado derecho: Visualizador del Mockup */}
-          <div className="lg:col-span-7 flex justify-center">
-            <div className="w-full max-w-md bg-transparent relative">
-              {/* VISTA PREVIA 1: BIOGRAFÍA DIGITAL (Simulador de Teléfono) */}
+          <div className="lg:col-span-7 flex justify-center w-full">
+            <div className="w-full max-w-lg bg-transparent relative flex justify-center">
+              {/* VISTA PREVIA 1: BIOGRAFÍA DIGITAL (Simulador de Teléfono con Biografía Real) */}
               {previewTab === 'biografia' && (
                 <div className="mx-auto w-[320px] h-[580px] bg-slate-950 rounded-[3rem] p-3 shadow-2xl border-[6px] border-slate-800 relative overflow-hidden animate-in fade-in duration-500">
                   {/* Cámara/Notch */}
@@ -465,20 +465,30 @@ export default function FatherLanding() {
                   <div className="w-full h-full bg-[#FFFBF7] rounded-[2.5rem] overflow-y-auto px-4 pt-10 pb-8 space-y-6 font-outfit selection:bg-orange-200 scrollbar-none">
                     <div className="text-center pt-2">
                       <span className="text-[9px] font-black tracking-widest text-blue-600 uppercase">Homenaje Activo</span>
-                      <h4 className="text-xl font-playfair font-bold text-gray-900 mt-1">El Legado de José</h4>
+                      <h4 className="text-xl font-playfair font-bold text-gray-900 mt-1">El Legado de Javier Rayas</h4>
                       <p className="text-[10px] text-gray-400 mt-0.5">Creado por su familia</p>
+                    </div>
+
+                    {/* Foto Circular */}
+                    <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-md mx-auto relative">
+                      <img src="/papa-sorpresa.png" alt="Javier Rayas" className="w-full h-full object-cover sepia-[0.1]" />
                     </div>
 
                     {/* Mini Player */}
                     <div className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center gap-3 shadow-sm">
-                      <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center">
-                        <Play size={16} fill="currentColor" />
+                      <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                        <Play size={16} fill="currentColor" className="ml-0.5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h5 className="text-xs font-bold text-gray-800 truncate">El Corrido de Don José</h5>
-                        <p className="text-[9px] text-gray-400 truncate">Corrido / Ranchero Norteño</p>
+                        <h5 className="text-xs font-bold text-gray-800 truncate">El Corrido de Javier Rayas</h5>
+                        <p className="text-[9px] text-gray-400 truncate">Corrido Mariachi Especial</p>
                       </div>
                     </div>
+
+                    {/* Quote */}
+                    <p className="text-xs italic text-center text-gray-600 px-2 leading-relaxed">
+                      "Javier, el hombre que con sus manos sembró un legado de amor y gratitud."
+                    </p>
 
                     {/* Timeline */}
                     <div className="space-y-4">
@@ -488,13 +498,18 @@ export default function FatherLanding() {
                       <div className="border-l-2 border-orange-100 ml-2 pl-4 space-y-4">
                         <div className="relative">
                           <div className="absolute -left-[22px] top-1.5 w-2.5 h-2.5 bg-orange-400 rounded-full"></div>
-                          <span className="text-[9px] font-bold text-orange-600 block">1955 - Nació en León</span>
-                          <p className="text-[10px] text-gray-500 mt-0.5">Hijo de campesinos, donde aprendió el amor por la tierra.</p>
+                          <span className="text-[9px] font-bold text-orange-600 block">1965 - Origen en La Sandía</span>
+                          <p className="text-[10px] text-gray-500 mt-0.5">Nació y creció en el campo de Guanajuato, aprendiendo el amor al trabajo campesino.</p>
                         </div>
                         <div className="relative">
                           <div className="absolute -left-[22px] top-1.5 w-2.5 h-2.5 bg-orange-400 rounded-full"></div>
-                          <span className="text-[9px] font-bold text-orange-600 block">1978 - Formó una Familia</span>
-                          <p className="text-[10px] text-gray-500 mt-0.5">Se casó con Clara y juntos criaron 3 hijos con valores honestos.</p>
+                          <span className="text-[9px] font-bold text-orange-600 block">1985 - Viaje y Sacrificio</span>
+                          <p className="text-[10px] text-gray-500 mt-0.5">Trabajó duramente en Estados Unidos con el único fin de darles un futuro digno a los suyos.</p>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute -left-[22px] top-1.5 w-2.5 h-2.5 bg-orange-400 rounded-full"></div>
+                          <span className="text-[9px] font-bold text-orange-600 block">2005 - El Regreso a su Tierra</span>
+                          <p className="text-[10px] text-gray-500 mt-0.5">Establecido en su amada huerta de sandías, disfrutando del comal y del fruto de su esfuerzo.</p>
                         </div>
                       </div>
                     </div>
@@ -504,14 +519,14 @@ export default function FatherLanding() {
                       <h5 className="text-[10px] font-bold text-blue-600 tracking-widest uppercase flex items-center gap-2">
                         <Users size={12} /> Árbol Familiar
                       </h5>
-                      <div className="grid grid-cols-2 gap-2 text-center">
+                      <div className="grid grid-cols-2 gap-2 text-center text-[10px]">
                         <div className="bg-white p-2 rounded-xl border border-gray-100">
                           <span className="text-[8px] text-gray-400 block">Esposa</span>
-                          <span className="text-[10px] font-bold text-gray-800">Clara Sánchez</span>
+                          <span className="font-bold text-gray-800">María de Jesús (Mary)</span>
                         </div>
                         <div className="bg-white p-2 rounded-xl border border-gray-100">
-                          <span className="text-[8px] text-gray-400 block">Hijo/a</span>
-                          <span className="text-[10px] font-bold text-gray-800">Rito Herrera</span>
+                          <span className="text-[8px] text-gray-400 block">Hijos</span>
+                          <span className="font-bold text-gray-800">Javier, Valeria, Edgar, Ulises, Aníbal</span>
                         </div>
                       </div>
                     </div>
@@ -521,52 +536,193 @@ export default function FatherLanding() {
                       <h5 className="text-[10px] font-bold text-blue-600 tracking-widest uppercase flex items-center gap-2">
                         <Award size={12} /> Escudos de Valores
                       </h5>
-                      <div className="flex gap-2 justify-center">
-                        <span className="px-2 py-1 bg-orange-50 border border-orange-100 rounded-full text-[9px] font-bold text-orange-600">🔨 Esfuerzo</span>
-                        <span className="px-2 py-1 bg-orange-50 border border-orange-100 rounded-full text-[9px] font-bold text-orange-600">❤️ Humildad</span>
+                      <div className="flex gap-2 justify-center flex-wrap">
+                        <span className="px-2.5 py-1 bg-orange-50 border border-orange-100 rounded-full text-[9px] font-bold text-orange-600">🛡️ Valor Inquebrantable</span>
+                        <span className="px-2.5 py-1 bg-orange-50 border border-orange-100 rounded-full text-[9px] font-bold text-orange-600">🛡️ Dedicación al Trabajo</span>
+                        <span className="px-2.5 py-1 bg-orange-50 border border-orange-100 rounded-full text-[9px] font-bold text-orange-600">🛡️ Amor Familiar</span>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* VISTA PREVIA 2: CERTIFICADO IMPRESO (Efecto Cuadro de Madera) */}
+              {/* VISTA PREVIA 2: CERTIFICADO IMPRESO (Efecto Cuadro de Madera Realista - Fiel a la foto) */}
               {previewTab === 'pdf' && (
-                <div className="mx-auto w-[360px] bg-amber-50 rounded-2xl shadow-2xl p-5 border-[16px] border-amber-900 relative font-outfit animate-in fade-in duration-500">
-                  {/* Textura de Madera simulada */}
-                  <div className="absolute inset-0 border-4 border-amber-950/20 pointer-events-none rounded-sm"></div>
+                <div className="mx-auto w-[380px] sm:w-[440px] bg-neutral-900 rounded-2xl shadow-2xl p-4 border-[14px] border-neutral-950 relative font-serif animate-in fade-in duration-500">
+                  {/* Borde interno metalizado */}
+                  <div className="absolute inset-0 border-2 border-amber-800/10 pointer-events-none rounded-md"></div>
                   
-                  {/* Contenido del Homenaje */}
-                  <div className="bg-[#FFFDF9] border-2 border-amber-600/30 p-6 text-center space-y-4 rounded-sm">
-                    <div className="w-8 h-8 mx-auto text-amber-600 opacity-60">
-                      <Award size={32} />
+                  {/* El Canvas de la biografía impreso */}
+                  <div className="bg-[#FAF7F0] border-[1px] border-amber-800/40 p-4 text-[#1C2A39] rounded-sm space-y-4 relative shadow-inner">
+                    {/* Borde fino doble */}
+                    <div className="absolute inset-1.5 border border-amber-800/20 pointer-events-none"></div>
+                    <div className="absolute top-1 left-1 w-3 h-3 border-t border-l border-amber-800/30"></div>
+                    <div className="absolute top-1 right-1 w-3 h-3 border-t border-r border-amber-800/30"></div>
+                    <div className="absolute bottom-1 left-1 w-3 h-3 border-b border-l border-amber-800/30"></div>
+                    <div className="absolute bottom-1 right-1 w-3 h-3 border-b border-r border-amber-800/30"></div>
+
+                    {/* HEADER */}
+                    <div className="text-center pt-1 z-10 relative">
+                      <span className="text-[6px] font-bold tracking-[0.25em] uppercase text-gray-500 block mb-0.5">La Historia De</span>
+                      <h4 className="text-lg font-black tracking-wide uppercase text-[#1C2A39] leading-none">
+                        JAVIER RAYAS
+                      </h4>
+                      <span className="text-[6.5px] italic font-semibold text-amber-700 tracking-wider block mt-1">
+                        — Una vida que dejó huella —
+                      </span>
                     </div>
-                    
-                    <span className="text-[8px] font-black text-amber-700 uppercase tracking-widest block">
-                      HOMENAJE DE VIDA Y LEGADO
-                    </span>
-                    
-                    <h4 className="text-lg font-playfair font-bold text-amber-950">
-                      José Herrera Salazar
-                    </h4>
-                    
-                    <div className="w-16 h-[1px] bg-amber-500/40 mx-auto"></div>
-                    
-                    <p className="text-[10px] text-amber-900/80 italic font-playfair leading-relaxed max-w-[240px] mx-auto">
-                      "Por ser el pilar inquebrantable de nuestro hogar, por labrar el campo con esfuerzo honesto y por enseñarnos con el ejemplo que el amor a la familia es el verdadero legado."
-                    </p>
-                    
-                    <div className="pt-2 flex justify-between items-end">
-                      <div className="text-left">
-                        <span className="text-[7px] text-amber-800/60 uppercase block">Fecha</span>
-                        <span className="text-[8px] font-bold text-amber-900">Día del Padre, 2026</span>
+
+                    {/* FILA SUPERIOR: 3 COLUMNAS */}
+                    <div className="grid grid-cols-12 gap-2.5 items-stretch min-h-[145px] relative z-10">
+                      {/* Columna Izquierda: Significado del Nombre */}
+                      <div className="col-span-3 border border-amber-800/20 p-2 rounded bg-white/40 flex flex-col justify-center text-center relative">
+                        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-[#FAF7F0] px-1 text-[5px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                          Significado de Nombre
+                        </span>
+                        <h5 className="text-[10px] font-bold italic text-amber-950 mt-1">Javier</h5>
+                        <p className="text-[5.5px] leading-relaxed text-gray-700 mt-1">
+                          De origen vasco, significa <strong>"casa nueva"</strong> y <strong>"castillo nuevo"</strong>. Con la fuerza de su nombre, ha edificado una vida de amor y dedicación.
+                        </p>
                       </div>
-                      
-                      {/* Código QR Realista */}
-                      <div className="bg-white p-1.5 border border-amber-600/20 rounded-md flex flex-col items-center gap-1">
-                        <QrCode size={36} className="text-amber-950" />
-                        <span className="text-[6px] font-bold text-amber-800 tracking-wider">ESCANEA</span>
+
+                      {/* Columna Central: Foto Circular con Laureles */}
+                      <div className="col-span-6 flex flex-col items-center justify-center text-center relative">
+                        <div className="relative w-24 h-24 flex items-center justify-center">
+                          {/* Laureles de fondo simulados en SVG */}
+                          <svg viewBox="0 0 100 100" fill="none" className="absolute w-[115%] h-[115%] opacity-85 stroke-amber-700/40">
+                            <path d="M 25,75 C 10,60 10,40 25,25 C 30,20 40,15 50,25 C 60,15 70,20 75,25 C 90,40 90,60 75,75" strokeWidth="1.5" strokeLinecap="round" />
+                            <circle cx="20" cy="50" r="1.5" fill="#B69D74" />
+                            <circle cx="80" cy="50" r="1.5" fill="#B69D74" />
+                          </svg>
+                          {/* Foto */}
+                          <div className="w-18 h-18 rounded-full overflow-hidden border-4 border-white shadow-md relative z-10">
+                            <img src="/papa-sorpresa.png" alt="Javier" className="w-full h-full object-cover sepia-[0.1]" />
+                          </div>
+                        </div>
+                        <p className="text-[6.5px] italic font-medium mt-2 text-gray-700 leading-snug px-2">
+                          "Javier, el hombre que con sus manos sembró un legado de amor y gratitud."
+                        </p>
+                        <span className="text-amber-600 text-[6px] mt-0.5">❤️</span>
                       </div>
+
+                      {/* Columna Derecha: Lo que dicen de el */}
+                      <div className="col-span-3 border border-amber-800/20 p-2 rounded bg-white/40 flex flex-col justify-start relative">
+                        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-[#FAF7F0] px-1 text-[5px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                          Lo que dicen de él
+                        </span>
+                        <div className="space-y-1.5 mt-1">
+                          <p className="text-[5.5px] text-gray-700 leading-snug">
+                            ⭐ <em>Su apoyo y consejos siempre fueron su fortaleza.</em>
+                          </p>
+                          <p className="text-[5.5px] text-gray-700 leading-snug">
+                            ⭐ <em>Trabajador honesto y de un corazón inmenso.</em>
+                          </p>
+                          <p className="text-[5.5px] text-gray-700 leading-snug">
+                            ⭐ <em>Su ejemplo ha enseñado el verdadero valor de la familia.</em>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* FILA MEDIA: APELLIDOS & SHIELDS */}
+                    <div className="grid grid-cols-12 gap-2.5 items-stretch min-h-[75px] relative z-10">
+                      {/* Origen del apellido */}
+                      <div className="col-span-4 border border-amber-800/20 p-2 rounded bg-white/40 flex flex-col justify-center text-center relative">
+                        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-[#FAF7F0] px-1 text-[5px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                          Origen del Apellido
+                        </span>
+                        <h5 className="text-[8px] font-bold italic text-amber-950 mt-0.5">Rayas</h5>
+                        <p className="text-[5.5px] leading-relaxed text-gray-700">
+                          Apellido hispánico español asociado a límites o caminos. Lo llevó con la rectitud de quien traza su sendero con esfuerzo.
+                        </p>
+                      </div>
+
+                      {/* Biografía y Escudos */}
+                      <div className="col-span-8 border border-amber-800/20 p-2 rounded bg-white/40 flex flex-col justify-center relative">
+                        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-[#FAF7F0] px-1 text-[5px] font-bold tracking-wider text-gray-500 uppercase whitespace-nowrap">
+                          Su Biografía
+                        </span>
+                        <p className="text-[5.5px] text-center italic text-gray-400 mb-1.5">Los valores y pilares de su historia de vida</p>
+                        <div className="flex justify-around items-center">
+                          <div className="flex flex-col items-center text-center">
+                            <span className="text-amber-700 text-xs">🛡️</span>
+                            <span className="text-[5.5px] font-bold mt-0.5 text-gray-800">VALOR</span>
+                          </div>
+                          <div className="flex flex-col items-center text-center">
+                            <span className="text-amber-700 text-xs">💼</span>
+                            <span className="text-[5.5px] font-bold mt-0.5 text-gray-800">TRABAJO</span>
+                          </div>
+                          <div className="flex flex-col items-center text-center">
+                            <span className="text-amber-700 text-xs">❤️</span>
+                            <span className="text-[5.5px] font-bold mt-0.5 text-gray-800">AMOR FAMILIAR</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* LÍNEA DEL TIEMPO */}
+                    <div className="border border-amber-800/20 p-2 rounded bg-white/40 relative z-10">
+                      <span className="absolute -top-1.5 left-4 bg-[#FAF7F0] px-1 text-[5px] font-bold tracking-wider text-gray-500 uppercase">
+                        Línea del Tiempo
+                      </span>
+                      <div className="flex items-center justify-between text-center pt-1 px-1">
+                        <div className="w-[18%]">
+                          <span className="text-[6px] font-bold text-amber-800 block">Infancia</span>
+                          <span className="text-[4.5px] text-gray-500 block leading-tight">Donde empezó su historia.</span>
+                        </div>
+                        <span className="text-gray-300 text-[6px]">➔</span>
+                        <div className="w-[18%]">
+                          <span className="text-[6px] font-bold text-amber-800 block">Adolescente</span>
+                          <span className="text-[4.5px] text-gray-500 block leading-tight">Cultivando con pasión.</span>
+                        </div>
+                        <span className="text-gray-300 text-[6px]">➔</span>
+                        <div className="w-[18%]">
+                          <span className="text-[6px] font-bold text-amber-800 block">Trabajó E.U.</span>
+                          <span className="text-[4.5px] text-gray-500 block leading-tight">Esfuerzo y sacrificio.</span>
+                        </div>
+                        <span className="text-gray-300 text-[6px]">➔</span>
+                        <div className="w-[18%]">
+                          <span className="text-[6px] font-bold text-amber-800 block">La Sandía</span>
+                          <span className="text-[4.5px] text-gray-500 block leading-tight">Trabajo y cosecha.</span>
+                        </div>
+                        <span className="text-gray-300 text-[6px]">➔</span>
+                        <div className="w-[18%]">
+                          <span className="text-[6px] font-bold text-amber-800 block">El Arrullo</span>
+                          <span className="text-[4.5px] text-gray-500 block leading-tight">Su legado familiar.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* FILA INFERIOR: LEGADO VIVE EN, MENSAJE, QR */}
+                    <div className="grid grid-cols-12 gap-2 items-center relative z-10 pt-1">
+                      {/* Legado Vive En */}
+                      <div className="col-span-3 text-center">
+                        <span className="text-[5px] font-black uppercase text-gray-400 tracking-wider block">Su Legado Vive En</span>
+                        <p className="text-[5px] font-semibold text-gray-700 leading-tight mt-1">
+                          Mary, Javier, Valeria, Edgar, Ulises, Aníbal
+                        </p>
+                      </div>
+
+                      {/* Mensaje */}
+                      <div className="col-span-6 text-center border-x border-amber-800/10 px-2">
+                        <span className="text-[5px] font-black uppercase text-gray-400 tracking-wider block">Mensaje para él</span>
+                        <p className="text-[5px] text-gray-700 italic leading-normal mt-0.5">
+                          "Hoy celebramos al hombre que ha sido nuestro guía y mayor apoyo. Gracias por tu amor incondicional. Tu historia es épica, tu legado eterno."
+                        </p>
+                      </div>
+
+                      {/* QR Code */}
+                      <div className="col-span-3 flex flex-col items-center text-center">
+                        <div className="bg-white p-1 border border-amber-600/10 rounded">
+                          <QrCode size={24} className="text-[#1C2A39]" />
+                        </div>
+                        <span className="text-[4.5px] font-bold text-gray-500 tracking-wide mt-1">ESCANEA CANCIÓN</span>
+                      </div>
+                    </div>
+
+                    {/* Footer text */}
+                    <div className="text-center text-[5.5px] font-bold tracking-[0.2em] text-amber-900/60 pt-1">
+                      UNA VIDA QUE INSPIRA, UN LEGADO QUE PERDURA.
                     </div>
                   </div>
                 </div>
@@ -586,20 +742,20 @@ export default function FatherLanding() {
                     <div className="p-4 bg-blush-50/40 rounded-2xl border border-blush-100/50">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Nombre</span>
-                        <span className="text-sm font-bold text-gray-800">JOSÉ</span>
+                        <span className="text-sm font-bold text-gray-800">JAVIER</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                        Proviene del hebreo y significa <strong>"El que añade"</strong> o <strong>"El que prospera"</strong>. Simboliza a una persona protectora, dedicada a proveer seguridad y multiplicar el bienestar de sus seres queridos.
+                        Proviene del euskera y significa <strong>"casa nueva"</strong> o <strong>"castillo nuevo"</strong>. Simboliza a un hombre protector, que cimienta la seguridad de su hogar y edifica su vida con bases sólidas de lealtad y amor incondicional.
                       </p>
                     </div>
 
                     <div className="p-4 bg-blush-50/40 rounded-2xl border border-blush-100/50">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Apellido</span>
-                        <span className="text-sm font-bold text-gray-800">HERRERA</span>
+                        <span className="text-sm font-bold text-gray-800">RAYAS</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                        De origen ocupacional, derivado del arte de la forja del hierro. Representa **fuerza, tenacidad, templanza y resiliencia**. Una estirpe que moldea el futuro con el esfuerzo de sus propias manos.
+                        Apellido de origen español. Históricamente hace referencia a límites, marcas de tierras o caminos. Simboliza **rectitud, determinación y la capacidad de labrar y trazar un sendero propio** e inconfundible con paso firme.
                       </p>
                     </div>
                   </div>
