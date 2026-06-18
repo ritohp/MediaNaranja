@@ -13,7 +13,9 @@ import {
   Calendar,
   Users,
   Award,
-  Heart
+  Heart,
+  QrCode,
+  Shield
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -24,6 +26,7 @@ export default function FatherLanding() {
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [previewTab, setPreviewTab] = useState<'biografia' | 'pdf' | 'significado'>('biografia');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -372,38 +375,238 @@ export default function FatherLanding() {
         </div>
       </section>
 
-      {/* --- SECCIÓN MOSTRANDO LA BIOGRAFÍA DIGITAL --- */}
-      <section className="py-20 px-6 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div>
-          <img 
-            src="/papa-sorpresa.png" 
-            alt="Biografía Digital Interactiva" 
-            className="w-full h-auto rounded-[2.5rem] shadow-2xl border-4 border-white"
-          />
-        </div>
-        <div className="space-y-6 font-outfit">
-          <span className="text-xs font-black text-blue-600 uppercase tracking-widest block">
-            Portal Familiar
+      {/* --- SECCIÓN DETALLE INTERACTIVO: EXPLORA EL HOMENAJE --- */}
+      <section className="py-24 px-6 max-w-6xl mx-auto bg-gradient-to-b from-white to-[#FFFBF7] rounded-[3rem] border border-orange-100/30 my-12 shadow-sm">
+        <div className="text-center space-y-4 mb-16">
+          <span className="text-xs font-black text-blue-600 uppercase tracking-widest block font-outfit">
+            ¿Qué vas a recibir?
           </span>
-          <h2 className="text-3xl md:text-4xl font-playfair font-bold text-gray-900 leading-tight">
-            La Biografía Digital Interactiva
+          <h2 className="text-4xl md:text-5xl font-playfair font-bold text-gray-900 leading-tight">
+            Explora cada elemento del Homenaje
           </h2>
-          <p className="text-gray-500 leading-relaxed">
-            Al adquirir la canción, no solo te llevas un archivo de audio. También desbloqueas una **página web única y privada** para tu papá que contiene:
+          <p className="text-gray-500 font-outfit max-w-2xl mx-auto">
+            Interactúa con los botones de abajo para ver una vista previa interactiva de lo que crearemos para tu papá.
           </p>
-          <ul className="space-y-3">
-            {[
-              "Línea de tiempo biográfica interactiva",
-              "Árbol con las personas pilares de su vida",
-              "Una dedicatoria firmada por los hijos y nietos",
-              "Galeria de recuerdos familiares",
-              "Reproductor musical integrado"
-            ].map((item, index) => (
-              <li key={index} className="flex items-center gap-3 text-sm text-gray-600 font-semibold">
-                <CheckCircle2 size={16} className="text-blue-500" /> {item}
-              </li>
-            ))}
-          </ul>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Lado izquierdo: Selector de Elementos */}
+          <div className="lg:col-span-5 space-y-4">
+            <button
+              onClick={() => setPreviewTab('biografia')}
+              className={`w-full text-left p-6 rounded-3xl border transition-all flex items-start gap-4 font-outfit ${
+                previewTab === 'biografia'
+                  ? 'bg-white border-blue-500 shadow-lg ring-1 ring-blue-500'
+                  : 'bg-white/50 border-gray-150 hover:bg-white hover:shadow-md'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                <BookOpen size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 text-base">📱 Portal de Biografía Digital</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Una página web interactiva con reproductor musical, árbol de pilares familiares, dedicatorias y fotos familiares.
+                </p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setPreviewTab('pdf')}
+              className={`w-full text-left p-6 rounded-3xl border transition-all flex items-start gap-4 font-outfit ${
+                previewTab === 'pdf'
+                  ? 'bg-white border-blue-500 shadow-lg ring-1 ring-blue-500'
+                  : 'bg-white/50 border-gray-150 hover:bg-white hover:shadow-md'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 flex-shrink-0">
+                <FileText size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 text-base">📄 Certificado Homenaje (PDF)</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Certificado oficial en PDF listo para enmarcar con diseño premium, dedicatoria especial y un código QR de acceso rápido.
+                </p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setPreviewTab('significado')}
+              className={`w-full text-left p-6 rounded-3xl border transition-all flex items-start gap-4 font-outfit ${
+                previewTab === 'significado'
+                  ? 'bg-white border-blue-500 shadow-lg ring-1 ring-blue-500'
+                  : 'bg-white/50 border-gray-150 hover:bg-white hover:shadow-md'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                <Shield size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 text-base">✨ Significado de Nombre y Apellido</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Un análisis poético detallado del origen de su nombre y el legado heráldico de su apellido integrado en su homenaje.
+                </p>
+              </div>
+            </button>
+          </div>
+
+          {/* Lado derecho: Visualizador del Mockup */}
+          <div className="lg:col-span-7 flex justify-center">
+            <div className="w-full max-w-md bg-transparent relative">
+              {/* VISTA PREVIA 1: BIOGRAFÍA DIGITAL (Simulador de Teléfono) */}
+              {previewTab === 'biografia' && (
+                <div className="mx-auto w-[320px] h-[580px] bg-slate-950 rounded-[3rem] p-3 shadow-2xl border-[6px] border-slate-800 relative overflow-hidden animate-in fade-in duration-500">
+                  {/* Cámara/Notch */}
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl z-20 flex justify-center items-center">
+                    <div className="w-3 h-3 bg-slate-900 rounded-full"></div>
+                  </div>
+
+                  {/* Contenido Pantalla */}
+                  <div className="w-full h-full bg-[#FFFBF7] rounded-[2.5rem] overflow-y-auto px-4 pt-10 pb-8 space-y-6 font-outfit selection:bg-orange-200 scrollbar-none">
+                    <div className="text-center pt-2">
+                      <span className="text-[9px] font-black tracking-widest text-blue-600 uppercase">Homenaje Activo</span>
+                      <h4 className="text-xl font-playfair font-bold text-gray-900 mt-1">El Legado de José</h4>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Creado por su familia</p>
+                    </div>
+
+                    {/* Mini Player */}
+                    <div className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center gap-3 shadow-sm">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center">
+                        <Play size={16} fill="currentColor" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="text-xs font-bold text-gray-800 truncate">El Corrido de Don José</h5>
+                        <p className="text-[9px] text-gray-400 truncate">Corrido / Ranchero Norteño</p>
+                      </div>
+                    </div>
+
+                    {/* Timeline */}
+                    <div className="space-y-4">
+                      <h5 className="text-[10px] font-bold text-blue-600 tracking-widest uppercase flex items-center gap-2">
+                        <Calendar size={12} /> Línea de Tiempo
+                      </h5>
+                      <div className="border-l-2 border-orange-100 ml-2 pl-4 space-y-4">
+                        <div className="relative">
+                          <div className="absolute -left-[22px] top-1.5 w-2.5 h-2.5 bg-orange-400 rounded-full"></div>
+                          <span className="text-[9px] font-bold text-orange-600 block">1955 - Nació en León</span>
+                          <p className="text-[10px] text-gray-500 mt-0.5">Hijo de campesinos, donde aprendió el amor por la tierra.</p>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute -left-[22px] top-1.5 w-2.5 h-2.5 bg-orange-400 rounded-full"></div>
+                          <span className="text-[9px] font-bold text-orange-600 block">1978 - Formó una Familia</span>
+                          <p className="text-[10px] text-gray-500 mt-0.5">Se casó con Clara y juntos criaron 3 hijos con valores honestos.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pilares Familiares */}
+                    <div className="space-y-2">
+                      <h5 className="text-[10px] font-bold text-blue-600 tracking-widest uppercase flex items-center gap-2">
+                        <Users size={12} /> Árbol Familiar
+                      </h5>
+                      <div className="grid grid-cols-2 gap-2 text-center">
+                        <div className="bg-white p-2 rounded-xl border border-gray-100">
+                          <span className="text-[8px] text-gray-400 block">Esposa</span>
+                          <span className="text-[10px] font-bold text-gray-800">Clara Sánchez</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-xl border border-gray-100">
+                          <span className="text-[8px] text-gray-400 block">Hijo/a</span>
+                          <span className="text-[10px] font-bold text-gray-800">Rito Herrera</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Escudos de Legado */}
+                    <div className="space-y-2">
+                      <h5 className="text-[10px] font-bold text-blue-600 tracking-widest uppercase flex items-center gap-2">
+                        <Award size={12} /> Escudos de Valores
+                      </h5>
+                      <div className="flex gap-2 justify-center">
+                        <span className="px-2 py-1 bg-orange-50 border border-orange-100 rounded-full text-[9px] font-bold text-orange-600">🔨 Esfuerzo</span>
+                        <span className="px-2 py-1 bg-orange-50 border border-orange-100 rounded-full text-[9px] font-bold text-orange-600">❤️ Humildad</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* VISTA PREVIA 2: CERTIFICADO IMPRESO (Efecto Cuadro de Madera) */}
+              {previewTab === 'pdf' && (
+                <div className="mx-auto w-[360px] bg-amber-50 rounded-2xl shadow-2xl p-5 border-[16px] border-amber-900 relative font-outfit animate-in fade-in duration-500">
+                  {/* Textura de Madera simulada */}
+                  <div className="absolute inset-0 border-4 border-amber-950/20 pointer-events-none rounded-sm"></div>
+                  
+                  {/* Contenido del Homenaje */}
+                  <div className="bg-[#FFFDF9] border-2 border-amber-600/30 p-6 text-center space-y-4 rounded-sm">
+                    <div className="w-8 h-8 mx-auto text-amber-600 opacity-60">
+                      <Award size={32} />
+                    </div>
+                    
+                    <span className="text-[8px] font-black text-amber-700 uppercase tracking-widest block">
+                      HOMENAJE DE VIDA Y LEGADO
+                    </span>
+                    
+                    <h4 className="text-lg font-playfair font-bold text-amber-950">
+                      José Herrera Salazar
+                    </h4>
+                    
+                    <div className="w-16 h-[1px] bg-amber-500/40 mx-auto"></div>
+                    
+                    <p className="text-[10px] text-amber-900/80 italic font-playfair leading-relaxed max-w-[240px] mx-auto">
+                      "Por ser el pilar inquebrantable de nuestro hogar, por labrar el campo con esfuerzo honesto y por enseñarnos con el ejemplo que el amor a la familia es el verdadero legado."
+                    </p>
+                    
+                    <div className="pt-2 flex justify-between items-end">
+                      <div className="text-left">
+                        <span className="text-[7px] text-amber-800/60 uppercase block">Fecha</span>
+                        <span className="text-[8px] font-bold text-amber-900">Día del Padre, 2026</span>
+                      </div>
+                      
+                      {/* Código QR Realista */}
+                      <div className="bg-white p-1.5 border border-amber-600/20 rounded-md flex flex-col items-center gap-1">
+                        <QrCode size={36} className="text-amber-950" />
+                        <span className="text-[6px] font-bold text-amber-800 tracking-wider">ESCANEA</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* VISTA PREVIA 3: SIGNIFICADO DE NOMBRE */}
+              {previewTab === 'significado' && (
+                <div className="mx-auto w-full max-w-sm bg-white rounded-3xl p-6 border-2 border-naranja-100 shadow-xl space-y-6 font-outfit animate-in fade-in duration-500">
+                  <div className="text-center">
+                    <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                      Análisis de Legado
+                    </span>
+                    <h4 className="text-xl font-bold text-gray-800 mt-2">Significado de su Nombre</h4>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blush-50/40 rounded-2xl border border-blush-100/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Nombre</span>
+                        <span className="text-sm font-bold text-gray-800">JOSÉ</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                        Proviene del hebreo y significa <strong>"El que añade"</strong> o <strong>"El que prospera"</strong>. Simboliza a una persona protectora, dedicada a proveer seguridad y multiplicar el bienestar de sus seres queridos.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-blush-50/40 rounded-2xl border border-blush-100/50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Apellido</span>
+                        <span className="text-sm font-bold text-gray-800">HERRERA</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                        De origen ocupacional, derivado del arte de la forja del hierro. Representa **fuerza, tenacidad, templanza y resiliencia**. Una estirpe que moldea el futuro con el esfuerzo de sus propias manos.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
