@@ -106,6 +106,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    let intervalId: any;
     const checkAdmin = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -115,6 +116,11 @@ export default function AdminDashboard() {
         }
         setChecking(false);
         await fetchData();
+
+        // Configurar actualización automática en tiempo real cada 10 segundos
+        intervalId = setInterval(() => {
+          fetchData();
+        }, 10000);
       } catch (err) {
         console.error("Auth check failed:", err);
       } finally {
@@ -122,6 +128,10 @@ export default function AdminDashboard() {
       }
     };
     checkAdmin();
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [navigate]);
 
   const handleResetTokens = async (userId: string) => {
@@ -490,6 +500,10 @@ export default function AdminDashboard() {
               <button onClick={() => setActiveTab('recientes')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'recientes' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Recientes</button>
               <button onClick={() => setActiveTab('marketing')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'marketing' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Marketing</button>
           </div>
+        </div>
+        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm">
+          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+          <span className="text-[9px] font-black uppercase tracking-widest">En Vivo (10s)</span>
         </div>
       </nav>
 
