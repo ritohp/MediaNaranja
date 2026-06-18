@@ -115,6 +115,14 @@ export default function FatherLanding() {
   };
 
   const handleStart = () => {
+    // Meta Pixel event to track initialization of song creation
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'InitiateCheckout', {
+        content_name: 'Crear Canción Papá',
+        currency: 'MXN',
+        value: 0.00
+      });
+    }
     localStorage.removeItem('mn_draft_song');
     navigate('/crear-cancion?flow=papa');
   };
