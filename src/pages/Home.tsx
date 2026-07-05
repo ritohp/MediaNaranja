@@ -69,49 +69,56 @@ export default function Home() {
         }
       `}</style>
 
-      {/* --- 1. SECCIÓN ESPECIAL: DÍA DEL PADRE --- */}
-      <section className="py-20 px-6 relative overflow-hidden bg-gradient-to-b from-[#FFFBF7] to-[#F0F7FF] border-b border-blue-50">
+      {/* --- 1. HERO: EL REGALO MÁS EMOTIVO --- */}
+      <section className="py-20 px-6 relative overflow-hidden bg-gradient-to-b from-[#FFFBF7] to-[#FFF0F0] border-b border-orange-50">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
           <div className="order-2 lg:order-1 space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 text-[10px] font-black uppercase tracking-widest">
-              El Regalo Definitivo
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-50 text-[#FF6B00] rounded-full border border-orange-100 text-[10px] font-black uppercase tracking-widest shadow-sm">
+              <Sparkles size={14} /> El Regalo Inolvidable
             </div>
             <h2 className="text-6xl md:text-8xl font-playfair leading-[1] text-[#1A1A1A]">
-              Para el rey de la casa, <br />
-              <span className="italic text-blue-600">su Biografía Digital.</span>
+              Hazle llorar de felicidad con <br />
+              <span className="italic text-gradient">su propia canción.</span>
             </h2>
             <p className="text-xl text-gray-500 font-outfit leading-relaxed max-w-lg">
-              Mucho más que una canción. Inmortaliza su historia, anécdotas, origen y pilares familiares en un <strong>Homenaje Digital Interactivo</strong> y una composición musical premium hecha a su medida. 
+              Convierte sus anécdotas, virtudes y recuerdos juntos en una pieza musical digna de la radio. Un regalo único que tocará su alma para siempre. 
             </p>
-            <div className="p-6 bg-white/70 backdrop-blur border border-blue-100 rounded-3xl space-y-3">
-              <p className="text-sm text-gray-600 font-outfit">
-                ✨ <strong>PDF Premium e Imprimible con QR:</strong> Una vez desbloqueada, descarga un hermoso certificado listo para enmarcar. Cualquiera en la familia podrá escanear el código QR para escuchar su canción y leer su biografía. Listo para compartir por WhatsApp.
-              </p>
-              <p className="text-sm font-bold text-blue-600 font-outfit italic">
-                🎁 Créala 100% gratis en menos de 8 minutos. Paga únicamente si te emociona hasta las lágrimas.
-              </p>
+            <div className="p-6 bg-white/70 backdrop-blur border border-orange-100 rounded-3xl space-y-4 shadow-xl shadow-orange-100/50">
+              <div className="flex gap-4 items-start">
+                <div className="p-2 bg-orange-100 text-[#FF6B00] rounded-full shrink-0"><Music size={20} /></div>
+                <p className="text-sm text-gray-600 font-outfit pt-1">
+                  <strong>Magia en 3 minutos:</strong> Cuéntanos su historia o graba una nota de voz. Nuestro estudio virtual compondrá y producirá su canción al instante.
+                </p>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="p-2 bg-pink-100 text-[#FF2D55] rounded-full shrink-0"><Heart size={20} /></div>
+                <p className="text-sm text-gray-600 font-outfit pt-1">
+                  <strong>Escúchala 100% GRATIS:</strong> Prueba la plataforma y escucha el resultado completo. Paga únicamente si te emociona hasta las lágrimas.
+                </p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 pt-2">
-              {["Creación Gratis en 8 Min", "Imprimible con Código QR", "Fácil por WhatsApp", "Paga si te encanta"].map((tag, i) => (
-                <span key={i} className="px-3.5 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-bold font-outfit border border-blue-100/50">{tag}</span>
+              {["Cero Riesgo", "Entrega Inmediata", "Estudio Profesional", "Letra 100% Personalizada"].map((tag, i) => (
+                <span key={i} className="px-3.5 py-1.5 bg-white text-gray-600 rounded-full text-xs font-bold font-outfit border border-orange-100 shadow-sm">{tag}</span>
               ))}
             </div>
             <button 
-              onClick={() => { localStorage.removeItem('mn_draft_song'); navigate('/crear-cancion?category=papa'); }}
-              className="w-full sm:w-auto px-12 py-6 bg-blue-600 text-white rounded-2xl font-outfit font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:shadow-blue-200 transition-all flex items-center justify-center gap-3 animate-pulse"
+              onClick={() => { localStorage.removeItem('mn_draft_song'); navigate('/crear-cancion'); }}
+              className="w-full sm:w-auto px-12 py-6 bg-brand-gradient text-white rounded-2xl font-outfit font-black text-sm uppercase tracking-[0.3em] shadow-2xl hover:shadow-orange-300 transition-all flex items-center justify-center gap-3 hover:scale-105"
             >
-              Crear Biografía Gratis <BookOpen size={18} />
+              Escuchar mi canción gratis <ArrowRight size={20} />
             </button>
           </div>
           <div className="order-1 lg:order-2 relative group">
-            <div className="absolute -inset-4 bg-blue-200/20 blur-3xl rounded-full"></div>
+            <div className="absolute -inset-10 bg-orange-200/30 blur-[80px] rounded-full"></div>
             <img 
-              src="/papa-sorpresa.png" 
-              alt="Papá emocionado" 
+              src="/pareja-amor.png" 
+              alt="Emoción al escuchar la canción" 
               className="relative z-10 w-full h-auto rounded-[3rem] shadow-2xl border-4 border-white animate-float"
             />
-            <div className="absolute -bottom-8 -right-8 glass-premium p-8 rounded-3xl space-y-2 max-w-[280px] z-20">
-               <p className="text-lg font-playfair italic">"Es el mejor regalo que me han dado jamás..."</p>
+            <div className="absolute -bottom-8 -left-8 glass-premium p-6 rounded-3xl space-y-2 max-w-[280px] z-20 shadow-2xl">
+               <div className="flex gap-1 text-[#FF6B00] mb-2"><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /></div>
+               <p className="text-sm font-playfair italic text-gray-700">"Lloró apenas escuchó su nombre en el primer verso. Fue el mejor regalo de nuestra vida."</p>
             </div>
           </div>
         </div>
