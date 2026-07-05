@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt, generateInfographicData } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import TributeAddon from '../components/tribute/TributeAddon';
+import VoiceRecorder from '../components/VoiceRecorder';
 
 export default function CreateSong() {
   const navigate = useNavigate();
@@ -1121,14 +1122,13 @@ INSTRUCCIONES:
                           <div>
                             <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> Historia, Enseñanzas y Anécdotas</h3>
                             <p className="text-ink-600/70 text-sm italic mt-2">Cuéntanos hitos importantes de su vida, anécdotas divertidas y enseñanzas que te dejó.</p>
-                            <textarea 
-                              name="specificDetails"
-                              value={formData.specificDetails || ''}
-                              onChange={handleChange}
-                              placeholder="Ej: Empezó trabajando desde muy joven en el campo, luego se mudó a la ciudad y fundó su propio taller. Siempre nos enseñó que la familia es lo primero. Un día se cayó de una bicicleta persiguiendo un perro y toda la cuadra se rió con él..."
-                              className="w-full h-36 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all font-medium"
-                              required
-                            ></textarea>
+                            <div className="mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5">
+                              <VoiceRecorder 
+                                initialText={formData.specificDetails}
+                                onTranscriptionComplete={(text) => setFormData({...formData, specificDetails: text})}
+                                placeholder="Ej: Empezó trabajando desde muy joven en el campo, luego se mudó a la ciudad y fundó su propio taller. Siempre nos enseñó que la familia es lo primero. Un día se cayó de una bicicleta persiguiendo un perro y toda la cuadra se rió con él..."
+                              />
+                            </div>
                           </div>
                         </>
                       ) : (
@@ -1137,14 +1137,13 @@ INSTRUCCIONES:
                           <div>
                             <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> {detailsPrompt.title}</h3>
                             <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
-                            <textarea 
-                              name="specificDetails"
-                              value={formData.specificDetails || ''}
-                              onChange={handleChange}
-                              placeholder={detailsPrompt.placeholder}
-                              className="w-full h-32 mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-naranja-400 text-base resize-none transition-all"
-                              required
-                            ></textarea>
+                            <div className="mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5">
+                              <VoiceRecorder 
+                                initialText={formData.specificDetails}
+                                onTranscriptionComplete={(text) => setFormData({...formData, specificDetails: text})}
+                                placeholder={detailsPrompt.placeholder}
+                              />
+                            </div>
                           </div>
 
                           <div>
@@ -1230,16 +1229,16 @@ INSTRUCCIONES:
                       <div className="p-3 bg-white rounded-full text-naranja-500 shadow-sm"><Mic size={24} /></div>
                       <div>
                         <h4 className="text-xl font-serif text-blush-800 leading-none">Mensaje Hablado Especial</h4>
-                        <p className="text-ink-600/70 text-xs mt-1 italic">Este texto se incluirá como una narración emotiva en medio de la canción.</p>
+                        <p className="text-ink-600/70 text-xs mt-1 italic">Este texto se incluirá como una narración emotiva en medio de la canción. Puedes escribirlo o grabarlo con tu voz.</p>
                       </div>
                     </div>
-                    <textarea 
-                      name="mensajeHablado"
-                      value={formData.mensajeHablado}
-                      onChange={handleChange}
-                      placeholder="Escribe las palabras exactas que quieres que se escuchen (ej: 'Te amo con todo mi ser, nunca lo olvides...')"
-                      className="w-full h-32 bg-white/80 border border-naranja-100 rounded-2xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-base font-medium resize-none shadow-inner"
-                    ></textarea>
+                    <div className="bg-white/80 border border-naranja-100 rounded-2xl p-6 shadow-inner">
+                      <VoiceRecorder 
+                        initialText={formData.mensajeHablado}
+                        onTranscriptionComplete={(text) => setFormData({...formData, mensajeHablado: text})}
+                        placeholder="Escribe o dicta las palabras exactas que quieres que se escuchen (ej: 'Te amo con todo mi ser, nunca lo olvides...')"
+                      />
+                    </div>
                   </div>
                 </div>
 

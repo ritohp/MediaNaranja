@@ -84,10 +84,10 @@ export default function MySongs() {
             
             // Trigger pixels purchase conversion
             if (window.fbq) {
-              window.fbq('track', 'Purchase', { value: 149.00, currency: 'MXN' });
+              window.fbq('track', 'Purchase', { value: 249.00, currency: 'MXN' });
             }
             if (window.ttq) {
-              window.ttq.track('CompletePayment', { value: 149.00, currency: 'MXN' });
+              window.ttq.track('CompletePayment', { value: 249.00, currency: 'MXN' });
             }
 
             setTimeout(() => {
@@ -109,10 +109,10 @@ export default function MySongs() {
 
             // Trigger pixels purchase conversion
             if (window.fbq) {
-              window.fbq('track', 'Purchase', { value: 149.00, currency: 'MXN' });
+              window.fbq('track', 'Purchase', { value: 249.00, currency: 'MXN' });
             }
             if (window.ttq) {
-              window.ttq.track('CompletePayment', { value: 149.00, currency: 'MXN' });
+              window.ttq.track('CompletePayment', { value: 249.00, currency: 'MXN' });
             }
 
             setTimeout(() => {
