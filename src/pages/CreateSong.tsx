@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt, generateInfographicData } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import TributeAddon from '../components/tribute/TributeAddon';
-import VoiceRecorder from '../components/VoiceRecorder';
+
 
 export default function CreateSong() {
   const navigate = useNavigate();
@@ -318,7 +318,7 @@ INSTRUCCIONES:
       }
 
       const combinedContext = `Idea base: ${finalContext}. Detalles: ${formData.specificDetails}. Familia: ${formData.familyNames}. Estilo deseado: ${formData.moodAndStyle}`;
-      const { questions, extractedName } = await generateInterviewQuestions(combinedContext, formData.category);
+      const { questions, extractedName } = await generateInterviewQuestions(combinedContext, formData.category, formData.nombreDestinatario || formData.childName || undefined);
       setAiQuestions(questions);
       
       // Si la IA encontró el nombre, lo guardamos si no está ya especificado por el usuario.
@@ -1123,11 +1123,14 @@ INSTRUCCIONES:
                             <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> Historia, Enseñanzas y Anécdotas</h3>
                             <p className="text-ink-600/70 text-sm italic mt-2">Cuéntanos hitos importantes de su vida, anécdotas divertidas y enseñanzas que te dejó.</p>
                             <div className="mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5">
-                              <VoiceRecorder 
-                                initialText={formData.specificDetails}
-                                onTranscriptionComplete={(text) => setFormData({...formData, specificDetails: text})}
+                              <textarea 
+                                name="specificDetails"
+                                value={formData.specificDetails || ''}
+                                onChange={handleChange}
                                 placeholder="Ej: Empezó trabajando desde muy joven en el campo, luego se mudó a la ciudad y fundó su propio taller. Siempre nos enseñó que la familia es lo primero. Un día se cayó de una bicicleta persiguiendo un perro y toda la cuadra se rió con él..."
-                              />
+                                className="w-full h-40 bg-transparent border-none outline-none resize-none text-base font-medium"
+                                required
+                              ></textarea>
                             </div>
                           </div>
                         </>
@@ -1138,11 +1141,14 @@ INSTRUCCIONES:
                             <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3"><BookOpen className="text-naranja-500" /> {detailsPrompt.title}</h3>
                             <p className="text-ink-600/70 text-sm italic mt-2">{detailsPrompt.subtitle}</p>
                             <div className="mt-4 bg-blush-50/50 border border-blush-200 rounded-2xl p-5">
-                              <VoiceRecorder 
-                                initialText={formData.specificDetails}
-                                onTranscriptionComplete={(text) => setFormData({...formData, specificDetails: text})}
+                              <textarea 
+                                name="specificDetails"
+                                value={formData.specificDetails || ''}
+                                onChange={handleChange}
                                 placeholder={detailsPrompt.placeholder}
-                              />
+                                className="w-full h-40 bg-transparent border-none outline-none resize-none text-base font-medium"
+                                required
+                              ></textarea>
                             </div>
                           </div>
 
@@ -1233,11 +1239,13 @@ INSTRUCCIONES:
                       </div>
                     </div>
                     <div className="bg-white/80 border border-naranja-100 rounded-2xl p-6 shadow-inner">
-                      <VoiceRecorder 
-                        initialText={formData.mensajeHablado}
-                        onTranscriptionComplete={(text) => setFormData({...formData, mensajeHablado: text})}
-                        placeholder="Escribe o dicta las palabras exactas que quieres que se escuchen (ej: 'Te amo con todo mi ser, nunca lo olvides...')"
-                      />
+                      <textarea 
+                        name="mensajeHablado"
+                        value={formData.mensajeHablado || ''}
+                        onChange={handleChange}
+                        placeholder="Escribe las palabras exactas que quieres que se escuchen (ej: 'Te amo con todo mi ser, nunca lo olvides...')"
+                        className="w-full h-32 bg-transparent border-none outline-none resize-none text-base font-medium"
+                      ></textarea>
                     </div>
                   </div>
                 </div>
@@ -1579,7 +1587,7 @@ INSTRUCCIONES:
                 </div>
 
                 {/* Mostrar el botón del Legado Digital si aplica */}
-                {formData.category === 'papa' && !formData.infographic_data && (
+                {/* formData.category === 'papa' && !formData.infographic_data && (
                   <div className="w-full bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-[#1C2A39]/10 shadow-xl relative overflow-hidden">
                     <TributeAddon 
                       song={{ 
@@ -1589,7 +1597,7 @@ INSTRUCCIONES:
                       }} 
                     />
                   </div>
-                )}
+                )*/}
                 <div className="pt-4">
                    <button onClick={() => setStep(1)} className="text-blush-400 text-xs font-bold hover:text-naranja-500 transition-all uppercase tracking-widest underline decoration-blush-200">
                     ¿PROBAR CON OTRA LETRA?
