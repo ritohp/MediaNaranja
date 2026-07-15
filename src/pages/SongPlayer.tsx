@@ -545,271 +545,7 @@ export default function SongPlayer() {
     ornament: 'rounded-none'
   };
 
-  // Función para renderizar el contenido infográfico compartido entre Web y PDF
-  const renderInfographicContent = (isPdf = false) => {
-    const legacyFullName = (infoData?.nameMeaning?.name && infoData?.lastNameMeaning?.lastName)
-      ? `${infoData.nameMeaning.name} ${infoData.lastNameMeaning.lastName}`.trim()
-      : recipient;
-      
-    return (
-    <div className={`relative ${isPdf ? 'w-[800px] p-12' : 'w-full p-6 md:p-12'} mx-auto`} style={{ fontFamily: 'Georgia, serif' }}>
-      
-      {/* Borde Decorativo */}
-      <div className={`absolute inset-4 border-[1.5px] ${tokens.border} z-0 opacity-60 ${theme === 'love' ? 'rounded-3xl' : ''}`}></div>
-      <div className={`absolute inset-[20px] border-[0.5px] ${tokens.border} z-0 opacity-40 ${theme === 'love' ? 'rounded-2xl' : ''}`}></div>
 
-      {/* Ornamentos Esquinas */}
-      <div className={`absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 ${tokens.border} z-0 ${tokens.ornament}`}></div>
-      <div className={`absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 ${tokens.border} z-0 ${tokens.ornament}`}></div>
-      <div className={`absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 ${tokens.border} z-0 ${tokens.ornament}`}></div>
-      <div className={`absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 ${tokens.border} z-0 ${tokens.ornament}`}></div>
-
-      <div className="relative z-10 text-center">
-        {/* Título Principal */}
-        <h3 className={`text-[#333] tracking-[0.2em] text-sm md:text-base font-semibold uppercase mb-2 mt-4`}>La Historia de</h3>
-        <h1 className={`text-4xl md:text-6xl ${tokens.text} font-bold uppercase tracking-widest mb-2`}>{legacyFullName}</h1>
-        <div className="flex items-center justify-center gap-4 mb-10 opacity-70">
-          <div className={`h-[2px] w-12 ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'}`}></div>
-          <span className={`${tokens.accent} uppercase tracking-[0.3em] text-xs font-bold`}>Una vida que dejó huella</span>
-          <div className={`h-[2px] w-12 ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'}`}></div>
-        </div>
-
-        {/* Anchor Graphic y Foto */}
-        <div className="flex flex-col items-center mb-8 relative">
-          <div className="z-20 mb-[-2.5rem] relative hidden">
-             <AnchorGraphic archetype={archetype} initialName={recipient} className="w-20 h-20" />
-          </div>
-          
-          <div className="relative flex items-center justify-center mt-6 w-56 h-56 md:w-72 md:h-72">
-            {/* Foto circular */}
-            <div className={`w-full h-full rounded-full overflow-hidden border-[6px] border-[#FDF8EE] shadow-xl relative z-10`}>
-              <img src={photoUrl} alt={recipient} className="w-full h-full object-cover sepia-[0.1] contrast-110" crossOrigin="anonymous"/>
-            </div>
-            {/* Laurels perfectamente centrados sobre la foto */}
-            <img src="/assets/laureles.png" alt="Laureles" className="absolute w-[125%] h-[125%] max-w-none opacity-90 object-contain drop-shadow-sm pointer-events-none z-20" style={{ left: '-12.5%', top: '-12.5%' }} crossOrigin="anonymous"/>
-          </div>
-          
-          <div className="mt-8 w-full text-center px-4 relative z-30">
-            <p className={`text-[#333] italic text-sm md:text-base font-medium font-serif`}>"{infoData.quote}"</p>
-            <Heart size={16} className={`mx-auto mt-3 ${tokens.accent}`} fill="currentColor" />
-          </div>
-        </div>
-
-        {/* Separador */}
-        <div className="flex items-center justify-center gap-4 mt-12 mb-10">
-          <div className={`h-[2px] w-24 md:w-48 ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'} opacity-40`}></div>
-          <span className="text-[#333] tracking-[0.2em] text-xs font-bold uppercase">Línea del Tiempo</span>
-          <div className={`h-[2px] w-24 md:w-48 ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'} opacity-40`}></div>
-        </div>
-
-        {/* Línea del Tiempo */}
-        <div className="flex flex-col md:flex-row justify-between items-start w-full px-4 md:px-8 mb-12 relative gap-8 md:gap-0">
-          <div className={`absolute top-6 bottom-6 left-10 w-[2px] md:bottom-auto md:w-auto md:top-6 md:left-12 md:right-12 md:h-[2px] ${tokens.bgHex === '#F8F3E9' ? 'bg-[#B69D74]' : 'bg-[#D64060]'} opacity-40 z-0`}></div>
-          {infoData.timeline.slice(0, 5).map((item: any, idx: number) => {
-            const Icon = IconMap[item.icon] || Star;
-            return (
-              <div key={idx} className="flex flex-row md:flex-col items-center md:w-[18%] relative z-10 w-full gap-4 md:gap-0">
-                <div className={`w-12 h-12 shrink-0 rounded-full bg-white border ${tokens.border} flex items-center justify-center md:mb-4 ${tokens.text} shadow-sm`}>
-                  <Icon size={20} />
-                </div>
-                <div className="flex flex-col items-start md:items-center text-left md:text-center w-full">
-                  <h4 className={`text-[12px] md:text-[11px] font-bold ${tokens.text} mb-1 md:mb-2 uppercase`}>{item.title}</h4>
-                  <p className="text-[11px] md:text-[10px] text-[#555] leading-tight">{item.subtitle}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Significados */}
-        <div className={`border-t-[2px] border-b-[2px] ${tokens.border} border-opacity-30 py-8 mb-12 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-0`}>
-          <div className={`md:border-r-[2px] ${tokens.border} border-opacity-30 px-6 flex flex-col items-center text-center relative`}>
-            <span className="text-[#333] tracking-[0.2em] text-[10px] font-bold uppercase mb-2">El Significado de su Nombre</span>
-            <div className="flex justify-center items-end mb-4 mt-2 gap-2">
-               <h3 className={`text-4xl md:text-5xl ${tokens.text} ${tokens.fontTitle}`}>{infoData.nameMeaning.name}</h3>
-               <img src="/assets/pluma.png" alt="Pluma" className="w-8 h-8 md:w-10 md:h-10 opacity-70 object-contain mix-blend-multiply mb-1" crossOrigin="anonymous"/>
-            </div>
-            <p className="text-xs text-[#333] font-medium leading-relaxed max-w-[250px] relative z-10">
-              {infoData.nameMeaning.meaning}
-            </p>
-          </div>
-          
-          <div className="px-6 flex flex-col items-center text-center relative">
-            <span className="text-[#333] tracking-[0.2em] text-[10px] font-bold uppercase mb-2">El Origen de sus Apellidos</span>
-            <div className="flex justify-center items-end mb-4 mt-2 gap-2">
-               <h3 className={`text-4xl md:text-5xl ${tokens.text} ${tokens.fontTitle}`}>{infoData.lastNameMeaning.lastName}</h3>
-               <img src="/assets/arbol.png" alt="Árbol" className="w-10 h-10 md:w-12 md:h-12 opacity-60 object-contain mix-blend-multiply mb-0" crossOrigin="anonymous"/>
-            </div>
-            <p className="text-xs text-[#333] font-medium leading-relaxed max-w-[280px] relative z-10 whitespace-pre-line">
-              {infoData.lastNameMeaning.meaning}
-            </p>
-          </div>
-        </div>
-
-        {/* Escudos / Legado */}
-        <div className="mb-12">
-          <span className="text-[#333] tracking-[0.2em] text-xs font-bold uppercase block mb-2">{theme === 'love' ? 'Nuestros Valores' : 'Su Biografía'}</span>
-          <p className="text-[10px] text-[#555] mb-8 italic">Los valores que marcaron su vida y que seguirán vivos por siempre.</p>
-          <div className="flex justify-center gap-4 md:gap-6 flex-wrap">
-            {infoData.shields.slice(0, 5).map((shield, idx) => {
-              const Icon = IconMap[shield.icon] || Heart;
-              return (
-                <div key={idx} className="flex flex-col items-center w-16 md:w-20">
-                  <div className="relative mb-3 flex items-center justify-center">
-                    <svg width="56" height="64" viewBox="0 0 48 56" fill="#1C2A39" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-lg">
-                      <path d="M24 0L48 10.6667V24C48 38.0133 37.7067 51.1067 24 56C10.2933 51.1067 0 38.0133 0 24V10.6667L24 0Z" stroke="#B69D74" strokeWidth="2.5"/>
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-[#B69D74]">
-                      <Icon size={22} fill="currentColor" strokeWidth={0} />
-                    </div>
-                  </div>
-                  <span className={`text-[8px] md:text-[9px] font-bold ${tokens.text} uppercase tracking-wider text-center`}>{shield.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Legado vive en */}
-        <div className={`mb-4 border-t-[2px] ${tokens.border} border-opacity-30 pt-8`}>
-          <span className="text-[#333] tracking-[0.2em] text-xs font-bold uppercase block mb-2">{theme === 'love' ? 'Nuestra Historia Vive En' : 'Su Legado Vive En'}</span>
-          <p className="text-[10px] text-[#555] mb-8 italic">Toda historia importante continúa a través de las personas que inspira.</p>
-          <div className="flex justify-center flex-wrap gap-4 md:gap-8">
-            {infoData.familyMembers.map((member, idx) => (
-              <div key={idx} className="flex flex-col items-center">
-                <div className={`w-12 h-12 rounded-full border-[1.5px] ${tokens.border} flex items-center justify-center ${tokens.accent} mb-2 bg-transparent shadow-sm`}>
-                  <User size={20} />
-                </div>
-                <span className="text-[9px] font-bold text-[#333] uppercase tracking-wider">{member}</span>
-              </div>
-            ))}
-          </div>
-          <Heart size={16} className={`mx-auto mt-6 ${tokens.accent}`} fill="currentColor" />
-        </div>
-
-        {/* Sección Inferior Diferenciada (Web: Reproductor / PDF: QR) */}
-        {isPdf ? (
-          <div className={`border-[2px] ${tokens.border} border-opacity-40 p-6 rounded-lg max-w-sm mx-auto flex flex-col items-center mt-12 mb-4`}>
-            <span className="text-[#333] tracking-[0.2em] text-sm font-bold uppercase mb-2">Escucha su Canción</span>
-            <p className="text-xs text-[#555] mb-4 italic">Escanea el código QR para escuchar la canción que cuenta su historia.</p>
-            <div className="bg-white p-3 shadow-md rounded-md border border-[#E8DCC8]">
-              <QRCodeSVG value={`${window.location.origin}/cancion/${song.id}`} size={100} fgColor="#1C2A39" />
-            </div>
-          </div>
-        ) : (
-          <div className="mt-8 mb-16 px-4 pb-8">
-            <span className="text-[#333] tracking-[0.2em] text-xs font-bold uppercase block mb-2">Su Canción</span>
-            <p className="text-[10px] text-[#555] mb-6 italic">Cada palabra cuenta su historia, cada nota su esencia.</p>
-            
-            {song.status === 'generating_music' ? (
-              <div className="bg-[#1C2A39] p-8 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54] text-center py-10 animate-pulse">
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
-                <div className="relative z-10 flex flex-col items-center justify-center gap-4">
-                  <div className="animate-spin w-8 h-8 border-4 border-[#B69D74] border-t-transparent rounded-full mb-2"></div>
-                  <h4 className="text-white text-xs md:text-sm tracking-widest font-bold opacity-90 uppercase">Naranjín está componiendo tu melodía...</h4>
-                  <p className="text-[#B69D74] text-[9px] uppercase tracking-widest leading-relaxed">
-                    Afinando guitarras y grabando las voces. Tu canción estará lista en aproximadamente 1 minuto. No cierres esta pestaña.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-[#1C2A39] p-6 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54]">
-                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
-                 
-                 <div className="relative z-10 flex gap-4 items-center">
-                    <img src={photoUrl} className="w-16 h-16 rounded-lg object-cover shadow-md border border-[#B69D74]/30" crossOrigin="anonymous"/>
-                    <div className="flex-1 text-left">
-                       <h4 className="text-white text-xs md:text-sm tracking-widest font-bold mb-1 opacity-90 truncate">{title}</h4>
-                       <p className="text-[#B69D74] text-[9px] uppercase tracking-widest">Una canción creada especialmente para él.</p>
-                    </div>
-                 </div>
-
-                 {/* Selector de Versiones (Exclusivo para el creador) */}
-                 {song.form_data?.version2 && (isOwner || isAdmin) && (
-                    <div className="relative z-10 mt-4 p-3 bg-[#2A3F54]/30 rounded-xl border border-[#B69D74]/10 text-center">
-                       <span className="text-[#B69D74] text-[9px] tracking-wider uppercase block mb-2 font-bold opacity-80">
-                          ¿Qué versión escuchará al compartir el link?
-                       </span>
-                       <div className="flex gap-2 mb-2">
-                          <button
-                            onClick={() => setActivePreviewVersion(1)}
-                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
-                              ${activePreviewVersion === 1 
-                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
-                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
-                          >
-                            Opción A {song.form_data?.selected_version !== 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
-                          </button>
-                          <button
-                            onClick={() => setActivePreviewVersion(2)}
-                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
-                              ${activePreviewVersion === 2 
-                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
-                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
-                          >
-                            Opción B {song.form_data?.selected_version === 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
-                          </button>
-                       </div>
-                       {song.form_data?.selected_version !== activePreviewVersion && (
-                          <button
-                            onClick={() => saveSelectedVersion(activePreviewVersion)}
-                            className="w-full py-1.5 bg-[#B69D74]/20 hover:bg-[#B69D74]/35 text-[#B69D74] border border-[#B69D74]/30 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all animate-pulse"
-                          >
-                            Fijar Opción {activePreviewVersion === 1 ? 'A' : 'B'} como la definitiva
-                          </button>
-                       )}
-                    </div>
-                 )}
-                 
-                 <div className="relative z-10 mt-6">
-                    {/* Leyenda de carga si el audio aún está cargándose en el reproductor */}
-                    {isAudioLoading && (
-                       <div className="mb-4 flex items-center justify-center gap-2 bg-[#2A3F54]/30 p-2.5 rounded-xl border border-[#B69D74]/10 animate-pulse">
-                          <div className="animate-spin w-3 h-3 border-2 border-[#B69D74] border-t-transparent rounded-full"></div>
-                          <p className="text-[#B69D74] text-[8px] tracking-wider uppercase font-semibold">
-                             Cargando melodía... Se reproducirá al instante.
-                          </p>
-                       </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-[9px] text-[#B69D74] font-mono mb-1">
-                       <span>{formatTime(currentTime)}</span>
-                       <span>{formatTime(duration)}</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={progress}
-                      onChange={handleSeek}
-                      className="w-full h-1 bg-[#2A3F54] rounded-lg appearance-none cursor-pointer accent-[#B69D74]"
-                    />
-                    <div className="flex items-center justify-center gap-6 mt-4">
-                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Share2 size={16} /></button>
-                      <button 
-                        onClick={togglePlay}
-                        className="w-12 h-12 rounded-full border border-[#B69D74] text-[#B69D74] flex items-center justify-center hover:bg-[#B69D74] hover:text-[#1C2A39] transition-colors shadow-lg"
-                      >
-                        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
-                      </button>
-                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Heart size={16} /></button>
-                    </div>
-                 </div>
-              </div>
-            )}
-            
-            <p className="text-[9px] text-center italic font-medium mt-8 text-[#555] max-w-sm mx-auto leading-relaxed">
-              Gracias por enseñarnos con tu ejemplo que el verdadero éxito<br/>
-              es dejar un legado en el corazón de los demás.
-            </p>
-            <Heart size={12} className={`mx-auto mt-3 ${tokens.accent} opacity-50`} fill="currentColor" />
-          </div>
-        )}
-
-      </div>
-    </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-[#111] py-8 px-4 md:py-12 flex justify-center">
@@ -817,7 +553,6 @@ export default function SongPlayer() {
       {/* Contenedor principal de la Web (Simulando un póster flotante) */}
       <div className={`w-full max-w-2xl ${tokens.bg} shadow-2xl relative overflow-hidden rounded-md transition-colors duration-500`}>
         
-        {!hasTributeData && song.form_data?.category === 'papa' ? (
           <div className="w-full p-6 md:p-12 space-y-8">
             {song.status === 'generating_music' ? (
               <div className="bg-[#1C2A39] p-8 rounded-3xl border-2 border-[#B69D74]/30 text-center shadow-xl relative overflow-hidden animate-pulse">
@@ -834,93 +569,105 @@ export default function SongPlayer() {
                 </div>
               </div>
             ) : (
-              <div className="bg-[#1C2A39] p-6 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54] text-center">
-                 <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
-                 
-                 <div className="relative z-10 flex gap-4 items-center mb-4">
-                    <img src={photoUrl} className="w-16 h-16 rounded-lg object-cover shadow-md border border-[#B69D74]/30" crossOrigin="anonymous"/>
-                    <div className="flex-1 text-left">
-                       <h4 className="text-white text-xs md:text-sm tracking-widest font-bold mb-1 opacity-90 truncate">{title}</h4>
-                       <p className="text-[#B69D74] text-[9px] uppercase tracking-widest">Muestra de 1.5 minutos de tu canción personalizada.</p>
-                    </div>
-                 </div>
+              <div className="space-y-8">
+                {/* Reproductor de Audio */}
+                <div className="bg-[#1C2A39] p-6 rounded-2xl shadow-2xl max-w-md mx-auto relative overflow-hidden border border-[#2A3F54] text-center">
+                   <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent"></div>
+                   
+                   <div className="relative z-10 flex gap-4 items-center mb-4">
+                      <img src={photoUrl} className="w-16 h-16 rounded-lg object-cover shadow-md border border-[#B69D74]/30" crossOrigin="anonymous"/>
+                      <div className="flex-1 text-left">
+                         <h4 className="text-white text-xs md:text-sm tracking-widest font-bold mb-1 opacity-90 truncate">{title}</h4>
+                         <p className="text-[#B69D74] text-[9px] uppercase tracking-widest">
+                           {isPaid ? "Versión Completa" : "Muestra de 1.5 minutos de tu canción."}
+                         </p>
+                      </div>
+                   </div>
 
-                 {song.form_data?.version2 && (isOwner || isAdmin) && (
-                    <div className="relative z-10 mt-2 mb-4 p-3 bg-[#2A3F54]/30 rounded-xl border border-[#B69D74]/10 text-center">
-                       <span className="text-[#B69D74] text-[9px] tracking-wider uppercase block mb-2 font-bold opacity-80">
-                          ¿Qué versión escucharás?
-                       </span>
-                       <div className="flex gap-2 mb-2">
-                          <button
-                            onClick={() => setActivePreviewVersion(1)}
-                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
-                              ${activePreviewVersion === 1 
-                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
-                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
-                          >
-                            Opción A {song.form_data?.selected_version !== 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
-                          </button>
-                          <button
-                            onClick={() => setActivePreviewVersion(2)}
-                            className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
-                              ${activePreviewVersion === 2 
-                                ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
-                                : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
-                          >
-                            Opción B {song.form_data?.selected_version === 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
-                          </button>
-                       </div>
-                       {song.form_data?.selected_version !== activePreviewVersion && (
-                          <button
-                            onClick={() => saveSelectedVersion(activePreviewVersion)}
-                            className="w-full py-1.5 bg-[#B69D74]/20 hover:bg-[#B69D74]/35 text-[#B69D74] border border-[#B69D74]/30 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all animate-pulse"
-                          >
-                            Fijar Opción {activePreviewVersion === 1 ? 'A' : 'B'} como la definitiva
-                          </button>
-                       )}
-                    </div>
-                 )}
+                   {song.form_data?.version2 && (isOwner || isAdmin) && (
+                      <div className="relative z-10 mt-2 mb-4 p-3 bg-[#2A3F54]/30 rounded-xl border border-[#B69D74]/10 text-center">
+                         <span className="text-[#B69D74] text-[9px] tracking-wider uppercase block mb-2 font-bold opacity-80">
+                            ¿Qué versión escucharás?
+                         </span>
+                         <div className="flex gap-2 mb-2">
+                            <button
+                              onClick={() => setActivePreviewVersion(1)}
+                              className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
+                                ${activePreviewVersion === 1 
+                                  ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
+                                  : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
+                            >
+                              Opción A {song.form_data?.selected_version !== 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
+                            </button>
+                            <button
+                              onClick={() => setActivePreviewVersion(2)}
+                              className={`flex-1 py-2 rounded-lg font-bold text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1
+                                ${activePreviewVersion === 2 
+                                  ? 'bg-[#B69D74] text-[#1C2A39] shadow-md' 
+                                  : 'bg-[#2A3F54]/50 text-gray-300 hover:bg-[#2A3F54]'}`}
+                            >
+                              Opción B {song.form_data?.selected_version === 2 && <span className="text-[7px] opacity-75">(Fijada)</span>}
+                            </button>
+                         </div>
+                         {song.form_data?.selected_version !== activePreviewVersion && (
+                            <button
+                              onClick={() => saveSelectedVersion(activePreviewVersion)}
+                              className="w-full py-1.5 bg-[#B69D74]/20 hover:bg-[#B69D74]/35 text-[#B69D74] border border-[#B69D74]/30 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all animate-pulse"
+                            >
+                              Fijar Opción {activePreviewVersion === 1 ? 'A' : 'B'} como la definitiva
+                            </button>
+                         )}
+                      </div>
+                   )}
 
-                 <div className="relative z-10 text-left">
-                    {isAudioLoading && (
-                       <div className="mb-4 flex items-center justify-center gap-2 bg-[#2A3F54]/30 p-2.5 rounded-xl border border-[#B69D74]/10 animate-pulse">
-                          <div className="animate-spin w-3 h-3 border-2 border-[#B69D74] border-t-transparent rounded-full"></div>
-                          <p className="text-[#B69D74] text-[8px] tracking-wider uppercase font-semibold">
-                             Cargando melodía...
-                          </p>
-                       </div>
-                    )}
+                   <div className="relative z-10 text-left">
+                      {isAudioLoading && (
+                         <div className="mb-4 flex items-center justify-center gap-2 bg-[#2A3F54]/30 p-2.5 rounded-xl border border-[#B69D74]/10 animate-pulse">
+                            <div className="animate-spin w-3 h-3 border-2 border-[#B69D74] border-t-transparent rounded-full"></div>
+                            <p className="text-[#B69D74] text-[8px] tracking-wider uppercase font-semibold">
+                               Cargando melodía...
+                            </p>
+                         </div>
+                      )}
 
-                    <div className="flex items-center justify-between text-[9px] text-[#B69D74] font-mono mb-1">
-                       <span>{formatTime(currentTime)}</span>
-                       <span>{formatTime(duration)}</span>
+                      <div className="flex items-center justify-between text-[9px] text-[#B69D74] font-mono mb-1">
+                         <span>{formatTime(currentTime)}</span>
+                         <span>{formatTime(duration)}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={progress}
+                        onChange={handleSeek}
+                        className="w-full h-1 bg-[#2A3F54] rounded-lg appearance-none cursor-pointer accent-[#B69D74]"
+                      />
+                      <div className="flex items-center justify-center gap-6 mt-4">
+                        <button className="text-gray-400 hover:text-[#B69D74] transition"><Share2 size={16} /></button>
+                        <button 
+                          onClick={togglePlay}
+                          className="w-12 h-12 rounded-full border border-[#B69D74] text-[#B69D74] flex items-center justify-center hover:bg-[#B69D74] hover:text-[#1C2A39] transition-colors shadow-lg"
+                        >
+                          {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                        </button>
+                        <button className="text-gray-400 hover:text-[#B69D74] transition"><Heart size={16} /></button>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Letra de la Canción */}
+                {song.lyrics && (
+                  <div className="bg-white/90 p-8 md:p-12 rounded-3xl shadow-md border border-[#E8DCC8] relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#D64060] to-[#B69D74]"></div>
+                    <h3 className="text-center font-serif text-[#1C2A39] text-xl md:text-2xl font-bold uppercase tracking-widest mb-8">Letra de la Canción</h3>
+                    <div className="whitespace-pre-wrap text-[#4A4A4A] font-medium text-sm md:text-base leading-relaxed text-center font-serif italic mx-auto max-w-lg">
+                      {song.lyrics}
                     </div>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={progress}
-                      onChange={handleSeek}
-                      className="w-full h-1 bg-[#2A3F54] rounded-lg appearance-none cursor-pointer accent-[#B69D74]"
-                    />
-                    <div className="flex items-center justify-center gap-6 mt-4">
-                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Share2 size={16} /></button>
-                      <button 
-                        onClick={togglePlay}
-                        className="w-12 h-12 rounded-full border border-[#B69D74] text-[#B69D74] flex items-center justify-center hover:bg-[#B69D74] hover:text-[#1C2A39] transition-colors shadow-lg"
-                      >
-                        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
-                      </button>
-                      <button className="text-gray-400 hover:text-[#B69D74] transition"><Heart size={16} /></button>
-                    </div>
-                 </div>
+                  </div>
+                )}
               </div>
             )}
-            <TributeAddon song={song} />
           </div>
-        ) : (
-          renderInfographicContent(false)
-        )}
 
         {/* Acciones Web */}
         <div className={`px-6 md:px-12 pb-12 pt-6 flex flex-col gap-4 border-t ${tokens.border} border-opacity-20 mt-4 relative z-20 ${tokens.bg}`}>
