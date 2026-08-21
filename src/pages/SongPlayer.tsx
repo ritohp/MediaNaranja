@@ -688,7 +688,7 @@ export default function SongPlayer() {
               if (isPaid) {
                  window.open(song.selected_version ? song.selected_version.url : currentAudioUrl, '_blank');
               } else {
-                 window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
+                 window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
               }
             }}
             className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase
@@ -843,7 +843,7 @@ export default function SongPlayer() {
             <button 
               onClick={() => {
                 setShowDemoModal(false);
-                window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
+                window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
               }}
               className="w-full py-5 bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white rounded-2xl font-bold text-base shadow-xl hover:scale-[1.02] transition-all uppercase tracking-widest text-xs"
             >

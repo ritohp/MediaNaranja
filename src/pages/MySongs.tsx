@@ -294,7 +294,7 @@ export default function MySongs() {
             <button 
               onClick={() => {
                 if (showDemoModal) {
-                  window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${showDemoModal}`;
+                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${showDemoModal}`;
                 }
               }}
               className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:scale-105 transition-all"
@@ -585,7 +585,7 @@ export default function MySongs() {
                         onClick={(e) => {
                           if (!song.is_paid) {
                             e.preventDefault();
-                            window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${song.id}`;
+                            window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
                           }
                         }}
                         className={`w-full py-3 ${!song.is_paid ? 'bg-naranja-500 hover:bg-naranja-600' : 'bg-blush-500 hover:bg-blush-600'} text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-3`}

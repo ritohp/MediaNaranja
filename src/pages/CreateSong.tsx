@@ -378,7 +378,7 @@ INSTRUCCIONES:
       alert("Hubo un problema al procesar el identificador de la canción. Por favor, ve a 'Mis Canciones' para realizar el pago de forma segura.");
       return;
     }
-    window.location.href = `https://buy.stripe.com/dRm5kwcXzf2T7kgdI72Ry00?client_reference_id=${currentSongId}`;
+    window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${currentSongId}`;
   };
 
   const handleStartLyrics = async (e: React.FormEvent) => {
