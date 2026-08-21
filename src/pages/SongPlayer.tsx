@@ -9,11 +9,10 @@ import {
 import { checkMusicStatus } from '../services/music';
 import { QRCodeSVG } from 'qrcode.react';
 import { toJpeg } from 'html-to-image';
-import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import type { InfographicData } from '../services/ai';
 import AnchorGraphic from '../components/tribute/AnchorGraphics';
-import PDFLayout from '../components/tribute/PDFLayout';
-import TributeAddon from '../components/tribute/TributeAddon';
+
 
 // Mapeo dinámico de iconos de Lucide
 const IconMap: Record<string, any> = {
@@ -399,41 +398,6 @@ export default function SongPlayer() {
     }
   };
 
-  const generatePDF = async () => {
-    if (!pdfRef.current || !isPaid) {
-      if (!isPaid) alert("Debes desbloquear la canción para descargar la Infografía en alta calidad.");
-      return;
-    }
-    
-    setIsUploading(true);
-    try {
-      const element = pdfRef.current;
-      
-      const imgData = await toJpeg(element, {
-        quality: 1.0,
-        backgroundColor: '#F8F3E9',
-        pixelRatio: 2
-      });
-      
-      const elementWidth = element.scrollWidth || 800;
-      const elementHeight = element.scrollHeight || 1200;
-      
-      // Ajustamos a proporciones de Tamaño Carta (Letter)
-      const pdf = new jsPDF('p', 'mm', 'letter');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Historia_${recipient.replace(/\s+/g, '_')}.pdf`);
-      
-    } catch (error: any) {
-      console.error("Error generando PDF:", error);
-      alert(`Hubo un error al generar tu certificado: ${error.message || error}`);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
@@ -672,16 +636,7 @@ export default function SongPlayer() {
         {/* Acciones Web */}
         <div className={`px-6 md:px-12 pb-12 pt-6 flex flex-col gap-4 border-t ${tokens.border} border-opacity-20 mt-4 relative z-20 ${tokens.bg}`}>
           
-          {!isPaid && (isAdmin || isOwner) && (
-            <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-2 text-center shadow-inner">
-              <p className="text-[10px] text-orange-800 font-medium uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
-                <Lock size={12} /> BIOGRAFÍA RESTRINGIDA
-              </p>
-              <p className="text-xs text-orange-700 leading-relaxed italic">
-                Para descargar la canción completa, obtener la Biografía PDF en alta calidad con QR y compartir este enlace públicamente, necesitas desbloquear tu regalo.
-              </p>
-            </div>
-          )}
+
 
           <button 
             onClick={() => {
@@ -695,18 +650,10 @@ export default function SongPlayer() {
               ${isPaid ? 'bg-[#1C2A39] text-white hover:bg-[#2A3F54]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
           >
             {isPaid ? <Download size={16} /> : <Lock size={16} className="opacity-60" />}
-            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción + Biografía PDF + Web ($249 MXN)"}
+            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción Completa ($249 MXN)"}
           </button>
           
-          {isPaid && (
-            <button 
-              onClick={generatePDF}
-              className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase bg-[#FDF8EE] border border-[#B69D74] text-[#1C2A39] hover:bg-[#F2E8D5]"
-            >
-              <FileText size={16} className="text-[#B69D74]" />
-              Descargar Biografía PDF para Imprimir
-            </button>
-          )}
+
           
           {isPaid && (
             <div className="pt-4 mt-2 border-t border-[#1C2A39]/10 grid grid-cols-2 gap-3">
@@ -738,26 +685,14 @@ export default function SongPlayer() {
               onClick={() => setIsEditing(true)}
               className="w-full py-3 text-[#555] text-[10px] font-medium flex items-center justify-center gap-2 hover:text-[#B69D74] transition-colors uppercase tracking-widest mt-2"
             >
-              <Edit3 size={14} /> Personalizar Foto y Textos (Gratis)
+              <Edit3 size={14} /> Personalizar Portada (Gratis)
             </button>
           )}
         </div>
 
       </div>
 
-      {/* Contenedor Oculto para Generación PDF (Posicionado fuera de pantalla para mantener la altura completa real) */}
-      <div style={{ position: 'absolute', top: '-20000px', left: '-20000px' }}>
-        <div ref={pdfRef} className="bg-transparent">
-          <PDFLayout 
-             infoData={infoData} 
-             recipient={recipient} 
-             photoUrl={photoUrl} 
-             songId={song.id} 
-             theme={theme} 
-             archetype={archetype} 
-          />
-        </div>
-      </div>
+
       
       <audio 
         key={currentAudioUrl}
@@ -771,7 +706,7 @@ export default function SongPlayer() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsEditing(false)}></div>
           <div className={`${tokens.bg} rounded-2xl p-6 md:p-8 max-w-md w-full relative z-10 border ${tokens.border} shadow-2xl max-h-[90vh] overflow-y-auto`}>
-            <h3 className={`text-lg md:text-xl font-serif ${tokens.text} uppercase tracking-widest mb-6 text-center border-b ${tokens.border} border-opacity-30 pb-4`}>Personalizar Infografía</h3>
+            <h3 className={`text-lg md:text-xl font-serif ${tokens.text} uppercase tracking-widest mb-6 text-center border-b ${tokens.border} border-opacity-30 pb-4`}>Personalizar Portada</h3>
             
             <div className="space-y-6">
               <div>
@@ -809,15 +744,7 @@ export default function SongPlayer() {
                 />
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-[#555] uppercase tracking-widest mb-2">Frase Célebre (Bajo la foto)</label>
-                <textarea 
-                  value={editData.dedication}
-                  onChange={e => setEditData({...editData, dedication: e.target.value})}
-                  rows={2}
-                  className="w-full border border-[#E8DCC8] bg-white rounded-xl p-3 outline-none focus:border-[#B69D74] resize-none text-sm font-serif italic"
-                ></textarea>
-              </div>
+
 
               <div className="flex gap-4 pt-4 border-t border-[#B69D74] border-opacity-30">
                 <button onClick={() => setIsEditing(false)} className="flex-1 py-3 text-[#555] font-bold hover:bg-[#E8DCC8] rounded-xl transition text-xs uppercase tracking-widest">Cancelar</button>
@@ -849,12 +776,7 @@ export default function SongPlayer() {
             >
               DESBLOQUEAR AHORA
             </button>
-            <button 
-              onClick={() => setShowDemoModal(false)}
-              className="text-gray-400 text-[10px] font-bold uppercase tracking-widest hover:text-[#B69D74] transition-all block mx-auto animate-pulse"
-            >
-              SEGUIR EXPLORANDO LA BIOGRAFÍA
-            </button>
+
           </div>
         </div>
       )}

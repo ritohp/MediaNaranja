@@ -4,7 +4,7 @@ import { Music, Sparkles, BookOpen, User, Users, Heart, Baby, Mic, Target, Calen
 import { supabase } from '../lib/supabase';
 import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt, generateInfographicData } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import TributeAddon from '../components/tribute/TributeAddon';
+
 
 
 export default function CreateSong() {
@@ -1311,9 +1311,9 @@ INSTRUCCIONES:
 
         {step === 3 && (
           <div className="text-center py-16 animate-in zoom-in duration-700">
-            {(generationStatus === 'generating' || (formData.category === 'papa' && !biographyGenerated)) ? (
+            {generationStatus === 'generating' || (generationStatus === 'completed' && !audioUrl) ? (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-5xl mx-auto">
-                <div className={`${formData.category === 'papa' ? 'lg:col-span-5' : 'lg:col-span-12'} text-center space-y-6`}>
+                <div className={`lg:col-span-12 text-center space-y-6`}>
                   {generationStatus === 'completed' || audioUrl ? (
                     <div className="space-y-4">
                       <div className="relative inline-block">
@@ -1327,7 +1327,7 @@ INSTRUCCIONES:
                       <p className="text-ink-600/70 text-sm max-w-xs mx-auto font-light leading-relaxed">
                         Naranjín ha terminado de componer y grabar tu canción personalizada.
                         <br /><br />
-                        <strong>Completa la biografía digital a la derecha</strong> para guardar tu regalo y escuchar la melodía de inmediato.
+                        <strong>Redirigiendo a tu reproductor...</strong>
                       </p>
                     </div>
                   ) : (
@@ -1364,104 +1364,7 @@ INSTRUCCIONES:
                   )}
                 </div>
 
-                {formData.category === 'papa' && (
-                  <div className="lg:col-span-7 bg-gradient-to-br from-blue-50 to-indigo-50/50 p-6 md:p-10 rounded-[2.5rem] border border-blue-100 shadow-xl text-left space-y-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                      <User size={150} />
-                    </div>
-                    <div className="flex items-center gap-4 relative z-10">
-                      <img src="/mascota.png" alt="Naranjín" className="w-14 h-14 object-contain animate-bounce-slow" />
-                      <div>
-                        <h4 className="text-xl font-serif text-blue-900 leading-tight">✨ ¡Paso Extra: Tu Biografía Digital!</h4>
-                        <p className="text-xs text-blue-700/70">Aprovecha este tiempo para subir su foto de portada y personalizar su portal interactivo.</p>
-                      </div>
-                    </div>
 
-                    {!biographyGenerated ? (
-                      <div className="space-y-5 relative z-10">
-                        <div className="space-y-2">
-                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Foto de Portada de Papá (Opcional)</label>
-                          <div className="flex items-center gap-4">
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              disabled={isUploading}
-                              className="px-4 py-3 bg-white border border-blue-200 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-50 transition-all flex items-center gap-2 shadow-sm"
-                            >
-                              {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Camera size={14} />}
-                              {photoUrl ? "Cambiar Foto" : "Subir Foto Oficial"}
-                            </button>
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              onChange={handleFileUpload}
-                              accept="image/*"
-                              className="hidden"
-                            />
-                            {photoUrl && (
-                              <div className="flex items-center gap-2 text-xs text-emerald-600 font-bold">
-                                <CheckCircle2 size={14} /> Foto cargada
-                              </div>
-                            )}
-                          </div>
-                          {photoUrl && (
-                            <img src={photoUrl} alt="Vista previa" className="w-24 h-24 object-cover rounded-2xl border-2 border-white shadow-md mt-2" />
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Dedicatoria Especial *</label>
-                          <p className="text-[10px] text-blue-700/60 italic">Una hermosa frase corta para recibir a toda la familia en su portal biográfico.</p>
-                          <input
-                            type="text"
-                            value={customDedication}
-                            onChange={(e) => setCustomDedication(e.target.value)}
-                            placeholder="Ej: Para el hombre que me enseñó a caminar con la frente en alto. Te amo, papá."
-                            className="w-full bg-white border border-blue-200 rounded-xl p-3.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 font-medium"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-xs font-black text-blue-900 uppercase tracking-widest block">Mayor Logro o Hito de su Vida *</label>
-                          <p className="text-[10px] text-blue-700/60 italic">Un orgullo familiar (ej: su carrera, su negocio, sus hijos, un gran viaje o aprendizaje).</p>
-                          <input
-                            type="text"
-                            value={majorMilestone}
-                            onChange={(e) => setMajorMilestone(e.target.value)}
-                            placeholder="Ej: Dedicar 40 años a la enseñanza y construir nuestro hogar con amor y esfuerzo."
-                            className="w-full bg-white border border-blue-200 rounded-xl p-3.5 text-sm outline-none focus:ring-2 focus:ring-blue-400 font-medium"
-                          />
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleGenerateBiography}
-                          disabled={isGeneratingBiography || isUploading || !customDedication.trim() || !majorMilestone.trim()}
-                          className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm tracking-wider hover:bg-blue-700 transition shadow disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                          {isGeneratingBiography ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-                          {isGeneratingBiography ? "GENERANDO PORTAL BIOGRÁFICO..." : "¡GENERAR BIOGRAFÍA DIGITAL!"}
-                        </button>
-                        <p className="text-[10px] text-center text-blue-600/60">Dedicatoria e hito de vida son obligatorios. La foto es opcional.</p>
-                      </div>
-                    ) : (
-                      <div className="p-8 bg-white/80 backdrop-blur rounded-3xl border border-emerald-100 text-center space-y-4 shadow-sm animate-in zoom-in duration-500">
-                        <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto">
-                          <CheckCircle2 size={32} />
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-bold text-emerald-800">¡Biografía Digital Creada con Éxito!</h4>
-                          <p className="text-xs text-emerald-600 mt-1">
-                            El Homenaje Digital Interactivo, el árbol familiar y el PDF descargable de alta calidad con QR personalizado han sido configurados.
-                          </p>
-                        </div>
-                        <p className="text-[10px] font-bold text-blue-600 animate-pulse uppercase tracking-widest pt-2">
-                          Naranjín sigue grabando tu melodía... ¡Espera en esta pantalla!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             ) : generationStatus === 'completed' && audioUrl ? (
               <div className="max-w-2xl mx-auto space-y-10 relative">
@@ -1587,14 +1490,6 @@ INSTRUCCIONES:
                 </div>
 
                 {/* Mostrar el botón del Legado Digital si aplica */}
-                {/* formData.category === 'papa' && !formData.infographic_data && (
-                  <div className="w-full bg-white p-6 md:p-8 rounded-[2.5rem] border-2 border-[#1C2A39]/10 shadow-xl relative overflow-hidden">
-                    <TributeAddon 
-                      song={{ 
-                        id: currentSongId, 
-                        form_data: formData,
-                        is_paid: false
-                      }} 
                     />
                   </div>
                 )*/}

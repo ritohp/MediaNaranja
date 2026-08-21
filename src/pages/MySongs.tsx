@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw, Scroll } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import TributeAddon from '../components/tribute/TributeAddon';
+
 
 interface Song {
   id: string;
@@ -610,14 +610,6 @@ export default function MySongs() {
                     >
                       <RefreshCw size={14} /> Ver Letra / Modificar
                     </button>
-
-                    {/* Botón de Upsell para Legado Digital en la tarjeta */}
-                    {song.form_data?.category === 'papa' && !song.form_data?.infographic_data && (
-                      <TributeAddon 
-                        song={song} 
-                        variant="card" 
-                      />
-                    )}
                   </>
                 )}
               </div>

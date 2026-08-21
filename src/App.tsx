@@ -9,7 +9,7 @@ import MemoryGallery from './pages/MemoryGallery';
 import MemoryCustomizer from './pages/MemoryCustomizer';
 import AdminDashboard from './pages/AdminDashboard';
 import SongPlayer from './pages/SongPlayer';
-import TributeWizard from './pages/TributeWizard';
+
 import FatherLanding from './pages/FatherLanding';
 
 function App() {
@@ -27,7 +27,7 @@ function App() {
           <Route path="/cancion-para-papa" element={<FatherLanding />} />
           <Route path="/mis-canciones" element={<MySongs />} />
           <Route path="/cancion/:id" element={<SongPlayer />} />
-          <Route path="/legado/:id" element={<TributeWizard />} />
+
           <Route path="/mis-recuerdos" element={<MyMemories />} />
           <Route path="/galeria-recuerdos" element={<MemoryGallery />} />
           <Route path="/personalizar-cuadro" element={<MemoryCustomizer />} />
