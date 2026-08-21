@@ -695,7 +695,7 @@ export default function SongPlayer() {
               ${isPaid ? 'bg-[#1C2A39] text-white hover:bg-[#2A3F54]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
           >
             {isPaid ? <Download size={16} /> : <Lock size={16} className="opacity-60" />}
-            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción + Biografía PDF + Web ($399 MXN)"}
+            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción + Biografía PDF + Web ($249 MXN)"}
           </button>
           
           {isPaid && (
