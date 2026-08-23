@@ -23,14 +23,14 @@ export default function CouplesLanding() {
               <Heart size={14} fill="currentColor" /> El Regalo de Aniversario Definitivo
             </div>
             
-            <h1 className="text-4xl md:text-6xl font-playfair font-bold leading-[1.1] text-[#1A1A1A] tracking-tight">
-              ¿Tu historia <br className="hidden md:block"/>
-              de amor en <br />
-              <span className="italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">una canción real?</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-playfair font-bold leading-[1.1] text-[#1A1A1A] tracking-tight">
+              Toda pareja tiene <br className="hidden md:block"/>
+              su canción especial... <br />
+              <span className="italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">La suya será inédita.</span>
             </h1>
             
             <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-sm mx-auto lg:mx-0">
-              Sí, es posible. Convierte sus mejores recuerdos en un éxito musical calidad de radio. Mucho mejor que unas rosas.
+              ¿Recuerdas esa melodía que se dedicaron? Ahora imagina sus lágrimas al escuchar un éxito musical profesional que cante <strong>exactamente cómo se conocieron y lo que han vivido.</strong>
             </p>
 
             <button 
