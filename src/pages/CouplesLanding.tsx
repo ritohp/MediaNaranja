@@ -30,7 +30,7 @@ export default function CouplesLanding() {
             </h1>
             
             <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-sm mx-auto lg:mx-0">
-              ¿Recuerdas esa melodía que se dedicaron? Ahora imagina sus lágrimas al escuchar un éxito musical profesional que cante <strong>exactamente cómo se conocieron y lo que han vivido.</strong>
+              ¿Recuerdas esa melodía que se dedicaron? Ahora imagina su emoción al escuchar una canción creada especialmente que cante <strong>exactamente cómo se conocieron y lo que han vivido.</strong>
             </p>
 
             <button 
