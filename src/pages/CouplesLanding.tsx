@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Music, Heart, ArrowRight, Sparkles, Star, CheckCircle2 } from 'lucide-react';
+import { Music, Heart, ArrowRight, Sparkles, Star, CheckCircle2, Play } from 'lucide-react';
 
 export default function CouplesLanding() {
   const navigate = useNavigate();
