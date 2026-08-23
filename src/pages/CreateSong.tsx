@@ -816,6 +816,49 @@ INSTRUCCIONES:
     </div>
   );
 
+  const getCategoryText = () => {
+    switch (formData.category) {
+      case 'pareja':
+        return {
+          title: "¿Cuál es la historia de amor?",
+          desc: "Cuéntanos brevemente cómo se conocieron o qué hace especial su relación.",
+          placeholder: "Ej: Nos conocimos en la universidad hace 3 años, fue amor a primera vista. Hemos superado la distancia juntos..."
+        };
+      case 'mama':
+        return {
+          title: "¿Qué hace tan especial a mamá?",
+          desc: "Escribe una breve reseña de mamá: qué te enseñó, su mayor virtud o qué significa para ti.",
+          placeholder: "Ej: Mi mamá María es una guerrera. Sacó adelante a sus 3 hijos sola, hace las mejores enchiladas..."
+        };
+      case 'papa':
+        return {
+          title: "¿Cuál es la chispa del homenaje?",
+          desc: "Escribe una breve reseña de papá: a qué se dedica o dedicaba, qué le gusta hacer en su tiempo libre y qué representa para la familia.",
+          placeholder: "Ej: Es un homenaje para mi papá José, fue maestro toda su vida, le apasiona la música..."
+        };
+      case 'hijo':
+        return {
+          title: "¿Qué mensaje quieres dejarle?",
+          desc: "Escribe lo que sientes por él/ella, algún logro reciente o el mensaje que quieres dejarle para el futuro.",
+          placeholder: "Ej: Para mi hijo Leo que cumple 5 años. Quiero que sepa que es mi mayor tesoro, que siga siendo tan alegre..."
+        };
+      case 'amigos':
+        return {
+          title: "¿De qué trata su amistad?",
+          desc: "Cuéntanos sobre esa anécdota inolvidable, cómo se conocieron o por qué son inseparables.",
+          placeholder: "Ej: Para mi mejor amiga Sofía. Nos conocemos desde el kinder, hemos pasado mil locuras juntas..."
+        };
+      default:
+        return {
+          title: "¿Cuál es la chispa inicial?",
+          desc: 'Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".',
+          placeholder: "Escribe aquí de qué se trata la canción..."
+        };
+    }
+  };
+
+  const categoryText = getCategoryText();
+
   return (
     <div className="relative min-h-[80vh] flex flex-col items-center py-16 px-4 md:px-6">
       
@@ -953,23 +996,15 @@ INSTRUCCIONES:
 
                   <h3 className="text-xl md:text-2xl font-serif text-blush-800 flex items-center gap-3 pt-4">
                     <Sparkles className="text-naranja-500" /> 
-                    {formData.category === 'papa' ? "¿Cuál es la chispa del homenaje?" : "¿Cuál es la chispa inicial?"}
+                    {categoryText.title}
                   </h3>
                   <p className="text-ink-600/70 text-sm italic">
-                    {formData.category === 'papa' ? (
-                      "Escribe una breve reseña de papá: a qué se dedica o dedicaba, qué le gusta hacer en su tiempo libre y qué representa para la familia."
-                    ) : (
-                      'Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".'
-                    )}
+                    {categoryText.desc}
                   </p>
                   <textarea 
                     value={initialContext}
                     onChange={(e) => setInitialContext(e.target.value)}
-                    placeholder={
-                      formData.category === 'papa' 
-                        ? "Ej: Es un homenaje para mi papá José, fue maestro de escuela toda su vida, le apasiona la música mexicana y siempre nos enseñó a ser trabajadores..." 
-                        : "Escribe aquí de qué se trata la canción..."
-                    }
+                    placeholder={categoryText.placeholder}
                     className="w-full h-40 bg-blush-50/50 border border-blush-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-lg font-medium resize-none transition-all"
                     required
                   ></textarea>
