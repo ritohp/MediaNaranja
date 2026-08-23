@@ -1489,10 +1489,7 @@ INSTRUCCIONES:
                   </div>
                 </div>
 
-                {/* Mostrar el botón del Legado Digital si aplica */}
-                    />
-                  </div>
-                )*/}
+
                 <div className="pt-4">
                    <button onClick={() => setStep(1)} className="text-blush-400 text-xs font-bold hover:text-naranja-500 transition-all uppercase tracking-widest underline decoration-blush-200">
                     ¿PROBAR CON OTRA LETRA?
