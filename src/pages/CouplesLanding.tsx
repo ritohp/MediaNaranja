@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Music, Heart, ArrowRight, Sparkles, Star, CheckCircle2 } from 'lucide-react';
-import Footer from '../components/Footer';
 
 export default function CouplesLanding() {
   const navigate = useNavigate();
@@ -115,7 +114,7 @@ export default function CouplesLanding() {
         </div>
       </section>
 
-      <Footer />
+
     </div>
   );
 }
