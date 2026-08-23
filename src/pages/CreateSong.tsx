@@ -974,7 +974,10 @@ INSTRUCCIONES:
                       <button
                         key={cat.id}
                         type="button"
-                        onClick={() => setFormData({ ...formData, category: cat.id })}
+                        onClick={() => {
+                          setFormData({ ...formData, category: cat.id });
+                          setSelectedOccasions([]);
+                        }}
                         className={`flex items-center gap-2 p-3 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all ${formData.category === cat.id ? 'bg-naranja-500 text-white border-transparent shadow-md' : 'bg-white text-gray-500 border-gray-100 hover:border-naranja-200'}`}
                       >
                         {cat.icon} {cat.label}
