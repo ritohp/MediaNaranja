@@ -11,6 +11,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import SongPlayer from './pages/SongPlayer';
 
 import FatherLanding from './pages/FatherLanding';
+import CouplesLanding from './pages/CouplesLanding';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/parejas" element={<CouplesLanding />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/crear-cancion" element={<CreateSong />} />
           <Route path="/regalo-papa" element={<FatherLanding />} />
