@@ -17,20 +17,20 @@ export default function CouplesLanding() {
         <div className="absolute top-0 right-0 -mr-32 -mt-32 w-[500px] h-[500px] bg-pink-100/50 rounded-full blur-[100px] pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-[500px] h-[500px] bg-orange-100/50 rounded-full blur-[100px] pointer-events-none"></div>
         
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
-          <div className="space-y-8 order-2 lg:order-1 text-center lg:text-left">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 md:gap-16 items-center relative z-10">
+          <div className="lg:col-span-5 space-y-6 md:space-y-8 order-2 lg:order-1 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-pink-50 text-pink-600 rounded-full border border-pink-100 text-[10px] font-black uppercase tracking-widest mx-auto lg:mx-0">
               <Heart size={14} fill="currentColor" /> El Regalo de Aniversario Definitivo
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
-              El regalo que le hará <br className="hidden md:block"/>
-              llorar de felicidad: <br />
-              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">su historia hecha canción.</span>
+            <h1 className="text-4xl md:text-6xl font-playfair font-bold leading-[1.1] text-[#1A1A1A] tracking-tight">
+              ¿Tu historia <br className="hidden md:block"/>
+              de amor en <br />
+              <span className="italic font-normal text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">una canción real?</span>
             </h1>
             
-            <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
-              Imagina su rostro al escuchar su historia real cantada en una canción profesional. Es mejor que mil cartas, peluches o rosas. Es un recuerdo eterno.
+            <p className="text-base md:text-lg text-gray-600 leading-relaxed max-w-sm mx-auto lg:mx-0">
+              Sí, es posible. Convierte sus mejores recuerdos en un éxito musical calidad de radio. Mucho mejor que unas rosas.
             </p>
 
             <button 
@@ -63,12 +63,12 @@ export default function CouplesLanding() {
             </div>
           </div>
           
-          <div className="order-1 lg:order-2 relative group">
+          <div className="lg:col-span-7 order-1 lg:order-2 relative group w-full flex justify-center lg:justify-end">
             <div className="absolute -inset-4 bg-gradient-to-tr from-pink-200 to-orange-200 blur-2xl opacity-40 rounded-full pointer-events-none"></div>
             <img 
               src="/pareja-joven.png" 
               alt="Pareja joven enamorada escuchando su canción" 
-              className="relative z-10 w-full max-w-md mx-auto rounded-[3rem] shadow-2xl border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500"
+              className="relative z-10 w-full max-w-[280px] sm:max-w-md lg:max-w-lg xl:max-w-xl mx-auto lg:mr-0 rounded-[3rem] shadow-2xl border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500"
             />
             
             {/* Flotante 1 (Ahora mejor posicionado y más sutil) */}
