@@ -822,37 +822,43 @@ INSTRUCCIONES:
         return {
           title: "¿Cuál es la historia de amor?",
           desc: "Cuéntanos brevemente cómo se conocieron o qué hace especial su relación.",
-          placeholder: "Ej: Nos conocimos en la universidad hace 3 años, fue amor a primera vista. Hemos superado la distancia juntos..."
+          placeholder: "Ej: Nos conocimos en la universidad hace 3 años, fue amor a primera vista. Hemos superado la distancia juntos...",
+          suggestions: ["🥂 Aniversario", "💍 Pedir Matrimonio", "❤️ San Valentín", "💒 Boda", "🙏 Pedir Perdón", "🧸 Detalle Romántico"]
         };
       case 'mama':
         return {
           title: "¿Qué hace tan especial a mamá?",
           desc: "Escribe una breve reseña de mamá: qué te enseñó, su mayor virtud o qué significa para ti.",
-          placeholder: "Ej: Mi mamá María es una guerrera. Sacó adelante a sus 3 hijos sola, hace las mejores enchiladas..."
+          placeholder: "Ej: Mi mamá María es una guerrera. Sacó adelante a sus 3 hijos sola, hace las mejores enchiladas...",
+          suggestions: ["🎂 Cumpleaños", "👑 Día de las Madres", "🏆 Agradecimiento Especial", "🕊️ Homenaje"]
         };
       case 'papa':
         return {
           title: "¿Cuál es la chispa del homenaje?",
           desc: "Escribe una breve reseña de papá: a qué se dedica o dedicaba, qué le gusta hacer en su tiempo libre y qué representa para la familia.",
-          placeholder: "Ej: Es un homenaje para mi papá José, fue maestro toda su vida, le apasiona la música..."
+          placeholder: "Ej: Es un homenaje para mi papá José, fue maestro toda su vida, le apasiona la música...",
+          suggestions: ["🎂 Cumpleaños", "👨‍👦 Día del Padre", "🕊️ Homenaje Póstumo", "🏆 Su Jubilación"]
         };
       case 'hijo':
         return {
           title: "¿Qué mensaje quieres dejarle?",
           desc: "Escribe lo que sientes por él/ella, algún logro reciente o el mensaje que quieres dejarle para el futuro.",
-          placeholder: "Ej: Para mi hijo Leo que cumple 5 años. Quiero que sepa que es mi mayor tesoro, que siga siendo tan alegre..."
+          placeholder: "Ej: Para mi hijo Leo que cumple 5 años. Quiero que sepa que es mi mayor tesoro, que siga siendo tan alegre...",
+          suggestions: ["🍼 Recién Nacido / Bautizo", "🎂 Cumpleaños", "🎓 Graduación", "🏅 Un Logro Especial", "🧸 Canción de Cuna"]
         };
       case 'amigos':
         return {
           title: "¿De qué trata su amistad?",
           desc: "Cuéntanos sobre esa anécdota inolvidable, cómo se conocieron o por qué son inseparables.",
-          placeholder: "Ej: Para mi mejor amiga Sofía. Nos conocemos desde el kinder, hemos pasado mil locuras juntas..."
+          placeholder: "Ej: Para mi mejor amiga Sofía. Nos conocemos desde el kinder, hemos pasado mil locuras juntas...",
+          suggestions: ["🎂 Cumpleaños", "🥂 Brindis / Despedida", "😂 Anécdota Divertida", "🤝 Agradecimiento"]
         };
       default:
         return {
           title: "¿Cuál es la chispa inicial?",
           desc: 'Ejemplo: "Es una canción para mi abuelo que cumple 80 años, fue agricultor y ama a su familia".',
-          placeholder: "Escribe aquí de qué se trata la canción..."
+          placeholder: "Escribe aquí de qué se trata la canción...",
+          suggestions: ["🎂 Cumpleaños", "🥳 Celebración", "🕊️ Homenaje", "🎁 Regalo Sorpresa"]
         };
     }
   };
@@ -1008,6 +1014,28 @@ INSTRUCCIONES:
                     className="w-full h-40 bg-blush-50/50 border border-blush-200 rounded-3xl p-6 outline-none focus:ring-2 focus:ring-naranja-400 text-lg font-medium resize-none transition-all"
                     required
                   ></textarea>
+
+                  {/* Sugerencias de Ocasión / Tags */}
+                  <div className="pt-1">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ocasiones populares (toca para añadir):</p>
+                    <div className="flex flex-wrap gap-2">
+                      {categoryText.suggestions.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const newText = initialContext.trim() 
+                              ? `${initialContext} \n[Ocasión: ${suggestion}] ` 
+                              : `[Ocasión: ${suggestion}] `;
+                            setInitialContext(newText);
+                          }}
+                          className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-full text-xs font-medium hover:bg-naranja-50 hover:text-naranja-600 hover:border-naranja-200 transition-all shadow-sm active:scale-95"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <button type="submit" disabled={isGeneratingDetailsPrompt || !initialContext.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
                     {isGeneratingDetailsPrompt ? <RefreshCw className="animate-spin" /> : <Sparkles />}
                     {isGeneratingDetailsPrompt ? "PREPARANDO..." : "SIGUIENTE PASO"}
