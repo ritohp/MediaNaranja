@@ -24,9 +24,9 @@ export default function CouplesLanding() {
             </div>
             
             <h1 className="text-5xl md:text-7xl font-playfair leading-[1.1] text-[#1A1A1A]">
-              Haz que se enamore <br className="hidden md:block"/>
-              de ti otra vez con <br />
-              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">su propia canción.</span>
+              El regalo que le hará <br className="hidden md:block"/>
+              llorar de felicidad: <br />
+              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">su historia hecha canción.</span>
             </h1>
             
             <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
