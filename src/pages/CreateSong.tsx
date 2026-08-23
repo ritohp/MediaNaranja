@@ -75,6 +75,7 @@ export default function CreateSong() {
     return 'spark';
   });
   const [initialContext, setInitialContext] = useState(draftData?.initialContext || '');
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>(draftData?.selectedOccasions || []);
   const [isGeneratingDetailsPrompt, setIsGeneratingDetailsPrompt] = useState(false);
   const [detailsPrompt, setDetailsPrompt] = useState({
     title: "Nombres, lugares y la historia",
@@ -137,6 +138,7 @@ export default function CreateSong() {
         currentSongId,
         formPhase,
         initialContext,
+        selectedOccasions,
         aiQuestions,
         interviewAnswers,
         landingFlow,
@@ -146,7 +148,7 @@ export default function CreateSong() {
     } else {
       localStorage.removeItem('mn_draft_song');
     }
-  }, [formData, step, lyrics, currentSongId, formPhase, initialContext, aiQuestions, interviewAnswers, landingFlow, showFullDetailsForm]);
+  }, [formData, step, lyrics, currentSongId, formPhase, initialContext, selectedOccasions, aiQuestions, interviewAnswers, landingFlow, showFullDetailsForm]);
 
   const handleClearDraft = () => {
     localStorage.removeItem('mn_draft_song');
@@ -269,7 +271,8 @@ INSTRUCCIONES:
 
   const handleProceedToDetails = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!initialContext.trim()) return;
+    const isContextEmpty = !initialContext.trim() && selectedOccasions.length === 0;
+    if (isContextEmpty) return;
     
     if (formData.category === 'hijo') {
       if (!formData.childName?.trim() || !formData.birthDate?.trim()) {
@@ -278,9 +281,13 @@ INSTRUCCIONES:
       }
     }
     
+    const fullContext = selectedOccasions.length > 0 
+      ? `[Ocasiones: ${selectedOccasions.join(', ')}]\n${initialContext}` 
+      : initialContext;
+
     setIsGeneratingDetailsPrompt(true);
     try {
-      const prompt = await generateDetailsPrompt(initialContext, formData.category);
+      const prompt = await generateDetailsPrompt(fullContext, formData.category);
       setDetailsPrompt({
         title: prompt.title || "Nombres, lugares y la historia",
         subtitle: prompt.subtitle || "¿Cómo se llaman? ¿Dónde se conocieron? ¿Hay algo específico que debemos mencionar?",
@@ -386,7 +393,10 @@ INSTRUCCIONES:
 
     setIsGenerating(true);
     try {
-      const prompt = buildPrompt(formData, interviewAnswers, initialContext);
+      const fullContext = selectedOccasions.length > 0 
+        ? `[Ocasiones: ${selectedOccasions.join(', ')}]\n${initialContext}` 
+        : initialContext;
+      const prompt = buildPrompt(formData, interviewAnswers, fullContext);
       const generatedLyrics = await generateLyrics(prompt);
       setLyrics(generatedLyrics);
       
@@ -412,7 +422,10 @@ INSTRUCCIONES:
     if (!feedback.trim()) return;
     setIsGenerating(true);
     try {
-      const prompt = buildPrompt(formData, interviewAnswers, initialContext, feedback, lyrics);
+      const fullContext = selectedOccasions.length > 0 
+        ? `[Ocasiones: ${selectedOccasions.join(', ')}]\n${initialContext}` 
+        : initialContext;
+      const prompt = buildPrompt(formData, interviewAnswers, fullContext, feedback, lyrics);
       const generatedLyrics = await generateLyrics(prompt);
       setLyrics(generatedLyrics);
       setFeedback('');
@@ -1017,26 +1030,31 @@ INSTRUCCIONES:
 
                   {/* Sugerencias de Ocasión / Tags */}
                   <div className="pt-1">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ocasiones populares (toca para añadir):</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ocasiones populares (toca para seleccionar):</p>
                     <div className="flex flex-wrap gap-2">
                       {categoryText.suggestions.map((suggestion, idx) => (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => {
-                            const newText = initialContext.trim() 
-                              ? `${initialContext} \n[Ocasión: ${suggestion}] ` 
-                              : `[Ocasión: ${suggestion}] `;
-                            setInitialContext(newText);
+                            setSelectedOccasions(prev => 
+                              prev.includes(suggestion)
+                                ? prev.filter(item => item !== suggestion)
+                                : [...prev, suggestion]
+                            );
                           }}
-                          className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-full text-xs font-medium hover:bg-naranja-50 hover:text-naranja-600 hover:border-naranja-200 transition-all shadow-sm active:scale-95"
+                          className={`px-4 py-2 border rounded-full text-xs font-medium transition-all shadow-sm active:scale-95 ${
+                            selectedOccasions.includes(suggestion) 
+                              ? 'bg-naranja-500 text-white border-naranja-500' 
+                              : 'bg-white border-gray-200 text-gray-600 hover:bg-naranja-50 hover:text-naranja-600 hover:border-naranja-200'
+                          }`}
                         >
                           {suggestion}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <button type="submit" disabled={isGeneratingDetailsPrompt || !initialContext.trim()} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
+                  <button type="submit" disabled={isGeneratingDetailsPrompt || (!initialContext.trim() && selectedOccasions.length === 0)} className="w-full py-5 bg-naranja-500 text-white rounded-2.5xl font-bold text-lg tracking-widest hover:bg-naranja-600 transition shadow-lg disabled:opacity-50 flex items-center justify-center gap-3">
                     {isGeneratingDetailsPrompt ? <RefreshCw className="animate-spin" /> : <Sparkles />}
                     {isGeneratingDetailsPrompt ? "PREPARANDO..." : "SIGUIENTE PASO"}
                   </button>
