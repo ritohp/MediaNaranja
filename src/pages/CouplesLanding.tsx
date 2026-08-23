@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Music, Heart, ArrowRight, Sparkles, Star, CheckCircle2, Play } from 'lucide-react';
+import { Music, Heart, ArrowRight, Sparkles, Star, CheckCircle2, Play, BookOpen } from 'lucide-react';
 
 export default function CouplesLanding() {
   const navigate = useNavigate();
@@ -80,6 +80,58 @@ export default function CouplesLanding() {
                 <p className="text-[9px] font-black uppercase text-gray-400 tracking-wider">Reacción</p>
                 <p className="text-xs font-bold text-[#1A1A1A]">"No paraba de llorar"</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN: CÓMO FUNCIONA */}
+      <section className="py-20 px-6 bg-pink-50/50 border-y border-pink-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-playfair font-bold text-[#1A1A1A]">
+              La magia ocurre en <span className="italic text-pink-500">3 pasos</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Línea conectora (solo desktop) */}
+            <div className="hidden md:block absolute top-12 left-[15%] right-[15%] h-[2px] bg-gradient-to-r from-pink-200 via-pink-400 to-pink-200 opacity-50"></div>
+
+            {/* Paso 1 */}
+            <div className="relative flex flex-col items-center text-center space-y-4 group">
+              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-pink-500 shadow-xl border border-pink-100 group-hover:scale-110 transition-transform relative z-10">
+                <span className="absolute -top-2 -right-2 w-8 h-8 bg-[#1A1A1A] text-white text-xs font-black rounded-full flex items-center justify-center shadow-lg">1</span>
+                <Heart size={32} fill="currentColor" />
+              </div>
+              <h3 className="text-xl font-bold text-[#1A1A1A]">Test de 2 Minutos</h3>
+              <p className="text-gray-500 text-sm leading-relaxed max-w-[250px]">
+                Cuéntale a nuestra IA los detalles íntimos de su historia a través de un test rápido, fácil y ultra-personalizado.
+              </p>
+            </div>
+
+            {/* Paso 2 */}
+            <div className="relative flex flex-col items-center text-center space-y-4 group">
+              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-pink-500 shadow-xl border border-pink-100 group-hover:scale-110 transition-transform relative z-10">
+                <span className="absolute -top-2 -right-2 w-8 h-8 bg-[#1A1A1A] text-white text-xs font-black rounded-full flex items-center justify-center shadow-lg">2</span>
+                <BookOpen size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-[#1A1A1A]">Aprueba la Letra</h3>
+              <p className="text-gray-500 text-sm leading-relaxed max-w-[250px]">
+                Naranjín compondrá una letra profunda y emotiva. Podrás revisarla, pedir ajustes y darle tu visto bueno.
+              </p>
+            </div>
+
+            {/* Paso 3 */}
+            <div className="relative flex flex-col items-center text-center space-y-4 group">
+              <div className="w-24 h-24 bg-gradient-to-br from-pink-500 to-rose-500 rounded-full flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform relative z-10 shadow-pink-500/40">
+                <span className="absolute -top-2 -right-2 w-8 h-8 bg-[#1A1A1A] text-white text-xs font-black rounded-full flex items-center justify-center shadow-lg">3</span>
+                <Music size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-[#1A1A1A]">Magia Pura</h3>
+              <p className="text-gray-500 text-sm leading-relaxed max-w-[250px]">
+                ¡Listo! Se crea tu canción con música profesional. <strong>Solo pagas hasta el final, y solo si te hizo sentir un nudo en la garganta.</strong>
+              </p>
             </div>
           </div>
         </div>
