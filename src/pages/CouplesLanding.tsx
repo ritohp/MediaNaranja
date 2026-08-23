@@ -40,6 +40,23 @@ export default function CouplesLanding() {
               Crear nuestra canción <ArrowRight size={20} />
             </button>
             
+            {/* Reproductor Demo Separado */}
+            <div className="pt-6">
+              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3">Escucha un ejemplo real:</p>
+              <div className="bg-white p-3 rounded-2xl shadow-lg border border-pink-100 flex items-center gap-4 max-w-sm mx-auto lg:mx-0">
+                <button className="w-12 h-12 bg-pink-50 text-pink-500 rounded-full flex items-center justify-center shrink-0 hover:bg-pink-100 transition-colors">
+                  <Play size={20} className="ml-1" fill="currentColor" />
+                </button>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-bold text-gray-800">"El Café de la Condesa"</p>
+                  <p className="text-xs text-gray-500">Balada Romántica</p>
+                </div>
+                <div className="flex text-amber-400 pr-2">
+                 <Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" /><Star size={12} fill="currentColor" />
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-center lg:justify-start gap-4 text-xs font-bold text-gray-500 uppercase tracking-widest pt-4">
               <span className="flex items-center gap-1"><CheckCircle2 size={14} className="text-emerald-500"/> Calidad de Radio</span>
               <span className="flex items-center gap-1"><CheckCircle2 size={14} className="text-emerald-500"/> Lista en 3 minutos</span>
@@ -49,28 +66,20 @@ export default function CouplesLanding() {
           <div className="order-1 lg:order-2 relative group">
             <div className="absolute -inset-4 bg-gradient-to-tr from-pink-200 to-orange-200 blur-2xl opacity-40 rounded-full pointer-events-none"></div>
             <img 
-              src="/pareja-amor.png" 
-              alt="Pareja emocionada escuchando su canción" 
+              src="/pareja-joven.png" 
+              alt="Pareja joven enamorada escuchando su canción" 
               className="relative z-10 w-full max-w-md mx-auto rounded-[3rem] shadow-2xl border-4 border-white rotate-2 hover:rotate-0 transition-transform duration-500"
             />
             
-            {/* Flotante 1 */}
-            <div className="absolute top-10 -left-6 md:-left-12 glass-premium p-4 rounded-2xl shadow-xl z-20 flex items-center gap-3 animate-float delay-100">
-              <div className="w-10 h-10 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center shrink-0">
-                <Music size={18} />
+            {/* Flotante 1 (Ahora mejor posicionado y más sutil) */}
+            <div className="absolute top-10 -left-6 md:-left-8 glass-premium p-3 rounded-2xl shadow-xl z-20 flex items-center gap-3 animate-float delay-100 bg-white/90 backdrop-blur border border-pink-50">
+              <div className="w-8 h-8 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center shrink-0">
+                <Heart size={14} fill="currentColor" />
               </div>
-              <div>
-                <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Estilo Musical</p>
-                <p className="text-sm font-bold text-[#1A1A1A]">Balada Romántica</p>
+              <div className="pr-2">
+                <p className="text-[9px] font-black uppercase text-gray-400 tracking-wider">Reacción</p>
+                <p className="text-xs font-bold text-[#1A1A1A]">"No paraba de llorar"</p>
               </div>
-            </div>
-
-            {/* Flotante 2 */}
-            <div className="absolute -bottom-6 -right-4 md:-right-8 glass-premium p-4 rounded-2xl shadow-xl z-20 flex items-center gap-2 animate-float">
-               <div className="flex text-amber-400">
-                 <Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" /><Star size={14} fill="currentColor" />
-               </div>
-               <p className="text-xs font-bold text-[#1A1A1A] ml-2">"No paraba de llorar"</p>
             </div>
           </div>
         </div>
