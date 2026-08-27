@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import Home from './pages/Home';
@@ -34,6 +34,9 @@ function App() {
           <Route path="/galeria-recuerdos" element={<MemoryGallery />} />
           <Route path="/personalizar-cuadro" element={<MemoryCustomizer />} />
           <Route path="/personalizar-cuadro/:id" element={<MemoryCustomizer />} />
+          
+          {/* Catch-all route para evitar pantallas en blanco si la URL (ej. por Meta Ads) viene rota */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>
