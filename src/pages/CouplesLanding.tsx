@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Music, Heart, ArrowRight, Sparkles, Star, CheckCircle2, Play, BookOpen } from 'lucide-react';
+import { Music, Heart, ArrowRight, Sparkles, Star, CheckCircle2, Play, BookOpen, ChevronDown } from 'lucide-react';
 
 export default function CouplesLanding() {
   const navigate = useNavigate();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const handleStart = () => {
     localStorage.removeItem('mn_draft_song');
@@ -175,6 +177,90 @@ export default function CouplesLanding() {
         </div>
       </section>
 
+      {/* SECCIÓN: TESTIMONIOS (SOCIAL PROOF) */}
+      <section className="py-24 px-6 bg-pink-50/30 border-t border-pink-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-playfair font-bold text-[#1A1A1A] mb-4">
+              Historias que <span className="italic text-pink-500">hacen llorar</span>
+            </h2>
+            <p className="text-gray-500">Parejas reales que ya inmortalizaron su amor con Naranjín.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { name: "Sofía & Andrés", text: "Se la puse en el coche de camino a nuestra cena de aniversario. A los 10 segundos ya estaba llorando. Fue el mejor regalo que le he dado en 5 años de novios.", rating: 5, initial: "S" },
+              { name: "Carlos M.", text: "Quería pedirle matrimonio de una forma única. La canción contó toda nuestra historia desde que nos conocimos en la prepa. ¡Dijo que sí!", rating: 5, initial: "C" },
+              { name: "Valentina P.", text: "Pensé que sonaría robótico o falso, pero la voz y la música suenan nivel Spotify. Lo que más me sorprendió fue cómo acomodaron nuestros chistes locales en la letra.", rating: 5, initial: "V" }
+            ].map((review, i) => (
+              <div key={i} className="bg-white p-8 rounded-3xl shadow-xl shadow-pink-100/50 border border-pink-50 relative">
+                <div className="flex gap-1 text-amber-400 mb-4">
+                  {[...Array(review.rating)].map((_, idx) => <Star key={idx} size={16} fill="currentColor" />)}
+                </div>
+                <p className="text-gray-600 italic mb-6 leading-relaxed">"{review.text}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center font-bold font-playfair">{review.initial}</div>
+                  <p className="font-bold text-[#1A1A1A] text-sm">{review.name}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN: PREGUNTAS FRECUENTES (FAQ) */}
+      <section className="py-24 px-6 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-playfair font-bold text-[#1A1A1A] mb-4">
+              Preguntas <span className="italic text-pink-500">Frecuentes</span>
+            </h2>
+          </div>
+          
+          <div className="space-y-4">
+            {[
+              { q: "¿Tengo que pagar antes de escucharla?", a: "¡Para nada! La generación de la letra y la primera versión de la canción es gratis. Solo pagas al final si la canción te enamora y quieres descargarla en alta calidad." },
+              { q: "¿Qué pasa si no me gusta la letra?", a: "Tú tienes el control total. Naranjín te mostrará la letra antes de ponerle música. Si quieres cambiar algo, solo pídeselo y la reescribirá al instante." },
+              { q: "¿Cuánto tiempo tarda en estar lista?", a: "¡Es magia pura! El proceso completo de contar tu historia, revisar la letra y escuchar la canción final toma menos de 3 minutos." },
+              { q: "¿Suena a voz de robot?", a: "En lo absoluto. Utilizamos tecnología de inteligencia artificial de última generación que genera voces humanas, emotivas y con calidad de estudio (nivel radio)." }
+            ].map((faq, i) => (
+              <div key={i} className="border border-gray-200 rounded-2xl overflow-hidden bg-white">
+                <button 
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full px-6 py-5 text-left font-bold text-[#1A1A1A] flex items-center justify-between hover:bg-pink-50/50 transition-colors"
+                >
+                  {faq.q}
+                  <ChevronDown className={`transition-transform ${openFaq === i ? 'rotate-180 text-pink-500' : 'text-gray-400'}`} size={20} />
+                </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-5 text-gray-600 text-sm leading-relaxed border-t border-gray-100 pt-4">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-16 text-center pb-12 md:pb-0">
+            <button 
+              onClick={handleStart}
+              className="px-10 py-5 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-pink-500/30 hover:scale-105 transition-transform mx-auto flex items-center justify-center gap-3"
+            >
+              Comenzar Ahora <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* STICKY CTA MOBILE */}
+      <div className="fixed bottom-0 left-0 w-full p-4 bg-white/90 backdrop-blur-md border-t border-pink-100 z-50 md:hidden flex justify-center pb-6">
+        <button 
+          onClick={handleStart}
+          className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+        >
+          Crear Nuestra Canción <ArrowRight size={18} />
+        </button>
+      </div>
 
     </div>
   );
