@@ -550,15 +550,22 @@ export default function MySongs() {
 
               <div className="px-8 pb-8 pt-2 flex flex-col gap-3">
                 
-                {/* Botón Descarga Grande si está pagada */}
                 {song.is_paid && (song.audio_url || song.form_data?.version2?.audio_url) && (
-                  <a 
-                    href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
-                    target="_blank" rel="noreferrer" download 
-                    className="w-full py-3 bg-white text-naranja-600 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-1 shadow-sm"
-                  >
-                    <Download size={14} /> Descargar Canción (MP3)
-                  </a>
+                  <>
+                    <a 
+                      href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
+                      target="_blank" rel="noreferrer" download 
+                      className="w-full py-3 bg-white text-naranja-600 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-1 shadow-sm"
+                    >
+                      <Download size={14} /> Descargar Canción (MP3)
+                    </a>
+                    <Link
+                      to={`/personalizar-cuadro?songId=${song.id}`}
+                      className="w-full py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold text-xs hover:opacity-95 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-2 shadow-sm"
+                    >
+                      <Heart size={14} fill="currentColor" /> Crear Caja Musical Loveflix
+                    </Link>
+                  </>
                 )}
 
                 {song.form_data?.infographic_data ? (

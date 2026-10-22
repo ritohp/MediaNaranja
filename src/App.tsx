@@ -12,6 +12,7 @@ import SongPlayer from './pages/SongPlayer';
 
 import FatherLanding from './pages/FatherLanding';
 import CouplesLanding from './pages/CouplesLanding';
+import PublicGiftPlayer from './pages/PublicGiftPlayer';
 
 function App() {
   return (
@@ -34,6 +35,8 @@ function App() {
           <Route path="/galeria-recuerdos" element={<MemoryGallery />} />
           <Route path="/personalizar-cuadro" element={<MemoryCustomizer />} />
           <Route path="/personalizar-cuadro/:id" element={<MemoryCustomizer />} />
+          <Route path="/escuchar/:id" element={<PublicGiftPlayer />} />
+          <Route path="/loveflix/:id" element={<PublicGiftPlayer />} />
           
           {/* Catch-all route para evitar pantallas en blanco si la URL (ej. por Meta Ads) viene rota */}
           <Route path="*" element={<Navigate to="/" replace />} />

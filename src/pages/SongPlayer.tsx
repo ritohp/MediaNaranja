@@ -656,6 +656,33 @@ export default function SongPlayer() {
 
           
           {isPaid && (
+            <div className="mt-3 p-5 rounded-2xl bg-gradient-to-r from-red-950/40 via-[#1C2A39] to-zinc-900 border border-red-800/40 text-left relative overflow-hidden shadow-xl">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1.5">
+                  <span className="px-2.5 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
+                    Nuevo Producto Especial
+                  </span>
+                  <h4 className="text-white font-bold text-sm">
+                    Caja Musical Loveflix (Madera MDF)
+                  </h4>
+                  <p className="text-zinc-300 text-xs leading-relaxed">
+                    Graba esta canción y un mensaje de voz en una caja musical de madera con el diseño Loveflix impreso o descarga tu lámina con código QR.
+                  </p>
+                </div>
+                <span className="text-2xl shrink-0">🎁</span>
+              </div>
+              <div className="pt-4">
+                <button
+                  onClick={() => navigate(`/personalizar-cuadro?songId=${song.id}`)}
+                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-950/50"
+                >
+                  <Sparkles size={14} /> Personalizar Caja o Lámina con QR
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isPaid && (
             <div className="pt-4 mt-2 border-t border-[#1C2A39]/10 grid grid-cols-2 gap-3">
               <button 
                 onClick={() => {

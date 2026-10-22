@@ -17,7 +17,13 @@ import {
   RotateCcw,
   Mail,
   Key,
-  Feather
+  Feather,
+  Package,
+  Volume2,
+  ExternalLink,
+  MessageCircle,
+  Heart,
+  CheckCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -31,6 +37,8 @@ export default function AdminDashboard() {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [xrayData, setXrayData] = useState<any | null>(null);
+  const [memoriesOrders, setMemoriesOrders] = useState<any[]>([]);
+  const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -93,6 +101,13 @@ export default function AdminDashboard() {
       
       // Nueva métrica de conversión más realista: (Registrados / Visitantes Únicos)
       const conv = uniqueVisitors > 0 ? (totalU / uniqueVisitors) * 100 : 0;
+
+      // Cajas Musicales & Memories Orders
+      const { data: mems } = await supabase
+        .from('memories')
+        .select('*, mn_songs(*)')
+        .order('created_at', { ascending: false });
+      setMemoriesOrders(mems || []);
 
       setStats({
         totalUsers: totalU,
@@ -474,6 +489,16 @@ export default function AdminDashboard() {
     };
   };
 
+  const handleUpdateMemoryStatus = async (memoryId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase.from('memories').update({ status: newStatus }).eq('id', memoryId);
+      if (error) throw error;
+      setMemoriesOrders(prev => prev.map(m => m.id === memoryId ? { ...m, status: newStatus } : m));
+    } catch (err: any) {
+      alert("Error actualizando estatus: " + err.message);
+    }
+  };
+
   if (checking || loading) {
     return (
       <div className="min-h-screen bg-[#FDF9F8] flex items-center justify-center p-6">
@@ -502,6 +527,9 @@ export default function AdminDashboard() {
               <button onClick={() => setActiveTab('trafico')} className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 ${activeTab === 'trafico' ? 'text-indigo-500 border-b-2 border-indigo-500' : 'text-gray-300'}`}>Inteligencia</button>
               <button onClick={() => setActiveTab('seguimiento')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'seguimiento' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Seguimiento</button>
               <button onClick={() => setActiveTab('recientes')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'recientes' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Recientes</button>
+              <button onClick={() => setActiveTab('cajas')} className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${activeTab === 'cajas' ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-300'}`}>
+                <Package size={12} /> Cajas Loveflix ({memoriesOrders.length})
+              </button>
               <button onClick={() => setActiveTab('marketing')} className={`text-[10px] font-black uppercase tracking-widest ${activeTab === 'marketing' ? 'text-naranja-500 border-b-2 border-naranja-500' : 'text-gray-300'}`}>Marketing</button>
           </div>
         </div>
@@ -879,6 +907,246 @@ export default function AdminDashboard() {
                    </div>
                  ))}
               </div>
+           </div>
+        )}
+
+        {activeTab === 'cajas' && (
+           <div className="animate-in slide-in-from-bottom-5 duration-500 space-y-6">
+              <header className="flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <h2 className="text-3xl font-black font-outfit flex items-center gap-2">
+                    <Package className="text-red-500" /> Pedidos de Cajas Musicales & Láminas Loveflix
+                  </h2>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Descarga el arte en alta resolución para el taller de grabado/impresión en madera MDF y los audios para el chip.
+                  </p>
+                </div>
+                <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
+                  Total Pedidos: {memoriesOrders.length}
+                </div>
+              </header>
+
+              {memoriesOrders.length === 0 ? (
+                <div className="bg-white p-16 rounded-[2.5rem] border border-orange-50 text-center text-gray-400 space-y-3">
+                  <Package size={48} className="mx-auto text-gray-300" />
+                  <p className="font-bold text-sm">Aún no hay pedidos registrados de Cajas Musicales o Láminas.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {memoriesOrders.map((order: any) => {
+                    let addressObj: any = null;
+                    if (order.shipping_address) {
+                      try {
+                        addressObj = JSON.parse(order.shipping_address);
+                      } catch {
+                        addressObj = { street: order.shipping_address };
+                      }
+                    }
+
+                    const cleanPhone = (order.phone || '').replace(/\D/g, '');
+                    const songData = order.mn_songs || {};
+                    const songAudio = songData.audio_url || songData.demo_url;
+
+                    return (
+                      <div key={order.id} className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-orange-50 shadow-sm space-y-6 flex flex-col justify-between">
+                        <div className="space-y-4">
+                          {/* ENCABEZADO DE LA TARJETA */}
+                          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 pb-4">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                                  order.product_type === 'digital_poster'
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                                    : 'bg-red-50 border-red-200 text-red-600'
+                                }`}>
+                                  {order.product_type === 'digital_poster' ? '🖼️ Lámina Digital QR' : '📦 Caja Musical MDF'}
+                                </span>
+                                <span className="text-[10px] text-gray-400 font-mono">
+                                  {new Date(order.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <h3 className="text-xl font-bold font-outfit text-gray-900">{order.names}</h3>
+                              <p className="text-xs text-gray-500 font-medium">Juntos desde: {order.date_text || 'No indicado'}</p>
+                            </div>
+
+                            {/* SELECTOR DE ESTATUS */}
+                            <select
+                              value={order.status || 'pending_payment'}
+                              onChange={(e) => handleUpdateMemoryStatus(order.id, e.target.value)}
+                              className={`text-[10px] font-bold px-3 py-1.5 rounded-xl border outline-none cursor-pointer ${
+                                order.status === 'shipped' || order.status === 'delivered'
+                                  ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                  : order.status === 'in_production'
+                                  ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                  : 'bg-orange-50 text-orange-600 border-orange-200'
+                              }`}
+                            >
+                              <option value="pending_payment">⏳ Pendiente Pago</option>
+                              <option value="paid">✅ Pagado</option>
+                              <option value="in_production">🔨 En Fabricación MDF</option>
+                              <option value="shipped">🚚 Enviado</option>
+                              <option value="delivered">🎉 Entregado</option>
+                            </select>
+                          </div>
+
+                          {/* VISTA PREVIA Y CRÉDITOS */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                            <div className="sm:col-span-1 aspect-[1/1.4] bg-zinc-900 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative group">
+                              {order.full_design_url ? (
+                                <img src={order.full_design_url} alt="Diseño" className="w-full h-full object-cover" />
+                              ) : order.main_photo_url ? (
+                                <img src={order.main_photo_url} alt="Fondo" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">Sin Arte</div>
+                              )}
+                              <a
+                                href={order.full_design_url || order.main_photo_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity"
+                              >
+                                Ver Arte
+                              </a>
+                            </div>
+
+                            <div className="sm:col-span-2 space-y-2 text-xs text-gray-600 leading-relaxed">
+                              {order.synopsis && (
+                                <p className="italic bg-gray-50 p-3 rounded-xl border border-gray-100 line-clamp-3 font-serif">
+                                  "{order.synopsis}"
+                                </p>
+                              )}
+                              <div className="text-[11px] space-y-0.5">
+                                {order.author_name && <p><strong>Escrito por:</strong> {order.author_name}</p>}
+                                {order.recipient_name && <p><strong>Destinado a:</strong> {order.recipient_name}</p>}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* SECCIÓN DE DIRECCIÓN DE ENVÍO Y CONTACTO (SI ES FÍSICA) */}
+                          {order.product_type !== 'digital_poster' && (
+                            <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 text-xs space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-gray-800 flex items-center gap-1.5 uppercase text-[10px] tracking-wider">
+                                  📍 Envío a Domicilio:
+                                </span>
+                                {cleanPhone && (
+                                  <a
+                                    href={`https://wa.me/${cleanPhone}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-2.5 py-1 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-lg font-bold text-[10px] flex items-center gap-1 transition-colors"
+                                  >
+                                    <MessageCircle size={12} /> WhatsApp ({order.phone})
+                                  </a>
+                                )}
+                              </div>
+                              {addressObj ? (
+                                <p className="text-gray-600">
+                                  {addressObj.street}, Col. {addressObj.colony}, CP {addressObj.zipCode}, {addressObj.city}, {addressObj.state}.
+                                </p>
+                              ) : (
+                                <p className="text-gray-400 italic">No se especificó dirección completa.</p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* AUDIOS: CANCIÓN Y NOTA DE VOZ */}
+                          <div className="space-y-3 pt-2">
+                            {/* CANCIÓN */}
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 truncate">
+                                <Music size={16} className="text-naranja-500 shrink-0" />
+                                <span className="text-xs font-bold text-gray-800 truncate">
+                                  {songData.title || 'Canción Personalizada'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {songAudio ? (
+                                  <>
+                                    <audio src={songAudio} controls className="h-7 w-36" />
+                                    <a
+                                      href={songAudio}
+                                      download
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="p-1.5 bg-white border border-gray-200 text-gray-600 hover:text-naranja-500 rounded-lg text-xs"
+                                      title="Descargar Canción MP3"
+                                    >
+                                      <Download size={14} />
+                                    </a>
+                                  </>
+                                ) : (
+                                  <span className="text-[10px] text-gray-400 italic">Sin audio</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* NOTA DE VOZ */}
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2 truncate">
+                                <Volume2 size={16} className="text-red-500 shrink-0" />
+                                <span className="text-xs font-bold text-gray-800 truncate">
+                                  Nota de Voz Dedicada
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {order.voice_note_url ? (
+                                  <>
+                                    <audio src={order.voice_note_url} controls className="h-7 w-36" />
+                                    <a
+                                      href={order.voice_note_url}
+                                      download
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="p-1.5 bg-white border border-gray-200 text-gray-600 hover:text-red-500 rounded-lg text-xs"
+                                      title="Descargar Nota de Voz"
+                                    >
+                                      <Download size={14} />
+                                    </a>
+                                  </>
+                                ) : (
+                                  <span className="text-[10px] text-gray-400 italic">No grabó nota</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* BOTÓN ESTELAR DE DESCARGA DE IMPRESIÓN Y REPRODUCTOR PÚBLICO */}
+                        <div className="pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {order.full_design_url ? (
+                            <a
+                              href={order.full_design_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              download={`Loveflix_${order.names.replace(/\s+/g, '_')}_print.jpg`}
+                              className="py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all"
+                            >
+                              <Download size={14} /> Descargar Arte Impresión
+                            </a>
+                          ) : (
+                            <button
+                              disabled
+                              className="py-3 bg-gray-100 text-gray-400 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed"
+                            >
+                              Arte no generado
+                            </button>
+                          )}
+
+                          <a
+                            href={`/escuchar/${order.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="py-3 bg-zinc-900 hover:bg-black text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all"
+                          >
+                            <ExternalLink size={14} /> Ver Reproductor QR
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
            </div>
         )}
 
