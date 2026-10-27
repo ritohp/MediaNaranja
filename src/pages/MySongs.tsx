@@ -26,6 +26,37 @@ export default function MySongs() {
   const [unlockingSongId, setUnlockingSongId] = useState<string | null>(null);
   const [unlockingStatus, setUnlockingStatus] = useState<'checking' | 'success' | 'failed'>('checking');
 
+  const isLoveSong = (song: any): boolean => {
+    const formData = song.form_data || {};
+    const rel = (formData.relacion || '').toLowerCase();
+    const cat = (formData.category || '').toLowerCase();
+    const flow = (formData.landing_flow || '').toLowerCase();
+
+    if (rel === 'pareja' || rel.includes('novi') || rel.includes('espos') || rel.includes('pareja')) return true;
+    if (cat === 'pareja' || cat === 'parejas' || cat === 'amor') return true;
+    if (flow === 'parejas' || flow === 'pareja') return true;
+
+    const allText = [
+      song.title,
+      song.lyrics,
+      formData.initialContext,
+      formData.specificDetails,
+      formData.comoSeConocieron,
+      formData.momentosImportantes,
+      formData.anecdota,
+      formData.apodos,
+      formData.fechaEspecial
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    const loveKeywords = [
+      'amor', 'enamorad', 'novio', 'novia', 'esposo', 'esposa', 'pareja',
+      'aniversario', 'boda', 'casamos', 'juntos', 'san valentín', 'te amo',
+      'matrimonio', 'romántic', 'flechamos'
+    ];
+
+    return loveKeywords.some(kw => allText.includes(kw));
+  };
+
   const handleVersionSelect = async (songId: string, version: number, currentFormData: any) => {
     setSelectedVersions(prev => ({ ...prev, [songId]: version }));
     try {
@@ -393,10 +424,15 @@ export default function MySongs() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {songs.map((song) => (
             <div key={song.id} className="group relative bg-white rounded-[2rem] overflow-hidden shadow-lg transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-blush-50 flex flex-col">
-              <div className="absolute top-4 right-4 z-10 flex gap-2">
+              <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
+                {isLoveSong(song) && (
+                  <span className="bg-red-50 text-red-600 border border-red-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                    ❤️ Pareja
+                  </span>
+                )}
                 {getStatusBadge(song.status)}
                 {song.status === 'completed' && (
-                  song.is_paid ? (
+                  (song.is_paid || user?.email === 'ritohp@gmail.com') ? (
                     <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Liberada</span>
                   ) : (
                     <span className="bg-naranja-100 text-naranja-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Demo</span>
@@ -550,22 +586,29 @@ export default function MySongs() {
 
               <div className="px-8 pb-8 pt-2 flex flex-col gap-3">
                 
-                {song.is_paid && (song.audio_url || song.form_data?.version2?.audio_url) && (
-                  <>
-                    <a 
-                      href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
-                      target="_blank" rel="noreferrer" download 
-                      className="w-full py-3 bg-white text-naranja-600 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-1 shadow-sm"
-                    >
-                      <Download size={14} /> Descargar Canción (MP3)
-                    </a>
-                    <Link
-                      to={`/personalizar-cuadro?songId=${song.id}`}
-                      className="w-full py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl font-bold text-xs hover:opacity-95 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-2 shadow-sm"
-                    >
-                      <Heart size={14} fill="currentColor" /> Crear Caja Musical Loveflix
-                    </Link>
-                  </>
+                {/* Botón Descarga Grande si está pagada o admin */}
+                {(song.is_paid || user?.email === 'ritohp@gmail.com') && (song.audio_url || song.form_data?.version2?.audio_url) && (
+                  <a 
+                    href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
+                    target="_blank" rel="noreferrer" download 
+                    className="w-full py-3 bg-white text-naranja-600 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-1 shadow-sm"
+                  >
+                    <Download size={14} /> Descargar Canción (MP3)
+                  </a>
+                )}
+
+                {/* Botón Caja Musical Loveflix */}
+                {song.status === 'completed' && (
+                  <Link
+                    to={`/personalizar-cuadro?songId=${song.id}`}
+                    className={`w-full py-3 rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-2 shadow-sm ${
+                      isLoveSong(song)
+                        ? 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white shadow-red-200'
+                        : 'bg-zinc-900 text-white hover:bg-black'
+                    }`}
+                  >
+                    <Heart size={14} fill="currentColor" /> {isLoveSong(song) ? "Preparar Caja Musical Loveflix" : "Crear Caja Musical o Lámina"}
+                  </Link>
                 )}
 
                 {song.form_data?.infographic_data ? (

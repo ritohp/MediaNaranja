@@ -113,23 +113,58 @@ export default function MemoryCustomizer() {
       setSongNotPaidWarning(false);
     }
 
-    // Auto-relleno inteligente desde los datos de la canción
+    // Auto-relleno inteligente desde los datos de la canción (formato nuevo o anterior)
     const formData = s.form_data || {};
-    const recipient = formData.nombreDestinatario || formData.recipientName || '';
-    const author = formData.authorName || '';
+    const recipient = (formData.nombreDestinatario || formData.recipientName || '').trim();
+    const author = (formData.authorName || formData.nombreRemitente || '').trim();
 
     if (recipient) {
-      setRecipientName(recipient);
+      // Capitalizar nombre
+      const capRecipient = recipient.charAt(0).toUpperCase() + recipient.slice(1);
+      setRecipientName(capRecipient);
       if (author) {
-        setAuthorName(author);
-        setNames(`${author} & ${recipient}`);
+        const capAuthor = author.charAt(0).toUpperCase() + author.slice(1);
+        setAuthorName(capAuthor);
+        setNames(`${capAuthor} & ${capRecipient}`);
       } else {
-        setNames(`Para ${recipient}`);
+        setNames(`${capRecipient} & Amor`);
       }
     }
 
-    if (formData.initialContext) {
-      setSynopsis(formData.initialContext.slice(0, 320));
+    // Extraer historia de amor / sinopsis
+    const storyParts = [
+      formData.comoSeConocieron,
+      formData.momentosImportantes,
+      formData.anecdota,
+      formData.queSientes,
+      formData.initialContext,
+      formData.specificDetails
+    ].filter(Boolean);
+
+    if (storyParts.length > 0) {
+      const fullStory = storyParts.join(' ').replace(/\s+/g, ' ').trim();
+      setSynopsis(fullStory.slice(0, 360));
+    }
+
+    // Extraer año / fecha especial
+    const dateSource = [
+      formData.fechaEspecial,
+      formData.fecha,
+      formData.date,
+      formData.initialContext,
+      formData.birthDate
+    ].filter(Boolean).join(' ');
+
+    const yearMatch = dateSource.match(/\b(19\d{2}|20\d{2})\b/);
+    if (yearMatch) {
+      setDate(yearMatch[1]);
+    } else if (s.created_at) {
+      setDate(new Date(s.created_at).getFullYear().toString());
+    }
+
+    // Cargar foto principal si ya existía en la canción
+    if (formData.custom_photo_url) {
+      setMainPhoto(formData.custom_photo_url);
     }
   };
 
