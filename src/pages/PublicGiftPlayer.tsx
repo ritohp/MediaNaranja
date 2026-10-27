@@ -143,14 +143,15 @@ export default function PublicGiftPlayer() {
     <div className="min-h-screen bg-[#080808] text-white font-sans selection:bg-red-900 pb-24">
       {/* Google fonts for Loveflix title */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
+        .font-bebas { font-family: 'Bebas Neue', cursive; letter-spacing: 2.5px; }
       `}</style>
 
       {/* HEADER CINEMATOGRÁFICO */}
       <header className="fixed top-0 inset-x-0 h-16 bg-black/80 backdrop-blur-md z-50 flex items-center justify-between px-6 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <span className="text-red-600 text-2xl font-black tracking-tighter">LOVEFLIX</span>
+          <span className="text-[#E50914] text-3xl font-normal leading-none font-bebas">LOVEFLIX</span>
           <span className="text-[10px] uppercase font-bold text-zinc-400 border-l border-zinc-700 pl-3 hidden sm:inline-block">
             Tu Regalo Inédito
           </span>

@@ -400,8 +400,9 @@ export default function MemoryCustomizer() {
   return (
     <div className="min-h-screen bg-[#080808] text-white pt-20 pb-24 selection:bg-red-900 font-sans">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
+        .font-bebas { font-family: 'Bebas Neue', cursive; letter-spacing: 2.5px; }
         .netflix-gradient-bottom { background: linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.7) 45%, transparent 80%); }
         .netflix-gradient-top { background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%); }
       `}</style>
@@ -844,7 +845,9 @@ export default function MemoryCustomizer() {
             {/* HEADER LOVEFLIX ESTILO NETFLIX */}
             <header className="absolute top-0 inset-x-0 h-16 flex items-center justify-between px-7 z-40">
               <div className="flex items-center gap-4">
-                <span className="text-red-600 font-black text-2xl tracking-tighter" style={{ fontFamily: 'Impact, sans-serif' }}>
+                <span 
+                  className="text-[#E50914] text-3xl font-normal leading-none select-none drop-shadow-sm font-bebas"
+                >
                   LOVEFLIX
                 </span>
                 <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-white/80">
@@ -859,7 +862,7 @@ export default function MemoryCustomizer() {
                 <span className="text-sm">⌕</span>
                 <span className="text-sm">🎁</span>
                 <span className="text-sm">🔔</span>
-                <div className="w-6 h-6 rounded-sm bg-red-600 border border-white/20 overflow-hidden flex items-center justify-center">
+                <div className="w-6 h-6 rounded-sm bg-[#E50914] border border-white/20 overflow-hidden flex items-center justify-center">
                   {mainPhoto ? (
                     <img src={mainPhoto} alt="Avatar" crossOrigin="anonymous" className="w-full h-full object-cover" />
                   ) : (
@@ -869,113 +872,116 @@ export default function MemoryCustomizer() {
               </div>
             </header>
 
-            {/* CONTENIDO PRINCIPAL: TÍTULO, BADGES Y SINOPSIS */}
-            <div className="absolute inset-x-8 bottom-36 z-40 space-y-2.5">
+            {/* CONTENIDO INFERIOR: ESTRUCTURA FLEX PARA EVITAR TODO TIPO DE SOLAPAMIENTO */}
+            <div className="absolute inset-x-7 bottom-4 z-40 flex flex-col justify-end space-y-3">
               
-              {/* BADGE N PAREJAS */}
-              <div className="flex items-center gap-2">
-                <span className="bg-red-600 text-white font-black text-[9px] px-1.5 py-0.2 rounded-xs shadow-md">
-                  N
-                </span>
-                <span className="text-white/90 font-black text-[10px] tracking-[0.25em] uppercase">
-                  PAREJAS
-                </span>
-              </div>
-
-              {/* NOMBRES DE LOS PROTAGONISTAS */}
-              <h2 className="text-5xl sm:text-6xl font-script text-white leading-none drop-shadow-xl">
-                {names || "Nombre & Nombre"}
-              </h2>
-
-              {/* FILA DE BADGES */}
-              <div className="flex items-center gap-2.5 text-[11px] font-bold text-white/90 pt-0.5">
-                <span className="text-emerald-400 font-extrabold">Juntos Desde {date || "2015"}</span>
-                <span className="bg-emerald-600 text-white px-1 py-0.2 rounded-[2px] text-[9px] font-black">L</span>
-                <span className="text-white/80 text-[10px]">1° Gran Amor</span>
-                <span className="border border-white/40 px-1 py-0.2 rounded-[2px] text-[8px] font-bold text-white/70">HD</span>
-              </div>
-
-              {/* TOP 10 RANKING */}
-              <div className="flex items-center gap-2">
-                <span className="bg-red-600 text-white font-black text-[8px] px-1 py-0.5 rounded-[2px] tracking-tighter">
-                  TOP 10
-                </span>
-                <span className="text-white font-bold text-[10px] tracking-wide">
-                  Las Mejores Parejas Del Mundo
-                </span>
-              </div>
-
-              {/* SINOPSIS / TEXTO DE AMOR */}
-              <p className="text-[10.5px] text-white/85 font-normal leading-relaxed max-w-[420px] drop-shadow-md pr-4 line-clamp-4">
-                {synopsis}
-              </p>
-
-              {/* BOTONES INTERFAZ NETFLIX + CRÉDITOS */}
-              <div className="flex items-center justify-between pt-1">
+              {/* BLOQUE DE TÍTULO, BADGES Y SINOPSIS */}
+              <div className="space-y-1.5">
+                {/* BADGE N PAREJAS */}
                 <div className="flex items-center gap-2">
-                  <div className="px-5 py-1.5 bg-white text-black rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-md">
-                    <span>▶</span> Play
-                  </div>
-                  <div className="px-4 py-1.5 bg-white/20 backdrop-blur-md text-white rounded font-bold text-[10px] uppercase tracking-wider border border-white/20 flex items-center gap-1">
-                    <span>✓</span> Favorito
-                  </div>
-                  <div className="w-6 h-6 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-[10px] text-white">
-                    👍
-                  </div>
-                  <div className="w-6 h-6 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-[10px] text-white">
-                    👎
-                  </div>
-                </div>
-
-                <div className="text-right text-[8.5px] text-white/70 leading-tight">
-                  {authorName && <div><span className="opacity-70">Escrito por:</span> {authorName}</div>}
-                  {recipientName && <div><span className="opacity-70">Destinado a:</span> {recipientName}</div>}
-                </div>
-              </div>
-
-            </div>
-
-            {/* SECCIÓN INFERIOR: NUESTROS MEJORES MOMENTOS + CÓDIGO QR */}
-            <div className="absolute inset-x-8 bottom-5 z-40">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-[10.5px] font-black uppercase tracking-wider text-white">
-                  Nuestros Mejores Momentos
-                </h4>
-                <span className="text-[8px] text-white/50 font-mono tracking-widest uppercase">
-                  Escanea para escuchar 🎵
-                </span>
-              </div>
-
-              <div className="grid grid-cols-5 gap-2.5 items-end">
-                {galleryPhotos.slice(0, 4).map((photo, i) => (
-                  <div 
-                    key={i} 
-                    className="aspect-[3/4] bg-zinc-900 rounded-sm border border-white/20 overflow-hidden shadow-lg"
-                  >
-                    {photo ? (
-                      <img src={photo} alt={`Momento ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-zinc-600 font-bold">
-                        Foto {i + 1}
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* ÚLTIMO SLOT: 5TA FOTO O CÓDIGO QR DE ESCUCHA */}
-                <div className="aspect-[3/4] bg-white rounded-sm border border-white/30 p-1.5 flex flex-col items-center justify-center shadow-lg relative group overflow-hidden">
-                  <QRCodeSVG
-                    value={publicGiftUrl}
-                    size={68}
-                    level="M"
-                    fgColor="#000000"
-                    bgColor="#ffffff"
-                  />
-                  <span className="text-[7px] font-black text-black uppercase tracking-tighter mt-1">
-                    Escanéame
+                  <span className="bg-[#E50914] text-white font-black text-[9px] px-1.5 py-0.5 rounded-xs shadow-md leading-none">
+                    N
+                  </span>
+                  <span className="text-white/90 font-black text-[10px] tracking-[0.25em] uppercase">
+                    PAREJAS
                   </span>
                 </div>
+
+                {/* NOMBRES DE LOS PROTAGONISTAS */}
+                <h2 className="text-5xl font-script text-white leading-tight drop-shadow-xl py-0.5">
+                  {names || "Nombre & Nombre"}
+                </h2>
+
+                {/* FILA DE BADGES */}
+                <div className="flex items-center gap-2.5 text-[11px] font-bold text-white/90">
+                  <span className="text-emerald-400 font-extrabold">Juntos Desde {date || "2015"}</span>
+                  <span className="bg-emerald-600 text-white px-1 py-0.2 rounded-[2px] text-[9px] font-black">L</span>
+                  <span className="text-white/80 text-[10px]">1° Gran Amor</span>
+                  <span className="border border-white/40 px-1 py-0.2 rounded-[2px] text-[8px] font-bold text-white/70">HD</span>
+                </div>
+
+                {/* TOP 10 RANKING */}
+                <div className="flex items-center gap-2">
+                  <span className="bg-[#E50914] text-white font-black text-[8px] px-1 py-0.5 rounded-[2px] tracking-tighter">
+                    TOP 10
+                  </span>
+                  <span className="text-white font-bold text-[10px] tracking-wide">
+                    Las Mejores Parejas Del Mundo
+                  </span>
+                </div>
+
+                {/* SINOPSIS / TEXTO DE AMOR */}
+                <p className="text-[10px] sm:text-[10.5px] text-white/85 font-normal leading-relaxed max-w-[430px] drop-shadow-md pr-2 line-clamp-3">
+                  {synopsis}
+                </p>
+
+                {/* BOTONES INTERFAZ NETFLIX + CRÉDITOS */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <div className="px-4 py-1.5 bg-white text-black rounded font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-md">
+                      <span>▶</span> Play
+                    </div>
+                    <div className="px-3.5 py-1.5 bg-white/20 backdrop-blur-md text-white rounded font-bold text-[10px] uppercase tracking-wider border border-white/20 flex items-center gap-1">
+                      <span>✓</span> Favorito
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-[10px] text-white">
+                      👍
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-[10px] text-white">
+                      👎
+                    </div>
+                  </div>
+
+                  <div className="text-right text-[8px] sm:text-[8.5px] text-white/70 leading-tight">
+                    {authorName && <div><span className="opacity-70">Escrito por:</span> {authorName}</div>}
+                    {recipientName && <div><span className="opacity-70">Destinado a:</span> {recipientName}</div>}
+                  </div>
+                </div>
               </div>
+
+              {/* SECCIÓN INFERIOR SEPARADA: NUESTROS MEJORES MOMENTOS + CÓDIGO QR */}
+              <div className="pt-2.5 border-t border-white/15">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-[10.5px] font-black uppercase tracking-wider text-white">
+                    Nuestros Mejores Momentos
+                  </h4>
+                  <span className="text-[8px] text-white/60 font-mono tracking-widest uppercase">
+                    Escanea para escuchar 🎵
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-5 gap-2.5 items-end">
+                  {galleryPhotos.slice(0, 4).map((photo, i) => (
+                    <div 
+                      key={i} 
+                      className="aspect-[3/4] bg-zinc-900 rounded-sm border border-white/20 overflow-hidden shadow-lg"
+                    >
+                      {photo ? (
+                        <img src={photo} alt={`Momento ${i + 1}`} crossOrigin="anonymous" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[9px] text-zinc-600 font-bold">
+                          Foto {i + 1}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* ÚLTIMO SLOT: 5TA FOTO O CÓDIGO QR DE ESCUCHA */}
+                  <div className="aspect-[3/4] bg-white rounded-sm border border-white/30 p-1.5 flex flex-col items-center justify-center shadow-lg relative group overflow-hidden">
+                    <QRCodeSVG
+                      value={publicGiftUrl}
+                      size={64}
+                      level="M"
+                      fgColor="#000000"
+                      bgColor="#ffffff"
+                    />
+                    <span className="text-[7px] font-black text-black uppercase tracking-tighter mt-1">
+                      Escanéame
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
           </div>
