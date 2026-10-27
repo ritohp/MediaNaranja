@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
-  Camera, Upload, ArrowLeft, Loader2, Save, Trash2, Search, Bell, 
+  Camera, Upload, ArrowLeft, ArrowRight, Loader2, Save, Trash2, Search, Bell, 
   Gift, Heart, Music, Check, Volume2, Sparkles, MapPin, Phone, 
   Download, Eye, Lock, ShieldCheck, CheckCircle2 
 } from 'lucide-react';
@@ -359,6 +359,94 @@ export default function MemoryCustomizer() {
     }
   };
 
+  const handleLaunchDemo = async () => {
+    if (!user) {
+      alert("Por favor inicia sesión con tu cuenta para guardar y ver el demo interactivo de tu serie.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const targetId = id || memoryUid;
+
+      // 1. Guardar la foto principal si es data URL
+      let mainUrl = mainPhoto;
+      if (mainPhoto && mainPhoto.startsWith('data:')) {
+        mainUrl = await uploadBase64(mainPhoto, `${user.id}/${targetId}_main.jpg`);
+      }
+
+      // 2. Guardar las fotos de galería que sean data URLs
+      const galleryUrls = [];
+      for (let i = 0; i < galleryPhotos.length; i++) {
+        const p = galleryPhotos[i];
+        if (p) {
+          if (p.startsWith('data:')) {
+            const url = await uploadBase64(p, `${user.id}/${targetId}_gal_${i}.jpg`);
+            galleryUrls.push(url);
+          } else {
+            galleryUrls.push(p);
+          }
+        } else {
+          galleryUrls.push(null);
+        }
+      }
+
+      // 3. Capturar el render para la impresión física
+      let masterUrl = undefined;
+      const area = document.getElementById('capture-area');
+      if (area) {
+        try {
+          const masterShotDataUrl = await toJpeg(area, {
+            quality: 0.92,
+            pixelRatio: 2.0,
+            cacheBust: true,
+            backgroundColor: '#000000',
+          });
+          masterUrl = await uploadBase64(masterShotDataUrl, `${user.id}/${targetId}_print_master.jpg`);
+        } catch (captureErr) {
+          console.warn("Capture warning:", captureErr);
+        }
+      }
+
+      const payload: any = {
+        user_id: user.id,
+        song_id: songId,
+        names,
+        date_text: date,
+        author_name: authorName,
+        recipient_name: recipientName,
+        synopsis,
+        main_photo_url: mainUrl,
+        gallery_photos_urls: galleryUrls,
+        voice_note_url: voiceNoteUrl,
+        product_type: productType,
+        shipping_address: JSON.stringify(shippingAddress),
+        phone,
+        style: 'loveflix',
+        status: 'pending_payment'
+      };
+
+      if (masterUrl) {
+        payload.full_design_url = masterUrl;
+      }
+
+      const { error } = id
+        ? await supabase.from('memories').update(payload).eq('id', id)
+        : await supabase.from('memories').insert({ id: targetId, ...payload });
+
+      if (error) throw error;
+
+      // Navegar inmediatamente a la mini página web en modo demo interactivo
+      navigate(`/escuchar/${targetId}?demo=true`);
+
+    } catch (err: any) {
+      console.error("Error generando demo:", err);
+      alert(`No se pudo cargar el demo: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const exportPDF = async () => {
     const area = document.getElementById('capture-area');
     if (!area) return;
@@ -614,6 +702,18 @@ export default function MemoryCustomizer() {
                     ></textarea>
                   </div>
                 </div>
+
+                {/* NAVEGACIÓN PASO 1 */}
+                <div className="pt-4 border-t border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('audio')}
+                    className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-red-950/50 flex items-center justify-center gap-2 transition-all active:scale-95"
+                  >
+                    <span>Continuar a Canción & Voz</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -657,6 +757,26 @@ export default function MemoryCustomizer() {
                   initialAudioUrl={voiceNoteUrl}
                   onAudioSaved={(url) => setVoiceNoteUrl(url)}
                 />
+
+                {/* NAVEGACIÓN PASO 2 */}
+                <div className="pt-4 border-t border-zinc-800 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('design')}
+                    className="py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Volver al Diseño</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('order')}
+                    className="py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-lg shadow-red-950/50 flex items-center justify-center gap-2 transition-all active:scale-95"
+                  >
+                    <span>Continuar a Envío</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -782,31 +902,52 @@ export default function MemoryCustomizer() {
                     </p>
                   </div>
                 )}
+
+                {/* BOTÓN ESTRELLA: VER DEMO INTERACTIVO */}
+                <div className="pt-4 border-t border-zinc-800 space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleLaunchDemo}
+                    disabled={isSaving}
+                    className="w-full py-4.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-red-950/60 flex items-center justify-center gap-2.5 transition-all active:scale-95 disabled:opacity-50 group border border-red-500/30"
+                  >
+                    {isSaving ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={18} className="text-amber-300 animate-pulse group-hover:rotate-12 transition-transform" />
+                    )}
+                    <span className="text-sm">
+                      {isSaving ? "Guardando y Preparando Demo..." : "🎬 Ver Demo Interactivo"}
+                    </span>
+                  </button>
+
+                  <p className="text-[11px] text-zinc-400 text-center">
+                    Disfruta la experiencia Loveflix en vivo con tu música y fotos antes de confirmar.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('audio')}
+                      className="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white rounded-xl font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                    >
+                      <ArrowLeft size={14} />
+                      <span>Volver a Audio</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={exportPDF}
+                      disabled={isExporting}
+                      className="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white rounded-xl font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                    >
+                      {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                      <span>Muestra PDF</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
-
-            {/* BOTONES DE ACCIÓN */}
-            <div className="space-y-3 pt-4 border-t border-zinc-800">
-              <button
-                type="button"
-                onClick={saveMemory}
-                disabled={isSaving}
-                className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-red-950/50 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                <span>{isSaving ? "Generando Arte en Alta Calidad..." : "Guardar y Confirmar Pedido"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={exportPDF}
-                disabled={isExporting}
-                className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
-              >
-                {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                <span>Descargar Muestra en PDF</span>
-              </button>
-            </div>
 
           </div>
         </div>

@@ -160,26 +160,39 @@ export default function MyMemories() {
                   
                   <p className="text-xs text-gray-500 italic line-clamp-2 mb-6">"{memory.synopsis || 'Sin sinopsis'}"</p>
 
-                  <div className="mt-auto flex gap-3">
-                    <button 
-                      onClick={(e) => downloadMasterPDF(memory, e)}
-                      disabled={downloadingId === memory.id}
-                      className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
-                        memory.full_design_url 
-                          ? 'bg-white text-black hover:bg-[#E50914] hover:text-white' 
-                          : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                      }`}
+                  <div className="mt-auto space-y-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/escuchar/${memory.id}?demo=true`);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-[#E50914] hover:bg-[#b80710] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md active:scale-95"
                     >
-                      {downloadingId === memory.id ? <Loader2 className="animate-spin" size={16}/> : <Download size={16}/>}
-                      {downloadingId === memory.id ? 'GENERANDO...' : 'DESCARGAR PDF'}
+                      <Play size={14} fill="currentColor" /> Ver Demo Interactivo
                     </button>
-                    
-                    <button 
-                      onClick={(e) => deleteMemory(memory.id, e)}
-                      className="p-4 text-gray-600 hover:text-red-500 hover:bg-white transition-all rounded-xl border border-white/5"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={(e) => downloadMasterPDF(memory, e)}
+                        disabled={downloadingId === memory.id}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                          memory.full_design_url 
+                            ? 'bg-zinc-800 text-zinc-200 hover:bg-white hover:text-black' 
+                            : 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
+                        }`}
+                      >
+                        {downloadingId === memory.id ? <Loader2 className="animate-spin" size={14}/> : <Download size={14}/>}
+                        {downloadingId === memory.id ? 'GENERANDO...' : 'DESCARGAR PDF'}
+                      </button>
+                      
+                      <button 
+                        onClick={(e) => deleteMemory(memory.id, e)}
+                        className="p-3 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 transition-all rounded-xl border border-white/5"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                   
                   {!memory.full_design_url && (
