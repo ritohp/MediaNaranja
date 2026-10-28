@@ -484,11 +484,20 @@ export default function MySongs() {
                         <div className="relative z-10">
                           <audio 
                             key={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || song.demo_url) : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url)}
-                            src={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) 
-                              ? (song.audio_url || song.demo_url || '') 
-                              : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url || '')}
+                            src={
+                              (() => {
+                                const raw = (!selectedVersions[song.id] || selectedVersions[song.id] === 1) 
+                                  ? (song.audio_url || song.demo_url || '') 
+                                  : (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url || '');
+                                if (!raw || raw.includes('tempfile.aiquickdraw.com') || raw.includes('cloudinary.com/demo')) {
+                                  return '/audio/love_song_sample.mp3';
+                                }
+                                return raw;
+                              })()
+                            }
                             controls 
                             controlsList="nodownload"
+                            preload="auto"
                             referrerPolicy="no-referrer"
                             onContextMenu={(e) => e.preventDefault()}
                             onTimeUpdate={(e) => {
@@ -500,10 +509,9 @@ export default function MySongs() {
                             }}
                             onError={(e) => {
                               const target = e.currentTarget;
-                              if (target.src && !target.src.includes('retry=')) {
-                                const url = new URL(target.src);
-                                url.searchParams.set('retry', Date.now().toString());
-                                target.src = url.toString();
+                              if (!target.src.endsWith('/audio/love_song_sample.mp3')) {
+                                target.src = '/audio/love_song_sample.mp3';
+                                target.load();
                               }
                             }}
                             className="w-full mb-2 custom-audio-player"

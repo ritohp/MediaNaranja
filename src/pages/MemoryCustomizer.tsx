@@ -67,15 +67,14 @@ export default function MemoryCustomizer() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
       if (user) {
-        // Cargar canciones pagadas del usuario
+        // Cargar todas las canciones del usuario (pagadas o en demo)
         const { data: songs } = await supabase
           .from('mn_songs')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        const paid = (songs || []).filter(s => s.is_paid || user.email === 'ritohp@gmail.com');
-        setUserPaidSongs(paid);
+        setUserPaidSongs(songs || []);
 
         // Si hay songId en URL, cargar y validar
         if (songIdParam) {
@@ -737,13 +736,13 @@ export default function MemoryCustomizer() {
                       <option value="">-- Selecciona una de tus canciones --</option>
                       {userPaidSongs.map(s => (
                         <option key={s.id} value={s.id}>
-                          🎵 {s.title || 'Canción Personalizada'} ({new Date(s.created_at).toLocaleDateString()})
+                          🎵 {s.title || 'Canción Personalizada'} {s.is_paid ? '✓' : '(Demo 1 min)'} ({new Date(s.created_at).toLocaleDateString()})
                         </option>
                       ))}
                     </select>
                   ) : (
                     <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 text-xs text-zinc-400 space-y-2">
-                      <p>No se encontraron canciones pagadas en tu cuenta.</p>
+                      <p>No se encontraron canciones creadas en tu cuenta.</p>
                       <Link to="/crear-cancion" className="text-red-500 font-bold hover:underline inline-block">
                         Crear una canción ahora →
                       </Link>

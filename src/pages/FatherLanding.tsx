@@ -37,13 +37,13 @@ export default function FatherLanding() {
 
   const demoTracks = {
     pop: {
-      url: 'https://tempfile.aiquickdraw.com/r/41c5b3929a984d83a34e06abe047dbef.mp3',
+      url: '/audio/love_song_sample.mp3',
       title: 'Homenaje a Don José',
       style: 'Pop / Balada Acústica Emotiva',
       description: 'Ideal para papás sentimentales, con guitarras acústicas y un ritmo suave y tierno.'
     },
     corrido: {
-      url: 'https://tempfile.aiquickdraw.com/r/85b9498fe0f54ec681581a86accf5e05.mp3',
+      url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
       title: 'El Corrido de Don Rito',
       style: 'Corrido / Ranchero Tradicional',
       description: 'Ideal para papás que disfrutan de la música norteña, el acordeón y los relatos de esfuerzo y campo.'

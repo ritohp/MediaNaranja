@@ -36,6 +36,10 @@ export default function PublicGiftPlayer() {
   // Modal Lightbox para fotos
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
+  // Carrusel móvil para fotos
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+
   // Modal de desbloqueo / límite de 1 minuto
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -95,8 +99,46 @@ export default function PublicGiftPlayer() {
     currentUser.email === 'ritohp@gmail.com'
   );
 
-  const songAudioUrl = song?.audio_url || song?.demo_url || '';
+  // Audio URL con fallback automático a la muestra romántica si el enlace temporal expiró (404/401)
+  const [songAudioUrl, setSongAudioUrl] = useState<string>('/audio/love_song_sample.mp3');
   const voiceAudioUrl = memory?.voice_note_url || '';
+
+  useEffect(() => {
+    const candidate = 
+      song?.audio_url || 
+      song?.demo_url || 
+      song?.form_data?.version2?.audio_url || 
+      song?.form_data?.version2?.demo_url || 
+      '';
+
+    if (candidate && !candidate.includes('tempfile.aiquickdraw.com') && !candidate.includes('cloudinary.com/demo')) {
+      setSongAudioUrl(candidate);
+    } else {
+      setSongAudioUrl('/audio/love_song_sample.mp3');
+    }
+  }, [song]);
+
+  // Manejo de scroll en carrusel móvil
+  const handleCarouselScroll = () => {
+    if (!carouselRef.current) return;
+    const { scrollLeft, clientWidth } = carouselRef.current;
+    const itemWidth = clientWidth * 0.65;
+    const newIdx = Math.round(scrollLeft / (itemWidth || 1));
+    setActiveSlide(Math.min(Math.max(newIdx, 0), galleryList.length - 1));
+  };
+
+  const scrollToSlide = (idx: number) => {
+    if (!carouselRef.current) return;
+    const children = carouselRef.current.children;
+    if (children[idx]) {
+      (children[idx] as HTMLElement).scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest'
+      });
+      setActiveSlide(idx);
+    }
+  };
 
   // Auto-play de cortesía al cargar
   useEffect(() => {
@@ -125,8 +167,21 @@ export default function PublicGiftPlayer() {
         voiceAudioRef.current.pause();
         setIsPlayingVoice(false);
       }
-      songAudioRef.current.play().catch(e => console.error(e));
-      setIsPlayingSong(true);
+      
+      const playPromise = songAudioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsPlayingSong(true))
+          .catch((err) => {
+            console.warn("Audio play prevented or url failed, trying fallback:", err);
+            if (songAudioUrl !== '/audio/love_song_sample.mp3') {
+              setSongAudioUrl('/audio/love_song_sample.mp3');
+              setTimeout(() => {
+                songAudioRef.current?.play().then(() => setIsPlayingSong(true)).catch(console.error);
+              }, 120);
+            }
+          });
+      }
     }
   };
 
@@ -513,7 +568,7 @@ export default function PublicGiftPlayer() {
                 </div>
                 <div className="flex justify-between text-[10px] font-mono text-white/60">
                   <span>{formatTime(songCurrentTime)}</span>
-                  <span>{isDemoMode ? "1:00 (Muestra)" : formatTime(songDuration)}</span>
+                  <span>{isDemoMode ? "1:00 (Muestra)" : formatTime(songDuration || 180)}</span>
                 </div>
               </div>
             )}
@@ -525,13 +580,29 @@ export default function PublicGiftPlayer() {
       {/* REPRODUCTOR DE AUDIO OCULTO - CANCIÓN */}
       <audio
         ref={songAudioRef}
-        src={songAudioUrl}
-        onTimeUpdate={handleSongTimeUpdate}
-        onLoadedMetadata={() => {
-          if (songAudioRef.current) {
-            setSongDuration(songAudioRef.current.duration || 0);
+        key={songAudioUrl}
+        src={songAudioUrl || '/audio/love_song_sample.mp3'}
+        preload="auto"
+        referrerPolicy="no-referrer"
+        onError={() => {
+          console.warn("Audio load error, fallback to /audio/love_song_sample.mp3");
+          if (songAudioUrl !== '/audio/love_song_sample.mp3') {
+            setSongAudioUrl('/audio/love_song_sample.mp3');
           }
         }}
+        onCanPlay={() => {
+          if (songAudioRef.current) {
+            const dur = songAudioRef.current.duration;
+            if (!isNaN(dur) && dur > 0) setSongDuration(dur);
+          }
+        }}
+        onLoadedMetadata={() => {
+          if (songAudioRef.current) {
+            const dur = songAudioRef.current.duration;
+            if (!isNaN(dur) && dur > 0) setSongDuration(dur);
+          }
+        }}
+        onTimeUpdate={handleSongTimeUpdate}
         onEnded={() => setIsPlayingSong(false)}
       />
 
@@ -539,6 +610,7 @@ export default function PublicGiftPlayer() {
       <audio
         ref={voiceAudioRef}
         src={voiceAudioUrl}
+        preload="auto"
         onTimeUpdate={() => {
           if (voiceAudioRef.current) {
             setVoiceCurrentTime(voiceAudioRef.current.currentTime);
@@ -564,13 +636,64 @@ export default function PublicGiftPlayer() {
                 <Sparkles size={16} className="text-red-500" />
                 Nuestros Mejores Momentos
               </h2>
-              <span className="text-xs text-zinc-400">
+              <span className="text-xs text-zinc-400 hidden sm:inline">
                 Toca cualquier foto para ampliarla
+              </span>
+              <span className="text-[11px] text-zinc-400 sm:hidden">
+                Desliza para ver momentos →
               </span>
             </div>
 
-            {/* GRILLA DE FOTOS INTERACTIVAS */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {/* VISTA 1: CARRUSEL EN MÓVIL / VERTICAL (< md) */}
+            <div className="md:hidden relative">
+              <div 
+                ref={carouselRef}
+                onScroll={handleCarouselScroll}
+                className="flex overflow-x-auto snap-x snap-mandatory gap-3.5 pb-3 pt-1 px-4 -mx-6 scrollbar-none scroll-smooth"
+              >
+                {galleryList.map((photoUrl: string, idx: number) => (
+                  <div
+                    key={idx}
+                    onClick={() => setLightboxIndex(idx)}
+                    className="snap-center shrink-0 w-[64vw] max-w-[240px] aspect-[3/4] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-red-600/80 cursor-pointer shadow-2xl relative group transition-all active:scale-95"
+                  >
+                    <img 
+                      src={photoUrl} 
+                      alt={`Momento ${idx + 1}`} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-3.5">
+                      <span className="bg-red-600/90 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full w-max mb-1">
+                        Momento #{idx + 1}
+                      </span>
+                      <p className="text-[11px] font-bold text-white flex items-center justify-between">
+                        <span>{memory.names}</span>
+                        <Eye size={13} className="text-white/80" />
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* INDICADORES DE PUNTOS DEL CARRUSEL EN MÓVIL */}
+              <div className="flex items-center justify-center gap-2 pt-2">
+                {galleryList.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    onClick={() => scrollToSlide(dotIdx)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      activeSlide === dotIdx 
+                        ? 'w-6 bg-red-600' 
+                        : 'w-1.5 bg-zinc-700 hover:bg-zinc-500'
+                    }`}
+                    aria-label={`Ver momento ${dotIdx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* VISTA 2: GRILLA DE 5 FOTOS EN ESCRITORIO (md y superior) */}
+            <div className="hidden md:grid md:grid-cols-5 gap-3">
               {galleryList.map((photoUrl: string, idx: number) => (
                 <div
                   key={idx}

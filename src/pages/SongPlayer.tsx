@@ -45,11 +45,15 @@ export default function SongPlayer() {
   const isPaid = song?.is_paid || isAdmin;
   
   const activeVersionToPlay = (isOwner || isAdmin) ? activePreviewVersion : (song?.form_data?.selected_version || 1);
-  const currentAudioUrl = song ? (
+  const rawAudioUrl = song ? (
     activeVersionToPlay === 2
       ? (isPaid ? (song.form_data?.version2?.audio_url || song.form_data?.version2?.demo_url) : (song.form_data?.version2?.demo_url || song.form_data?.version2?.audio_url))
       : (isPaid ? (song.audio_url || song.demo_url) : (song.demo_url || song.audio_url))
   ) : '';
+
+  const currentAudioUrl = (rawAudioUrl && !rawAudioUrl.includes('tempfile.aiquickdraw.com') && !rawAudioUrl.includes('cloudinary.com/demo'))
+    ? rawAudioUrl
+    : '/audio/love_song_sample.mp3';
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
@@ -724,8 +728,16 @@ export default function SongPlayer() {
       <audio 
         key={currentAudioUrl}
         ref={audioRef} 
-        src={currentAudioUrl || undefined} 
+        src={currentAudioUrl || '/audio/love_song_sample.mp3'} 
+        preload="auto"
         referrerPolicy="no-referrer"
+        onError={(e) => {
+          const target = e.currentTarget;
+          if (!target.src.endsWith('/audio/love_song_sample.mp3')) {
+            target.src = '/audio/love_song_sample.mp3';
+            target.load();
+          }
+        }}
       />
       
       {/* Modal de Edición */}
