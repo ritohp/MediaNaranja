@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Play, Pause, Heart, Sparkles, Volume2, Music, Disc3, Share2, 
-  MessageCircle, Copy, Check, X, ChevronLeft, ChevronRight, Lock, 
-  ArrowLeft, ShieldCheck, Gift, CheckCircle2, ShoppingBag, Eye, Edit3
+  Play, Pause, Heart, Sparkles, Volume2, Music, Share2, 
+  Copy, Check, X, ChevronLeft, ChevronRight, Lock, 
+  ArrowLeft, ShieldCheck, Gift, CheckCircle2, ShoppingBag, Eye, Edit3,
+  MapPin, Loader2, Phone
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -46,6 +47,20 @@ export default function PublicGiftPlayer() {
   const [isInMyList, setIsInMyList] = useState(true);
   const [liked, setLiked] = useState(false);
 
+  // Sección de Compra Post-Demo
+  const [selectedProduct, setSelectedProduct] = useState<'physical_box' | 'digital_poster'>('physical_box');
+  const [shippingAddress, setShippingAddress] = useState({
+    street: '',
+    colony: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    references: ''
+  });
+  const [phone, setPhone] = useState('');
+  const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
+  const [orderSavedSuccess, setOrderSavedSuccess] = useState(false);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUser(user);
@@ -66,7 +81,21 @@ export default function PublicGiftPlayer() {
         .single();
 
       if (memErr) throw memErr;
-      setMemory(memData);
+      if (memData) {
+        setMemory(memData);
+        if (memData.shipping_address) {
+          try {
+            const parsed = typeof memData.shipping_address === 'string'
+              ? JSON.parse(memData.shipping_address)
+              : memData.shipping_address;
+            setShippingAddress(prev => ({ ...prev, ...parsed }));
+          } catch (e) {
+            console.warn("Could not parse shipping address:", e);
+          }
+        }
+        if (memData.phone) setPhone(memData.phone);
+        if (memData.product_type) setSelectedProduct(memData.product_type);
+      }
 
       if (memData?.song_id) {
         const { data: songData } = await supabase
@@ -149,7 +178,6 @@ export default function PublicGiftPlayer() {
         playPromise
           .then(() => setIsPlayingSong(true))
           .catch(() => {
-            // La política del navegador previene auto-play sin interacción previa
             setIsPlayingSong(false);
           });
       }
@@ -159,44 +187,35 @@ export default function PublicGiftPlayer() {
   // Controles de Canción
   const togglePlaySong = () => {
     if (!songAudioRef.current) return;
+
     if (isPlayingSong) {
       songAudioRef.current.pause();
       setIsPlayingSong(false);
     } else {
+      // Pausar nota de voz si estaba sonando para que no se encimen
       if (voiceAudioRef.current && isPlayingVoice) {
         voiceAudioRef.current.pause();
         setIsPlayingVoice(false);
       }
-      
-      const playPromise = songAudioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => setIsPlayingSong(true))
-          .catch((err) => {
-            console.warn("Audio play prevented or url failed, trying fallback:", err);
-            if (songAudioUrl !== '/audio/love_song_sample.mp3') {
-              setSongAudioUrl('/audio/love_song_sample.mp3');
-              setTimeout(() => {
-                songAudioRef.current?.play().then(() => setIsPlayingSong(true)).catch(console.error);
-              }, 120);
-            }
-          });
-      }
+      songAudioRef.current.play().catch(console.error);
+      setIsPlayingSong(true);
     }
   };
 
   // Controles de Nota de Voz
   const togglePlayVoice = () => {
     if (!voiceAudioRef.current) return;
+
     if (isPlayingVoice) {
       voiceAudioRef.current.pause();
       setIsPlayingVoice(false);
     } else {
+      // Pausar canción de fondo si estaba sonando
       if (songAudioRef.current && isPlayingSong) {
         songAudioRef.current.pause();
         setIsPlayingSong(false);
       }
-      voiceAudioRef.current.play().catch(e => console.error(e));
+      voiceAudioRef.current.play().catch(console.error);
       setIsPlayingVoice(true);
     }
   };
@@ -234,6 +253,57 @@ export default function PublicGiftPlayer() {
   };
 
   const galleryList = (memory?.gallery_photos_urls || []).filter(Boolean);
+
+  // Guardar y Confirmar Pedido de Caja Musical MDF
+  const handleOrderPhysicalBox = async () => {
+    if (!shippingAddress.street || !shippingAddress.zipCode || !phone) {
+      alert("Por favor completa los campos obligatorios de entrega: Calle, Código Postal y Teléfono.");
+      return;
+    }
+
+    setIsUpdatingOrder(true);
+    try {
+      const { error } = await supabase.from('memories').update({
+        product_type: 'physical_box',
+        shipping_address: JSON.stringify(shippingAddress),
+        phone: phone,
+      }).eq('id', memory.id);
+
+      if (error) throw error;
+      setOrderSavedSuccess(true);
+
+      const message = encodeURIComponent(
+        `¡Hola Media Naranja! Quiero confirmar mi pedido de Caja Musical MDF para ${memory.names || 'mi pareja'}.\n\n` +
+        `📦 Producto: Caja Musical MDF Personalizada ($899 MXN)\n` +
+        `📍 Dirección de entrega: ${shippingAddress.street}, Col. ${shippingAddress.colony || ''}, C.P. ${shippingAddress.zipCode}, ${shippingAddress.city || ''}, ${shippingAddress.state || ''}\n` +
+        `📞 Teléfono de contacto: ${phone}\n` +
+        `🔗 Ver Serie Loveflix: ${window.location.origin}/escuchar/${memory.id}\n` +
+        `🆔 ID de Pedido: ${memory.id}`
+      );
+      window.open(`https://wa.me/5215512345678?text=${message}`, '_blank');
+    } catch (err: any) {
+      alert("Error al guardar pedido: " + err.message);
+    } finally {
+      setIsUpdatingOrder(false);
+    }
+  };
+
+  // Guardar y Confirmar Lámina Digital
+  const handleOrderDigitalPoster = async () => {
+    setIsUpdatingOrder(true);
+    try {
+      await supabase.from('memories').update({
+        product_type: 'digital_poster',
+      }).eq('id', memory.id);
+
+      const stripeUrl = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song?.id || memory.id}`;
+      window.location.href = stripeUrl;
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setIsUpdatingOrder(false);
+    }
+  };
 
   // Loading
   if (loading) {
@@ -333,8 +403,8 @@ export default function PublicGiftPlayer() {
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Dancing+Script:wght@700&display=swap');
         .font-script { font-family: 'Dancing Script', cursive; }
         .font-bebas { font-family: 'Bebas Neue', cursive; letter-spacing: 2.5px; }
-        .netflix-gradient-bottom { background: linear-gradient(to top, rgba(8,8,8,1) 0%, rgba(8,8,8,0.85) 45%, transparent 85%); }
-        .netflix-gradient-top { background: linear-gradient(to bottom, rgba(8,8,8,0.9) 0%, transparent 100%); }
+        .netflix-gradient-bottom { background: linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.4) 75%, transparent 100%); }
+        .netflix-gradient-top { background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%); }
         @keyframes eqPulse {
           0%, 100% { height: 4px; }
           50% { height: 16px; }
@@ -351,22 +421,29 @@ export default function PublicGiftPlayer() {
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
             <span className="font-bold text-amber-300">Modo Demo Interactivo (Vista Previa Privada)</span>
             <span className="text-zinc-400 hidden md:inline">
-              • Esta página se activará públicamente al confirmar tu pedido.
+              • Escucha el adelanto y confirma tu pedido para activar el código QR.
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(`/personalizar-cuadro/${memory.id}`)}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Edit3 size={13} />
               <span>Volver a Editar</span>
             </button>
 
             <button
-              onClick={() => setShowUnlockModal(true)}
-              className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-red-950 transition-all active:scale-95"
+              onClick={() => {
+                const checkoutEl = document.getElementById('checkout-section');
+                if (checkoutEl) {
+                  checkoutEl.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  setShowUnlockModal(true);
+                }
+              }}
+              className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-red-950 transition-all active:scale-95 cursor-pointer"
             >
               <Gift size={13} />
               <span>Confirmar Pedido y Activar QR</span>
@@ -375,53 +452,66 @@ export default function PublicGiftPlayer() {
         </aside>
       )}
 
-      {/* HEADER CINEMATOGRÁFICO LOVEFLIX */}
-      <header className={`w-full ${isCreator && isDemoMode ? 'relative' : 'fixed top-0'} inset-x-0 h-16 bg-black/70 backdrop-blur-md z-40 flex items-center justify-between px-6 sm:px-10 border-b border-white/5`}>
-        <div className="flex items-center gap-6">
-          <span className="text-[#E50914] text-3xl sm:text-4xl font-normal leading-none font-bebas select-none drop-shadow">
-            LOVEFLIX
-          </span>
-          <nav className="hidden md:flex items-center gap-4 text-xs font-bold text-white/80">
-            <span className="text-white hover:text-white cursor-pointer transition-colors">Inicio</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Series</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Películas</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Tendencias</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Mi Lista</span>
-          </nav>
-        </div>
+      {/* CONTENEDOR PRINCIPAL: PÓSTER CINEMÁTICO VERTICAL LOVEFLIX */}
+      {/* Mantiene la proporción alargada 1:1.414 idéntica a la plantilla de impresión para que las fotos verticales luzcan perfectas */}
+      <section aria-label="Afiche Loveflix" className="w-full max-w-[560px] mx-auto px-3 sm:px-0 pt-4 sm:pt-6">
+        <div className="relative w-full aspect-[1/1.414] bg-black rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-zinc-800/80 group">
+          
+          {/* FOTO PRINCIPAL VERTICAL DE FONDO */}
+          <div className="absolute inset-0">
+            {memory.main_photo_url ? (
+              <img 
+                src={memory.main_photo_url} 
+                alt={memory.names} 
+                className="w-full h-full object-cover object-center"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-950 flex items-center justify-center text-zinc-600 font-bold uppercase tracking-widest text-xs">
+                Serie Original Loveflix
+              </div>
+            )}
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={copyShareLink}
-            className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all"
-          >
-            {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-            <span>{copied ? "¡Copiado!" : "Compartir"}</span>
-          </button>
-        </div>
-      </header>
+            {/* Degradados cinemáticos estilo Netflix */}
+            <div className="absolute inset-0 netflix-gradient-bottom"></div>
+            <div className="absolute top-0 inset-x-0 h-32 netflix-gradient-top"></div>
+          </div>
 
-      {/* HERO PRINCIPAL: PORTADA CINEMÁTICA CON FOTO DE FONDO */}
-      <section aria-label="Portada Cinematográfica" className="relative w-full max-w-5xl mx-auto overflow-hidden sm:rounded-3xl sm:mt-6 sm:border sm:border-zinc-800/80 shadow-2xl">
-        <div className="relative aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/9] w-full overflow-hidden bg-black">
-          {memory.main_photo_url ? (
-            <img 
-              src={memory.main_photo_url} 
-              alt={memory.names} 
-              className="w-full h-full object-cover object-center"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-950 flex items-center justify-center text-zinc-600 font-bold uppercase tracking-widest">
-              Serie Original Loveflix
+          {/* CABECERA LOVEFLIX DENTRO DEL AFICHE (ALINEADA EXACTA A LOS BORDES DE LA FOTO) */}
+          <header className="absolute top-0 inset-x-0 h-16 flex items-center justify-between px-5 sm:px-7 z-30">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <span className="text-[#E50914] text-3xl sm:text-4xl font-normal leading-none font-bebas select-none drop-shadow">
+                LOVEFLIX
+              </span>
+              <div className="hidden sm:flex items-center gap-2.5 text-[10px] font-bold text-white/80">
+                <span>Inicio</span>
+                <span>Series</span>
+                <span>Películas</span>
+                <span>Tendencias</span>
+              </div>
             </div>
-          )}
 
-          {/* Degradados cinemáticos genuinos de Netflix */}
-          <div className="absolute inset-0 netflix-gradient-bottom"></div>
-          <div className="absolute top-0 inset-x-0 h-32 netflix-gradient-top"></div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={copyShareLink}
+                className="px-2.5 sm:px-3 py-1 bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Copiar enlace del regalo"
+              >
+                {copied ? <Check size={13} className="text-emerald-400" /> : <Share2 size={13} />}
+                <span className="hidden xs:inline">{copied ? "¡Listo!" : "Compartir"}</span>
+              </button>
 
-          {/* CONTENIDO SUPERPUESTO DE LA SERIE */}
-          <div className="absolute inset-x-6 sm:inset-x-10 bottom-6 sm:bottom-8 z-20 space-y-3">
+              <div className="w-7 h-7 rounded-sm bg-[#E50914] border border-white/20 overflow-hidden flex items-center justify-center shrink-0">
+                {memory.main_photo_url ? (
+                  <img src={memory.main_photo_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[10px] text-white">☺</span>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* CONTENIDO INFERIOR DEL AFICHE */}
+          <div className="absolute inset-x-5 sm:inset-x-7 bottom-4 sm:bottom-6 z-20 flex flex-col justify-end space-y-2 sm:space-y-2.5">
             
             {/* BADGE N PAREJAS */}
             <div className="flex items-center gap-2">
@@ -434,121 +524,111 @@ export default function PublicGiftPlayer() {
             </div>
 
             {/* NOMBRES DE LOS PROTAGONISTAS */}
-            <h1 className="text-5xl sm:text-7xl md:text-8xl font-script text-white drop-shadow-2xl leading-tight py-1">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-script text-white drop-shadow-2xl leading-tight py-0.5">
               {memory.names || "Nuestra Historia de Amor"}
             </h1>
 
             {/* FILA DE BADGES ESTILO NETFLIX */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-bold pt-1">
+            <div className="flex flex-wrap items-center gap-2 text-[10px] sm:text-[11px] font-bold">
               <span className="text-emerald-400 font-extrabold drop-shadow">
                 Juntos Desde {memory.date_text || "Siempre"}
               </span>
-              <span className="bg-emerald-600 text-white px-1.5 py-0.2 rounded-[2px] text-[10px] font-black">
+              <span className="bg-emerald-600 text-white px-1 py-0.2 rounded-[2px] text-[9px] font-black">
                 L
               </span>
-              <span className="text-white/85 text-[11px] drop-shadow">1° Gran Amor</span>
-              <span className="border border-white/50 px-1.5 py-0.2 rounded-[2px] text-[9px] font-bold text-white/80">
+              <span className="text-white/85 drop-shadow">1° Gran Amor</span>
+              <span className="border border-white/50 px-1 py-0.2 rounded-[2px] text-[8px] font-bold text-white/80">
                 HD 4K
               </span>
-              <div className="flex items-center gap-1.5">
-                <span className="bg-[#E50914] text-white font-black text-[8px] px-1.5 py-0.5 rounded-[2px] tracking-tighter">
+              <div className="flex items-center gap-1">
+                <span className="bg-[#E50914] text-white font-black text-[8px] px-1 py-0.5 rounded-[2px] tracking-tighter">
                   TOP 10
                 </span>
-                <span className="text-white font-bold text-[11px] drop-shadow">
+                <span className="text-white font-bold text-[10px] drop-shadow">
                   Las Mejores Parejas Del Mundo
                 </span>
               </div>
             </div>
 
-            {/* SINOPSIS / HISTORIA */}
+            {/* SINOPSIS */}
             {memory.synopsis && (
-              <p className="text-xs sm:text-sm text-white/90 font-normal leading-relaxed max-w-2xl drop-shadow-md pr-2 line-clamp-3 sm:line-clamp-4">
+              <p className="text-[11px] sm:text-xs text-white/90 font-normal leading-relaxed drop-shadow line-clamp-3">
                 "{memory.synopsis}"
               </p>
             )}
 
-            {/* CRÉDITOS */}
-            <div className="flex flex-wrap gap-4 text-[10px] sm:text-xs text-white/70 pt-0.5">
-              {memory.author_name && (
-                <div><span className="text-white/50">Escrito por:</span> <strong className="text-white">{memory.author_name}</strong></div>
-              )}
-              {memory.recipient_name && (
-                <div><span className="text-white/50">Destinado a:</span> <strong className="text-white">{memory.recipient_name}</strong></div>
-              )}
-            </div>
-
-            {/* BOTONES INTERACTIVOS ESTILO NETFLIX */}
-            <div className="pt-2 flex flex-wrap items-center gap-3">
+            {/* BOTONES INTERACTIVOS */}
+            <div className="pt-1 flex flex-wrap items-center gap-2 sm:gap-2.5">
               {/* BOTÓN PLAY INTERACTIVO DINÁMICO */}
               <button
                 onClick={togglePlaySong}
-                className="px-6 py-3 bg-white hover:bg-zinc-200 text-black rounded-lg font-black text-xs uppercase tracking-wider flex items-center gap-2.5 shadow-xl transition-all active:scale-95 cursor-pointer"
+                className="px-4 sm:px-5 py-2.5 bg-white hover:bg-zinc-200 text-black rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-xl transition-all active:scale-95 cursor-pointer"
               >
                 {isPlayingSong ? (
                   <>
-                    <Pause size={18} fill="currentColor" />
+                    <Pause size={16} fill="currentColor" />
                     <span>Pausar</span>
-                    <div className="flex items-end gap-0.5 h-4 ml-1">
-                      <span className="w-1 bg-black rounded-full eq-bar-1"></span>
-                      <span className="w-1 bg-black rounded-full eq-bar-2"></span>
-                      <span className="w-1 bg-black rounded-full eq-bar-3"></span>
+                    <div className="flex items-end gap-0.5 h-3.5 ml-0.5">
+                      <span className="w-0.5 bg-black rounded-full eq-bar-1"></span>
+                      <span className="w-0.5 bg-black rounded-full eq-bar-2"></span>
+                      <span className="w-0.5 bg-black rounded-full eq-bar-3"></span>
                     </div>
                   </>
                 ) : (
                   <>
-                    <Play size={18} fill="currentColor" />
-                    <span>{songCurrentTime > 0 ? "Reanudar Canción" : "Reproducir"}</span>
+                    <Play size={16} fill="currentColor" />
+                    <span>{songCurrentTime > 0 ? "Reanudar" : "Reproducir"}</span>
                   </>
                 )}
               </button>
 
-              {/* BOTÓN DEDICATORIA DE VOZ (SI EXISTE) */}
+              {/* BOTÓN DEDICATORIA DE VOZ */}
               {voiceAudioUrl && (
                 <button
                   onClick={togglePlayVoice}
-                  className={`px-5 py-3 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all active:scale-95 ${
+                  className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 transition-all active:scale-95 ${
                     isPlayingVoice 
                       ? 'bg-amber-400 text-black shadow-lg shadow-amber-950' 
-                      : 'bg-zinc-800/80 hover:bg-zinc-700 text-amber-300 border border-amber-500/40'
+                      : 'bg-black/60 hover:bg-black/80 text-amber-300 border border-amber-500/40 backdrop-blur-md'
                   }`}
                 >
-                  <Volume2 size={16} />
-                  <span>{isPlayingVoice ? "Pausar Dedicatoria" : "🎙️ Escuchar Mensaje de Voz"}</span>
+                  <Volume2 size={15} />
+                  <span>{isPlayingVoice ? "Pausar Voz" : "🎙️ Nota de Voz"}</span>
                 </button>
               )}
 
-              {/* BOTONES SECUNDARIOS NETFLIX */}
+              {/* BOTONES SECUNDARIOS */}
               <button
                 onClick={() => setIsInMyList(!isInMyList)}
-                className="w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 border border-white/30 flex items-center justify-center text-white transition-all text-xs"
+                className="w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 border border-white/30 flex items-center justify-center text-white transition-all text-xs"
                 title="Mi Lista"
               >
-                {isInMyList ? <Check size={16} className="text-emerald-400" /> : "+"}
+                {isInMyList ? <Check size={15} className="text-emerald-400" /> : "+"}
               </button>
 
               <button
                 onClick={() => setLiked(!liked)}
-                className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all text-xs ${
+                className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all text-xs ${
                   liked 
                     ? 'bg-red-600/30 border-red-500 text-red-500' 
-                    : 'bg-black/60 hover:bg-black/90 border-white/30 text-white'
+                    : 'bg-black/60 hover:bg-black/80 border-white/30 text-white'
                 }`}
                 title="Me gusta"
               >
-                <Heart size={16} fill={liked ? "currentColor" : "none"} />
+                <Heart size={15} fill={liked ? "currentColor" : "none"} />
               </button>
 
               {/* BADGE DEMO */}
               {isDemoMode && (
-                <div className="px-3 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-[10px] text-amber-300 font-bold flex items-center gap-1.5 ml-auto">
-                  <span>⏳ Muestra de 1 minuto</span>
+                <div className="px-2.5 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-[9px] text-amber-300 font-bold flex items-center gap-1 ml-auto">
+                  <span>⏳ Demo 1 min</span>
                 </div>
               )}
             </div>
 
             {/* BARRA DE PROGRESO DE LA CANCIÓN */}
             {songAudioUrl && (
-              <div className="pt-2 max-w-xl space-y-1">
+              <div className="pt-1 w-full space-y-1">
                 <div 
                   className="w-full bg-white/20 hover:bg-white/30 h-1.5 rounded-full overflow-hidden cursor-pointer transition-colors"
                   onClick={(e) => {
@@ -566,7 +646,7 @@ export default function PublicGiftPlayer() {
                     style={{ width: `${songProgress}%` }}
                   ></div>
                 </div>
-                <div className="flex justify-between text-[10px] font-mono text-white/60">
+                <div className="flex justify-between text-[9px] font-mono text-white/70">
                   <span>{formatTime(songCurrentTime)}</span>
                   <span>{isDemoMode ? "1:00 (Muestra)" : formatTime(songDuration || 180)}</span>
                 </div>
@@ -625,14 +705,14 @@ export default function PublicGiftPlayer() {
         onEnded={() => setIsPlayingVoice(false)}
       />
 
-      {/* CONTENIDO PRINCIPAL: GALERÍA DE MEJORES MOMENTOS + DETALLES */}
-      <div className="max-w-5xl mx-auto px-6 sm:px-10 space-y-10 mt-10">
+      {/* CONTENIDO PRINCIPAL: GALERÍA DE MEJORES MOMENTOS + DETALLES + CHECKOUT */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-10 mt-10">
 
-        {/* SECCIÓN: NUESTROS MEJORES MOMENTOS (SIN CÓDIGO QR EN LA WEB) */}
+        {/* SECCIÓN: NUESTROS MEJORES MOMENTOS (5 FOTOS AMPLIABLES) */}
         {galleryList.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
                 <Sparkles size={16} className="text-red-500" />
                 Nuestros Mejores Momentos
               </h2>
@@ -644,18 +724,18 @@ export default function PublicGiftPlayer() {
               </span>
             </div>
 
-            {/* VISTA 1: CARRUSEL EN MÓVIL / VERTICAL (< md) */}
+            {/* VISTA 1: CARRUSEL EN MÓVIL (< md) */}
             <div className="md:hidden relative">
               <div 
                 ref={carouselRef}
                 onScroll={handleCarouselScroll}
-                className="flex overflow-x-auto snap-x snap-mandatory gap-3.5 pb-3 pt-1 px-4 -mx-6 scrollbar-none scroll-smooth"
+                className="flex overflow-x-auto snap-x snap-mandatory gap-3.5 pb-3 pt-1 px-4 -mx-4 scrollbar-none scroll-smooth"
               >
                 {galleryList.map((photoUrl: string, idx: number) => (
                   <div
                     key={idx}
                     onClick={() => setLightboxIndex(idx)}
-                    className="snap-center shrink-0 w-[64vw] max-w-[240px] aspect-[3/4] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-red-600/80 cursor-pointer shadow-2xl relative group transition-all active:scale-95"
+                    className="snap-center shrink-0 w-[64vw] max-w-[220px] aspect-[3/4] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-red-600/80 cursor-pointer shadow-2xl relative group transition-all active:scale-95"
                   >
                     <img 
                       src={photoUrl} 
@@ -722,7 +802,7 @@ export default function PublicGiftPlayer() {
             <div className="flex items-center gap-4">
               <button
                 onClick={togglePlayVoice}
-                className="w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 text-black flex items-center justify-center font-bold shadow-lg shadow-amber-950/60 transition-transform active:scale-95 shrink-0"
+                className="w-14 h-14 rounded-full bg-amber-500 hover:bg-amber-400 text-black flex items-center justify-center font-bold shadow-lg shadow-amber-950/60 transition-transform active:scale-95 shrink-0 cursor-pointer"
               >
                 {isPlayingVoice ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" className="ml-1" />}
               </button>
@@ -761,7 +841,7 @@ export default function PublicGiftPlayer() {
 
         {/* LETRA DE LA CANCIÓN */}
         {song?.lyrics && (
-          <div className="bg-[#121212] border border-zinc-800 rounded-3xl p-6 sm:p-10 space-y-4 shadow-xl">
+          <div className="bg-[#121212] border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                 <Music size={16} className="text-red-500" />
@@ -774,23 +854,218 @@ export default function PublicGiftPlayer() {
           </div>
         )}
 
-        {/* BANNER DE INCENTIVO AL FINAL */}
-        {isDemoMode && (
-          <div className="bg-gradient-to-r from-red-950/70 via-zinc-900 to-red-950/70 border border-red-700/60 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl">
-            <Sparkles size={32} className="text-amber-400 mx-auto" />
-            <h3 className="text-xl sm:text-2xl font-serif font-bold text-white">
-              ¿Listo para inmortalizar su historia en madera real?
-            </h3>
-            <p className="text-xs sm:text-sm text-zinc-300 max-w-xl mx-auto leading-relaxed">
-              Recibe la <strong>Caja Musical de Madera MDF</strong> personalizada con esta portada impresa en la tapa, chip de música recargable y el código QR grabado que abre esta página web mágica.
-            </p>
-            <button
-              onClick={() => setShowUnlockModal(true)}
-              className="px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-red-950 transition-all active:scale-95 cursor-pointer"
-            >
-              Confirmar Pedido de Caja Musical ($899 MXN)
-            </button>
-          </div>
+        {/* ============================================================== */}
+        {/* SECCIÓN DE ELECCIÓN DE PRODUCTO Y CONFIRMACIÓN POST-DEMO       */}
+        {/* ============================================================== */}
+        {isCreator && (
+          <section id="checkout-section" className="bg-[#121212] border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-full bg-red-600/20 text-red-500 flex items-center justify-center mx-auto mb-2">
+                <Sparkles size={24} />
+              </div>
+              <h2 className="text-2xl font-serif font-bold text-white">
+                Inmortaliza Esta Serie en la Vida Real
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
+                Elige cómo quieres regalar este momento a tu pareja. Puedes recibir la caja de madera física con chip musical o la lámina digital en alta resolución.
+              </p>
+            </div>
+
+            {/* SELECTOR DE PRODUCTO: CAJA MDF vs LÁMINA DIGITAL */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              {/* OPCIÓN 1: CAJA MUSICAL MDF */}
+              <div
+                onClick={() => setSelectedProduct('physical_box')}
+                className={`p-5 rounded-2xl border cursor-pointer transition-all ${
+                  selectedProduct === 'physical_box' 
+                    ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50 shadow-xl shadow-red-950/40' 
+                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl">📦</span>
+                  {selectedProduct === 'physical_box' ? (
+                    <CheckCircle2 size={18} className="text-red-500" />
+                  ) : (
+                    <span className="text-xs text-zinc-500">Seleccionar</span>
+                  )}
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <h4 className="text-base font-bold text-white">Caja Musical MDF</h4>
+                  <span className="text-base font-black text-red-400">$899 MXN</span>
+                </div>
+                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                  Caja de madera con chip de música recargable + impresión en la tapa + código QR grabado + envío a domicilio en México.
+                </p>
+              </div>
+
+              {/* OPCIÓN 2: LÁMINA DIGITAL */}
+              <div
+                onClick={() => setSelectedProduct('digital_poster')}
+                className={`p-5 rounded-2xl border cursor-pointer transition-all ${
+                  selectedProduct === 'digital_poster' 
+                    ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50 shadow-xl shadow-red-950/40' 
+                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl">🖼️</span>
+                  {selectedProduct === 'digital_poster' ? (
+                    <CheckCircle2 size={18} className="text-red-500" />
+                  ) : (
+                    <span className="text-xs text-zinc-500">Seleccionar</span>
+                  )}
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <h4 className="text-base font-bold text-white">Lámina Digital con QR</h4>
+                  <span className="text-base font-black text-white">$249 MXN</span>
+                </div>
+                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                  Descarga inmediata en calidad 300 DPI lista para imprimir en tu ciudad con el código QR activado de por vida.
+                </p>
+              </div>
+            </div>
+
+            {/* FORMULARIO DE ENVÍO SI ELIGE CAJA MUSICAL FÍSICA */}
+            {selectedProduct === 'physical_box' && (
+              <div className="space-y-4 pt-4 border-t border-zinc-800 animate-in fade-in duration-300">
+                <div className="flex items-center gap-2 text-xs font-bold text-red-500 uppercase tracking-wider">
+                  <MapPin size={16} /> Datos para Envío a Domicilio en México
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
+                    Calle, Número y Depto *
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingAddress.street}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, street: e.target.value })}
+                    placeholder="Ej: Av. Juárez 450, Interior 201"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
+                      Colonia / Fraccionamiento *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingAddress.colony}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, colony: e.target.value })}
+                      placeholder="Ej: Centro"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
+                      Código Postal *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingAddress.zipCode}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, zipCode: e.target.value })}
+                      placeholder="Ej: 06000"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
+                      Ciudad / Municipio *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingAddress.city}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                      placeholder="Ej: Monterrey"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
+                      Estado *
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingAddress.state}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                      placeholder="Ej: Nuevo León"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
+                    Teléfono / WhatsApp de Contacto para Paquetería *
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Ej: 55 1234 5678"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
+                  />
+                </div>
+
+                {/* BOTÓN CONFIRMAR CAJA MUSICAL */}
+                <button
+                  type="button"
+                  onClick={handleOrderPhysicalBox}
+                  disabled={isUpdatingOrder}
+                  className="w-full py-4.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-red-700 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-red-950 flex items-center justify-center gap-2.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isUpdatingOrder ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Gift size={18} />
+                  )}
+                  <span>
+                    {isUpdatingOrder ? "Guardando..." : "Confirmar Pedido de Caja Musical ($899 MXN)"}
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* ACCIÓN SI ELIGE LÁMINA DIGITAL */}
+            {selectedProduct === 'digital_poster' && (
+              <div className="space-y-4 pt-4 border-t border-zinc-800 animate-in fade-in duration-300">
+                <div className="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300 space-y-2">
+                  <p className="font-bold text-white flex items-center gap-2">
+                    <Sparkles size={16} className="text-amber-400" />
+                    ¿Qué recibirás con tu Lámina Digital?
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1 text-zinc-400 text-[11px]">
+                    <li>Archivo de impresión en 300 DPI listo para tamaño póster (A4 / A3 / Cuadro).</li>
+                    <li>Código QR activo de por vida vinculado directamente a esta serie interactiva.</li>
+                    <li>Reproducción ilimitada de su canción completa y dedicatoria de voz.</li>
+                  </ul>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOrderDigitalPoster}
+                  disabled={isUpdatingOrder}
+                  className="w-full py-4.5 bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl flex items-center justify-center gap-2.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isUpdatingOrder ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <ShoppingBag size={18} />
+                  )}
+                  <span>
+                    {isUpdatingOrder ? "Procesando..." : "Obtener Lámina Digital con QR ($249 MXN)"}
+                  </span>
+                </button>
+              </div>
+            )}
+
+          </section>
         )}
 
         {/* FOOTER */}
@@ -902,10 +1177,9 @@ export default function PublicGiftPlayer() {
               {/* OPCIÓN 1: CAJA MDF */}
               <div 
                 onClick={() => {
-                  const phoneText = encodeURIComponent(
-                    `¡Hola Media Naranja! Quiero confirmar mi pedido de Caja Musical MDF para ${memory.names || 'mi pareja'}. ID de Recuerdo: ${memory.id}`
-                  );
-                  window.open(`https://wa.me/5215512345678?text=${phoneText}`, '_blank');
+                  setShowUnlockModal(false);
+                  setSelectedProduct('physical_box');
+                  document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="p-4 bg-gradient-to-r from-red-950/50 to-zinc-800 rounded-2xl border border-red-600/70 hover:border-red-500 cursor-pointer transition-all hover:scale-[1.01] shadow-lg space-y-1.5"
               >
@@ -923,7 +1197,9 @@ export default function PublicGiftPlayer() {
               {/* OPCIÓN 2: LÁMINA DIGITAL */}
               <div 
                 onClick={() => {
-                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song?.id || memory.id}`;
+                  setShowUnlockModal(false);
+                  setSelectedProduct('digital_poster');
+                  document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="p-4 bg-zinc-800/60 rounded-2xl border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-all hover:scale-[1.01] space-y-1.5"
               >

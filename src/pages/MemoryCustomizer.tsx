@@ -58,7 +58,7 @@ export default function MemoryCustomizer() {
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'design' | 'audio' | 'order'>('design');
+  const [activeTab, setActiveTab] = useState<'design' | 'audio'>('design');
 
   // Memory ID generado o actual para el código QR
   const [memoryUid, setMemoryUid] = useState<string>(id || crypto.randomUUID());
@@ -276,7 +276,6 @@ export default function MemoryCustomizer() {
 
     if (productType === 'physical_box' && (!shippingAddress.street || !shippingAddress.zipCode || !phone)) {
       alert("Por favor completa los datos de envío (calle, código postal y teléfono).");
-      setActiveTab('order');
       return;
     }
 
@@ -541,7 +540,7 @@ export default function MemoryCustomizer() {
             </div>
 
             {/* SELECCIÓN DE PESTAÑAS DE CONFIGURACIÓN */}
-            <div className="grid grid-cols-3 gap-2 p-1 bg-zinc-900 rounded-xl border border-zinc-800 text-xs font-bold">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-900 rounded-xl border border-zinc-800 text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setActiveTab('design')}
@@ -555,13 +554,6 @@ export default function MemoryCustomizer() {
                 className={`py-2.5 rounded-lg transition-all ${activeTab === 'audio' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
               >
                 2. Canción & Voz
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('order')}
-                className={`py-2.5 rounded-lg transition-all ${activeTab === 'order' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
-              >
-                3. Producto & Envío
               </button>
             </div>
 
@@ -758,151 +750,6 @@ export default function MemoryCustomizer() {
                 />
 
                 {/* NAVEGACIÓN PASO 2 */}
-                <div className="pt-4 border-t border-zinc-800 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('design')}
-                    className="py-3.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
-                  >
-                    <ArrowLeft size={16} />
-                    <span>Volver al Diseño</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('order')}
-                    className="py-3.5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-lg shadow-red-950/50 flex items-center justify-center gap-2 transition-all active:scale-95"
-                  >
-                    <span>Continuar a Envío</span>
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* PESTAÑA 3: PRODUCTO Y ENVÍO */}
-            {activeTab === 'order' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                {/* SELECCIÓN DE PRODUCTO */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-3">
-                    Selecciona tu Presentación:
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div
-                      onClick={() => setProductType('physical_box')}
-                      className={`p-4 rounded-2xl border cursor-pointer transition-all ${productType === 'physical_box' ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'}`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xl">📦</span>
-                        {productType === 'physical_box' && <CheckCircle2 size={16} className="text-red-500" />}
-                      </div>
-                      <h4 className="text-sm font-bold text-white">Caja Musical MDF</h4>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
-                        Caja de madera con chip de música recargable + impresión en la tapa + envío a domicilio.
-                      </p>
-                    </div>
-
-                    <div
-                      onClick={() => setProductType('digital_poster')}
-                      className={`p-4 rounded-2xl border cursor-pointer transition-all ${productType === 'digital_poster' ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'}`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xl">🖼️</span>
-                        {productType === 'digital_poster' && <CheckCircle2 size={16} className="text-red-500" />}
-                      </div>
-                      <h4 className="text-sm font-bold text-white">Lámina Digital con QR</h4>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
-                        Descarga el póster en ultra-alta resolución listo para imprimir y enmarcar en tu ciudad.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* FORMULARIO DE ENVÍO (SOLO SI ES FÍSICA) */}
-                {productType === 'physical_box' ? (
-                  <div className="space-y-4 pt-2 border-t border-zinc-800">
-                    <div className="flex items-center gap-2 text-xs font-bold text-red-500 uppercase tracking-wider">
-                      <MapPin size={16} /> Dirección de Envío en México
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Calle y Número *</label>
-                      <input
-                        type="text"
-                        value={shippingAddress.street}
-                        onChange={(e) => setShippingAddress({ ...shippingAddress, street: e.target.value })}
-                        placeholder="Ej: Av. Reforma 123, Depto 4B"
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Colonia *</label>
-                        <input
-                          type="text"
-                          value={shippingAddress.colony}
-                          onChange={(e) => setShippingAddress({ ...shippingAddress, colony: e.target.value })}
-                          placeholder="Ej: Juárez"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Código Postal *</label>
-                        <input
-                          type="text"
-                          value={shippingAddress.zipCode}
-                          onChange={(e) => setShippingAddress({ ...shippingAddress, zipCode: e.target.value })}
-                          placeholder="Ej: 06600"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Ciudad / Municipio *</label>
-                        <input
-                          type="text"
-                          value={shippingAddress.city}
-                          onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
-                          placeholder="Ej: Cuauhtémoc"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Estado *</label>
-                        <input
-                          type="text"
-                          value={shippingAddress.state}
-                          onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
-                          placeholder="Ej: CDMX"
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Teléfono / WhatsApp para entrega *</label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Ej: 55 1234 5678"
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-400 space-y-2">
-                    <p className="font-bold text-white">✨ Entrega Digital Inmediata</p>
-                    <p>
-                      Al completar el pedido, podrás descargar tu archivo listo para imprenta en formato PDF y JPG de alta resolución (300 DPI), con el código QR que reproduce la canción y tu nota de voz.
-                    </p>
-                  </div>
-                )}
-
-                {/* BOTÓN ESTRELLA: VER DEMO INTERACTIVO */}
                 <div className="pt-4 border-t border-zinc-800 space-y-3">
                   <button
                     type="button"
@@ -916,34 +763,22 @@ export default function MemoryCustomizer() {
                       <Sparkles size={18} className="text-amber-300 animate-pulse group-hover:rotate-12 transition-transform" />
                     )}
                     <span className="text-sm">
-                      {isSaving ? "Guardando y Preparando Demo..." : "🎬 Ver Demo Interactivo"}
+                      {isSaving ? "Guardando y Preparando Demo..." : "🎬 Ver Demo Interactivo de Nuestra Serie"}
                     </span>
                   </button>
 
                   <p className="text-[11px] text-zinc-400 text-center">
-                    Disfruta la experiencia Loveflix en vivo con tu música y fotos antes de confirmar.
+                    Disfruta la experiencia Loveflix en vivo con tu música y fotos antes de confirmar tu pedido.
                   </p>
 
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('audio')}
-                      className="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white rounded-xl font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
-                    >
-                      <ArrowLeft size={14} />
-                      <span>Volver a Audio</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={exportPDF}
-                      disabled={isExporting}
-                      className="py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white rounded-xl font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
-                    >
-                      {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                      <span>Muestra PDF</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('design')}
+                    className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Volver a Editar Diseño</span>
+                  </button>
                 </div>
               </div>
             )}

@@ -146,6 +146,11 @@ export default function Header() {
     setIsMenuOpen(false);
   };
 
+  // En páginas inmersivas del demo o reproductor de regalo Loveflix, ocultar el header principal
+  if (location.pathname.startsWith('/escuchar') || location.pathname.startsWith('/loveflix')) {
+    return null;
+  }
+
   return (
     <>
       <nav className="max-w-6xl mx-auto px-6 py-6 md:py-8 relative z-50">
