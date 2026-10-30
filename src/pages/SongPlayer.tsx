@@ -109,22 +109,24 @@ export default function SongPlayer() {
           
           const song1 = sunoData[0];
           const song2 = sunoData.length > 1 ? sunoData[1] : null;
-          const audioUrl = song1.audioUrl;
+          let audioUrl = song1.audioUrl;
           
           let demoUrl = audioUrl;
           let finalUrl2 = null;
           try {
             const { data: treatmentData } = await supabase.functions.invoke('process-audio', {
-              body: { originalUrl: audioUrl, songId: song.id, taskId: song.task_id }
+              body: { originalUrl: audioUrl, songId: song.id, taskId: song.task_id, version: 1 }
             });
-            demoUrl = treatmentData?.demoUrl || audioUrl;
+            const permanent1 = treatmentData?.permanentAudioUrl || treatmentData?.demoUrl || audioUrl;
+            audioUrl = permanent1;
+            demoUrl = permanent1;
 
             if (song2 && song2.audioUrl) {
                try {
                   const { data: treatmentData2 } = await supabase.functions.invoke('process-audio', {
-                    body: { originalUrl: song2.audioUrl, songId: song.id, taskId: song.task_id }
+                    body: { originalUrl: song2.audioUrl, songId: song.id, taskId: song.task_id, version: 2 }
                   });
-                  finalUrl2 = treatmentData2?.demoUrl || song2.audioUrl;
+                  finalUrl2 = treatmentData2?.permanentAudioUrl || treatmentData2?.demoUrl || song2.audioUrl;
                } catch (e) {
                   finalUrl2 = song2.audioUrl;
                }
@@ -135,9 +137,9 @@ export default function SongPlayer() {
 
           const updatedFormData = {
             ...(song.form_data || {}),
-            version2: (song2 && song2.audioUrl) ? { 
-              audio_url: song2.audioUrl, 
-              demo_url: finalUrl2,
+            version2: (song2 && (finalUrl2 || song2.audioUrl)) ? { 
+              audio_url: finalUrl2 || song2.audioUrl, 
+              demo_url: finalUrl2 || song2.audioUrl,
               song_id: song2.id 
             } : null
           };

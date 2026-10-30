@@ -709,8 +709,33 @@ INSTRUCCIONES:
               try {
                 let finalUrl1 = song1.audioUrl;
                 let finalUrl2 = null;
+
+                // Guardar permanentemente en Supabase Storage (bucket 'demos') para que nunca expire
+                try {
+                  const { data: treatment1 } = await supabase.functions.invoke('process-audio', {
+                    body: { originalUrl: song1.audioUrl, songId: newSong.id, version: 1 }
+                  });
+                  if (treatment1?.permanentAudioUrl) {
+                    finalUrl1 = treatment1.permanentAudioUrl;
+                  }
+                } catch (tErr) {
+                  console.warn("Could not save audio 1 to Supabase Storage:", tErr);
+                }
+
                 if (song2 && song2.audioUrl) {
-                  finalUrl2 = song2.audioUrl;
+                  try {
+                    const { data: treatment2 } = await supabase.functions.invoke('process-audio', {
+                      body: { originalUrl: song2.audioUrl, songId: newSong.id, version: 2 }
+                    });
+                    if (treatment2?.permanentAudioUrl) {
+                      finalUrl2 = treatment2.permanentAudioUrl;
+                    } else {
+                      finalUrl2 = song2.audioUrl;
+                    }
+                  } catch (tErr) {
+                    console.warn("Could not save audio 2 to Supabase Storage:", tErr);
+                    finalUrl2 = song2.audioUrl;
+                  }
                 }
 
                 setAudioUrl(finalUrl1);
@@ -729,16 +754,16 @@ INSTRUCCIONES:
                   ...currentDbFormData,
                   ...formData,
                   finalStylePrompt: formData.finalStylePrompt || cleanedStyle,
-                  version2: (song2 && song2.audioUrl) ? { 
-                    audio_url: song2.audioUrl, 
-                    demo_url: finalUrl2,
+                  version2: (song2 && (finalUrl2 || song2.audioUrl)) ? { 
+                    audio_url: finalUrl2 || song2.audioUrl, 
+                    demo_url: finalUrl2 || song2.audioUrl,
                     song_id: song2.id 
                   } : null
                 };
 
                 await supabase.from('mn_songs').update({ 
                   audio_url: finalUrl1,
-                  demo_url: null,
+                  demo_url: finalUrl1,
                   suno_id: song1.id,
                   form_data: updatedFormData,
                   status: 'completed'
