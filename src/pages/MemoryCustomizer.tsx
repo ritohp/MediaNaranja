@@ -102,9 +102,36 @@ export default function MemoryCustomizer() {
     });
   }, [id, songIdParam]);
 
+  const [selectedVersion, setSelectedVersion] = useState<1 | 2>(1);
+
+  const handleVersionChange = async (version: 1 | 2) => {
+    setSelectedVersion(version);
+    if (!selectedSong) return;
+
+    const updatedFormData = {
+      ...(selectedSong.form_data || {}),
+      selected_version: version
+    };
+
+    setSelectedSong((prev: any) => ({
+      ...prev,
+      form_data: updatedFormData
+    }));
+
+    try {
+      await supabase
+        .from('mn_songs')
+        .update({ form_data: updatedFormData })
+        .eq('id', selectedSong.id);
+    } catch (err) {
+      console.error("Error al actualizar versión seleccionada:", err);
+    }
+  };
+
   const handleSelectSong = (s: any, currentUser?: any) => {
     setSelectedSong(s);
     setSongId(s.id);
+    setSelectedVersion(s.form_data?.selected_version === 2 ? 2 : 1);
 
     const isAdmin = currentUser?.email === 'ritohp@gmail.com';
     if (!s.is_paid && !isAdmin) {
@@ -113,13 +140,13 @@ export default function MemoryCustomizer() {
       setSongNotPaidWarning(false);
     }
 
-    // Auto-relleno inteligente desde los datos de la canción (formato nuevo o anterior)
+    // Auto-relleno inteligente SOLO si los campos aún conservan su valor por defecto
     const formData = s.form_data || {};
     const recipient = (formData.nombreDestinatario || formData.recipientName || '').trim();
     const author = (formData.authorName || formData.nombreRemitente || '').trim();
 
-    if (recipient) {
-      // Capitalizar nombre
+    const isNamesDefault = !names || names === "Adam & Emily";
+    if (recipient && isNamesDefault) {
       const capRecipient = recipient.charAt(0).toUpperCase() + recipient.slice(1);
       setRecipientName(capRecipient);
       if (author) {
@@ -131,39 +158,46 @@ export default function MemoryCustomizer() {
       }
     }
 
-    // Extraer historia de amor / sinopsis
-    const storyParts = [
-      formData.comoSeConocieron,
-      formData.momentosImportantes,
-      formData.anecdota,
-      formData.queSientes,
-      formData.initialContext,
-      formData.specificDetails
-    ].filter(Boolean);
+    // Extraer historia de amor / sinopsis solo si aún está la predeterminada
+    const defaultSynopsis = "Mirada a los ojos y mi mundo se detuvo, fue extraño cómo todo comenzó. Quise pasar de nuevo por allí y en ese instante me di cuenta. La dueña de esa mirada era más de lo que podría imaginar. Sonriente, cariñosa, sensible y envolvente. Lo suficiente para que pudiera amarla para siempre.";
+    const isSynopsisDefault = !synopsis || synopsis === defaultSynopsis;
+    if (isSynopsisDefault) {
+      const storyParts = [
+        formData.comoSeConocieron,
+        formData.momentosImportantes,
+        formData.anecdota,
+        formData.queSientes,
+        formData.initialContext,
+        formData.specificDetails
+      ].filter(Boolean);
 
-    if (storyParts.length > 0) {
-      const fullStory = storyParts.join(' ').replace(/\s+/g, ' ').trim();
-      setSynopsis(fullStory.slice(0, 360));
+      if (storyParts.length > 0) {
+        const fullStory = storyParts.join(' ').replace(/\s+/g, ' ').trim();
+        setSynopsis(fullStory.slice(0, 360));
+      }
     }
 
-    // Extraer año / fecha especial
-    const dateSource = [
-      formData.fechaEspecial,
-      formData.fecha,
-      formData.date,
-      formData.initialContext,
-      formData.birthDate
-    ].filter(Boolean).join(' ');
+    // Extraer año / fecha especial solo si aún está la predeterminada
+    const isDateDefault = !date || date === "2015";
+    if (isDateDefault) {
+      const dateSource = [
+        formData.fechaEspecial,
+        formData.fecha,
+        formData.date,
+        formData.initialContext,
+        formData.birthDate
+      ].filter(Boolean).join(' ');
 
-    const yearMatch = dateSource.match(/\b(19\d{2}|20\d{2})\b/);
-    if (yearMatch) {
-      setDate(yearMatch[1]);
-    } else if (s.created_at) {
-      setDate(new Date(s.created_at).getFullYear().toString());
+      const yearMatch = dateSource.match(/\b(19\d{2}|20\d{2})\b/);
+      if (yearMatch) {
+        setDate(yearMatch[1]);
+      } else if (s.created_at) {
+        setDate(new Date(s.created_at).getFullYear().toString());
+      }
     }
 
-    // Cargar foto principal si ya existía en la canción
-    if (formData.custom_photo_url) {
+    // Cargar foto principal si no hay ninguna foto subida
+    if (!mainPhoto && formData.custom_photo_url) {
       setMainPhoto(formData.custom_photo_url);
     }
   };
@@ -712,12 +746,109 @@ export default function MemoryCustomizer() {
             {/* PESTAÑA 2: CANCIÓN Y NOTA DE VOZ */}
             {activeTab === 'audio' && (
               <div className="space-y-6 animate-in fade-in duration-300">
-                {/* VINCULACIÓN DE CANCIÓN */}
+                {/* CANCIÓN ASIGNADA Y SELECTOR DE VERSIONES */}
                 <div>
                   <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
-                    Canción Vinculada de Media Naranja
+                    Canción Asignada a la Serie
                   </label>
-                  {userPaidSongs.length > 0 ? (
+                  {selectedSong ? (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-500 flex items-center justify-center font-bold">
+                            <Music size={20} />
+                          </div>
+                          <div>
+                            <h4 className="text-white text-sm font-bold">
+                              {selectedSong.title || 'Canción Personalizada'}
+                            </h4>
+                            <p className="text-[11px] text-zinc-400">
+                              {selectedSong.is_paid ? '✓ Canción Liberada' : 'Muestra de 1.5 min'} • {new Date(selectedSong.created_at || Date.now()).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="px-2.5 py-1 bg-red-950 text-red-400 border border-red-800/50 rounded-full text-[9px] font-black uppercase tracking-wider">
+                          Vinculada
+                        </span>
+                      </div>
+
+                      {/* SELECTOR DE LAS 2 VERSIONES DE LA GENERACIÓN */}
+                      {selectedSong.form_data?.version2 ? (
+                        <div className="pt-3 border-t border-zinc-800 space-y-3">
+                          <label className="block text-[11px] font-bold text-amber-300 uppercase tracking-wider">
+                            ¿Cuál de las 2 versiones deseas para tu serie Loveflix?
+                          </label>
+                          <div className="grid grid-cols-2 gap-2.5">
+                            {/* BOTÓN VERSIÓN 1 */}
+                            <button
+                              type="button"
+                              onClick={() => handleVersionChange(1)}
+                              className={`p-3 rounded-xl border text-left transition-all ${
+                                selectedVersion === 1
+                                  ? 'bg-red-950/70 border-red-500 ring-2 ring-red-500/40 text-white shadow-lg'
+                                  : 'bg-zinc-950/80 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-black uppercase">Opción A</span>
+                                {selectedVersion === 1 && <Check size={14} className="text-red-400" />}
+                              </div>
+                              <p className="text-[10px] text-zinc-400">Versión 1 generada</p>
+                            </button>
+
+                            {/* BOTÓN VERSIÓN 2 */}
+                            <button
+                              type="button"
+                              onClick={() => handleVersionChange(2)}
+                              className={`p-3 rounded-xl border text-left transition-all ${
+                                selectedVersion === 2
+                                  ? 'bg-red-950/70 border-red-500 ring-2 ring-red-500/40 text-white shadow-lg'
+                                  : 'bg-zinc-950/80 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-black uppercase">Opción B</span>
+                                {selectedVersion === 2 && <Check size={14} className="text-red-400" />}
+                              </div>
+                              <p className="text-[10px] text-zinc-400">Versión 2 generada</p>
+                            </button>
+                          </div>
+
+                          {/* REPRODUCTOR DE PRUEBA DE LA VERSIÓN SELECCIONADA */}
+                          <div className="pt-1">
+                            <audio 
+                              key={selectedVersion === 1 
+                                ? (selectedSong.audio_url || selectedSong.demo_url) 
+                                : (selectedSong.form_data?.version2?.audio_url || selectedSong.form_data?.version2?.demo_url)}
+                              src={
+                                (() => {
+                                  const raw = selectedVersion === 1 
+                                    ? (selectedSong.audio_url || selectedSong.demo_url) 
+                                    : (selectedSong.form_data?.version2?.audio_url || selectedSong.form_data?.version2?.demo_url);
+                                  if (!raw || raw.includes('tempfile.aiquickdraw.com') || raw.includes('cloudinary.com/demo')) {
+                                    return '/audio/love_song_sample.mp3';
+                                  }
+                                  return raw;
+                                })()
+                              }
+                              controls
+                              className="w-full h-9 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="pt-2 border-t border-zinc-800">
+                          <p className="text-[10px] text-zinc-400 mb-2">Versión única disponible de tu canción:</p>
+                          <audio 
+                            key={selectedSong.audio_url || selectedSong.demo_url}
+                            src={selectedSong.audio_url || selectedSong.demo_url || '/audio/love_song_sample.mp3'}
+                            controls
+                            className="w-full h-9 rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : userPaidSongs.length > 0 ? (
                     <select
                       value={songId || ''}
                       onChange={(e) => {
@@ -729,7 +860,7 @@ export default function MemoryCustomizer() {
                       <option value="">-- Selecciona una de tus canciones --</option>
                       {userPaidSongs.map(s => (
                         <option key={s.id} value={s.id}>
-                          🎵 {s.title || 'Canción Personalizada'} {s.is_paid ? '✓' : '(Demo 1 min)'} ({new Date(s.created_at).toLocaleDateString()})
+                          🎵 {s.title || 'Canción Personalizada'} {s.is_paid ? '✓' : '(Demo)'} ({new Date(s.created_at).toLocaleDateString()})
                         </option>
                       ))}
                     </select>

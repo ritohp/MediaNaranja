@@ -136,12 +136,10 @@ export default function PublicGiftPlayer() {
   const voiceAudioUrl = memory?.voice_note_url || '';
 
   useEffect(() => {
-    const candidate = 
-      song?.audio_url || 
-      song?.demo_url || 
-      song?.form_data?.version2?.audio_url || 
-      song?.form_data?.version2?.demo_url || 
-      '';
+    const selectedVersion = song?.form_data?.selected_version || 1;
+    const candidate = selectedVersion === 2
+      ? (song?.form_data?.version2?.audio_url || song?.form_data?.version2?.demo_url || song?.audio_url || song?.demo_url || '')
+      : (song?.audio_url || song?.demo_url || song?.form_data?.version2?.audio_url || song?.form_data?.version2?.demo_url || '');
 
     if (candidate && !candidate.includes('tempfile.aiquickdraw.com') && !candidate.includes('cloudinary.com/demo')) {
       setSongAudioUrl(candidate);

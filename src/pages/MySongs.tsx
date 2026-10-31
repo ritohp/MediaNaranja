@@ -27,18 +27,25 @@ export default function MySongs() {
   const [unlockingStatus, setUnlockingStatus] = useState<'checking' | 'success' | 'failed'>('checking');
 
   const isLoveSong = (song: any): boolean => {
+    if (!song) return false;
     const formData = song.form_data || {};
     const rel = (formData.relacion || '').toLowerCase();
     const cat = (formData.category || '').toLowerCase();
     const flow = (formData.landing_flow || '').toLowerCase();
 
-    if (rel === 'pareja' || rel.includes('novi') || rel.includes('espos') || rel.includes('pareja')) return true;
+    // Si explícitamente pertenece a otra categoría familiar o de amistad, NO es de pareja
+    if (['mama', 'papa', 'hijo', 'amigos'].includes(cat) || ['mama', 'papa', 'hijo', 'amigos'].includes(flow)) {
+      return false;
+    }
+
+    // Si explícitamente es de pareja
     if (cat === 'pareja' || cat === 'parejas' || cat === 'amor') return true;
     if (flow === 'parejas' || flow === 'pareja') return true;
+    if (rel === 'pareja' || rel.includes('novi') || rel.includes('espos') || rel.includes('marid') || rel.includes('pareja')) return true;
 
+    // Si no tiene categoría explícita, buscar términos estrictamente de pareja
     const allText = [
       song.title,
-      song.lyrics,
       formData.initialContext,
       formData.specificDetails,
       formData.comoSeConocieron,
@@ -48,13 +55,13 @@ export default function MySongs() {
       formData.fechaEspecial
     ].filter(Boolean).join(' ').toLowerCase();
 
-    const loveKeywords = [
-      'amor', 'enamorad', 'novio', 'novia', 'esposo', 'esposa', 'pareja',
-      'aniversario', 'boda', 'casamos', 'juntos', 'san valentín', 'te amo',
-      'matrimonio', 'romántic', 'flechamos'
+    const strictLoveKeywords = [
+      'novio', 'novia', 'esposo', 'esposa', 'mi pareja', 'nuestro aniversario',
+      'aniversario de novios', 'boda', 'casamos', 'san valentín', 'pedir matrimonio',
+      'matrimonio', 'enamorados', 'amor de mi vida'
     ];
 
-    return loveKeywords.some(kw => allText.includes(kw));
+    return strictLoveKeywords.some(kw => allText.includes(kw));
   };
 
   const handleVersionSelect = async (songId: string, version: number, currentFormData: any) => {
@@ -642,13 +649,15 @@ export default function MySongs() {
                       </a>
                     )}
 
-                    {/* Botón Upgrade Loveflix por $199 MXN */}
-                    <Link
-                      to={`/personalizar-cuadro?songId=${song.id}&upgrade=true`}
-                      className="w-full py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm shadow-red-200"
-                    >
-                      <Heart size={14} fill="currentColor" /> Inmortalizar en Loveflix (Upgrade $199)
-                    </Link>
+                    {/* Botón Upgrade Loveflix por $199 MXN - SOLO PARA PAREJAS */}
+                    {isLoveSong(song) && (
+                      <Link
+                        to={`/personalizar-cuadro?songId=${song.id}&upgrade=true`}
+                        className="w-full py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm shadow-red-200"
+                      >
+                        <Heart size={14} fill="currentColor" /> Inmortalizar en Loveflix (Upgrade $199)
+                      </Link>
+                    )}
 
                     {/* Botón Ver Canción */}
                     <Link 
@@ -661,23 +670,36 @@ export default function MySongs() {
                 ) : (
                   /* CASO 2: CANCIÓN AÚN NO PAGADA (DEMO) */
                   <>
-                    {/* Botón Primario: Crear Serie Loveflix ($399 MXN) */}
-                    <Link
-                      to={`/personalizar-cuadro?songId=${song.id}`}
-                      className="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-red-200"
-                    >
-                      <Heart size={14} fill="currentColor" /> Crear Serie Loveflix ($399 MXN)
-                    </Link>
+                    {/* SI ES DE PAREJA: Ofrecer paquete completo ($399 MXN) y solo canción ($249 MXN) */}
+                    {isLoveSong(song) ? (
+                      <>
+                        <Link
+                          to={`/personalizar-cuadro?songId=${song.id}`}
+                          className="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-red-200"
+                        >
+                          <Heart size={14} fill="currentColor" /> Crear Serie Loveflix ($399 MXN)
+                        </Link>
 
-                    {/* Botón Secundario: Solo Canción ($249 MXN) */}
-                    <button 
-                      onClick={() => {
-                        window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
-                      }}
-                      className="w-full py-2.5 bg-white text-gray-700 border border-gray-300 hover:border-gray-500 rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2"
-                    >
-                      <Lock size={12} className="opacity-60" /> Solo Canción MP3 ($249 MXN)
-                    </button>
+                        <button 
+                          onClick={() => {
+                            window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                          }}
+                          className="w-full py-2.5 bg-white text-gray-700 border border-gray-300 hover:border-gray-500 rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                        >
+                          <Lock size={12} className="opacity-60" /> Solo Canción MP3 ($249 MXN)
+                        </button>
+                      </>
+                    ) : (
+                      /* SI NO ES DE PAREJA (ej: mamá, papá, etc.): Desbloqueo regular de canción */
+                      <button 
+                        onClick={() => {
+                          window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                        }}
+                        className="w-full py-3.5 bg-naranja-500 hover:bg-naranja-600 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-naranja-200"
+                      >
+                        <Lock size={14} /> Desbloquear Canción ($249 MXN)
+                      </button>
+                    )}
                   </>
                 )}
 
