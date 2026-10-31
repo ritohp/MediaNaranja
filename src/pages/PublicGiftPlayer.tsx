@@ -433,40 +433,55 @@ export default function PublicGiftPlayer() {
         .eq-bar-3 { animation: eqPulse 0.7s ease-in-out 0.4s infinite; }
       `}</style>
 
-      {/* BARRA SUPERIOR PARA EL CREADOR EN MODO DEMO */}
-      {isCreator && isDemoMode && (
-        <aside aria-label="Aviso de Modo Demo" className="sticky top-0 inset-x-0 z-50 bg-gradient-to-r from-red-950 via-zinc-950 to-red-950 border-b border-red-800/80 px-4 py-2.5 shadow-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* BARRA SUPERIOR PARA EL CREADOR */}
+      {isCreator && (
+        <aside aria-label="Controles del Creador" className="sticky top-0 inset-x-0 z-50 bg-gradient-to-r from-red-950 via-zinc-950 to-red-950 border-b border-red-800/80 px-4 py-2.5 shadow-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
-            <span className="font-bold text-amber-300">Modo Demo Interactivo (Vista Previa Privada)</span>
-            <span className="text-zinc-400 hidden md:inline">
-              • Escucha el adelanto y confirma tu pedido para activar el código QR.
-            </span>
+            <Link
+              to="/mis-canciones"
+              className="px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-all shadow-sm border border-zinc-700/80 hover:border-zinc-500"
+            >
+              <ArrowLeft size={13} />
+              <span>Mis Canciones</span>
+            </Link>
+            {isDemoMode ? (
+              <span className="font-bold text-amber-300 hidden sm:flex items-center gap-1.5 ml-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block"></span>
+                Demo Interactivo (Vista Previa)
+              </span>
+            ) : (
+              <span className="font-bold text-emerald-400 hidden sm:flex items-center gap-1.5 ml-2">
+                <CheckCircle2 size={13} />
+                Netflix de Amor Activo
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(`/personalizar-cuadro/${memory.id}`)}
-              className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer border border-zinc-700 hover:border-zinc-500"
             >
               <Edit3 size={13} />
-              <span>Volver a Editar</span>
+              <span>Editar Plantilla</span>
             </button>
 
-            <button
-              onClick={() => {
-                const checkoutEl = document.getElementById('checkout-section');
-                if (checkoutEl) {
-                  checkoutEl.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                  setShowUnlockModal(true);
-                }
-              }}
-              className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-red-950 transition-all active:scale-95 cursor-pointer"
-            >
-              <Gift size={13} />
-              <span>Confirmar Pedido y Activar QR</span>
-            </button>
+            {isDemoMode && (
+              <button
+                onClick={() => {
+                  const checkoutEl = document.getElementById('checkout-section');
+                  if (checkoutEl) {
+                    checkoutEl.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    setShowUnlockModal(true);
+                  }
+                }}
+                className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-red-950 transition-all active:scale-95 cursor-pointer"
+              >
+                <Gift size={13} />
+                <span>Confirmar Pedido y Activar QR</span>
+              </button>
+            )}
           </div>
         </aside>
       )}
@@ -883,27 +898,27 @@ export default function PublicGiftPlayer() {
                 <Sparkles size={24} />
               </div>
               <h2 className="text-2xl font-serif font-bold text-white">
-                {isSongPaidOnly ? "Activa la Serie Loveflix para tu Pareja" : "Inmortaliza Esta Historia de Amor"}
+                {isSongPaidOnly ? "Activa tu Netflix de Amor" : "Crea tu Plantilla Personalizada de Parejas"}
               </h2>
               <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
                 {isSongPaidOnly 
-                  ? "Como ya desbloqueaste tu canción en MP3, obtén tu serie interactiva con QR activo y lámina de alta resolución con precio preferencial de Upgrade." 
-                  : "Elige el paquete que mejor se adapte a tu regalo. Puedes elegir solo la canción en MP3, la experiencia Loveflix completa con página web y lámina, o la caja física artesanal de madera."}
+                  ? "Como ya desbloqueaste tu canción en MP3, obtén tu plantilla personalizada de Netflix de Amor con QR activo y lámina de alta resolución por solo $199 MXN." 
+                  : "Elige el paquete que mejor se adapte a tu regalo. Puedes elegir solo la canción en MP3, la experiencia Netflix de Amor completa con página web interactiva y lámina, o la caja física artesanal de madera."}
               </p>
             </div>
 
-            {/* SI LA CANCIÓN YA FUE PAGADA (UPGRADE FLOW) */}
+            {/* SI LA CANCIÓN YA FUE PAGADA (PRECIO PREFERENCIAL) */}
             {isSongPaidOnly ? (
               <div className="space-y-4">
                 <div className="p-3.5 bg-amber-950/40 border border-amber-500/30 rounded-2xl flex items-center gap-3 text-xs text-amber-200">
                   <span className="text-xl shrink-0">✨</span>
                   <span>
-                    <strong>¡Canción desbloqueada!</strong> Tienes un descuento exclusivo de <strong>-$49 MXN</strong> para activar la experiencia Loveflix completa.
+                    <strong>¡Canción desbloqueada!</strong> Tienes un precio preferencial exclusivo de <strong>$199 MXN</strong> para activar la plantilla interactiva completa.
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                  {/* OPCIÓN 1: UPGRADE DIGITAL ($199 MXN) */}
+                  {/* OPCIÓN 1: PLANTILLA DIGITAL ($199 MXN) */}
                   <div
                     onClick={() => setSelectedProduct('digital_poster')}
                     className={`p-5 rounded-2xl border cursor-pointer transition-all ${
@@ -914,7 +929,7 @@ export default function PublicGiftPlayer() {
                   >
                     <div className="flex items-center justify-between mb-3">
                       <span className="px-2 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
-                        ✨ UPGRADE PREFERENCIAL
+                        ✨ PRECIO PREFERENCIAL
                       </span>
                       {selectedProduct === 'digital_poster' ? (
                         <CheckCircle2 size={18} className="text-red-500" />
@@ -1093,11 +1108,11 @@ export default function PublicGiftPlayer() {
                 <div className="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300 space-y-2">
                   <p className="font-bold text-white flex items-center gap-2">
                     <Sparkles size={16} className="text-red-400" />
-                    {isSongPaidOnly ? "¿Qué incluye tu Upgrade Loveflix Digital?" : "¿Qué recibirás con tu Experiencia Loveflix Digital?"}
+                    {isSongPaidOnly ? "¿Qué incluye tu Netflix de Amor?" : "¿Qué recibirás con tu Experiencia Netflix de Amor?"}
                   </p>
                   <ul className="list-disc pl-5 space-y-1 text-zinc-400 text-[11px]">
                     {!isSongPaidOnly && <li>Canción completa en MP3 de máxima calidad sin límites de reproducción.</li>}
-                    <li>Mini página web interactiva Loveflix con código QR activo.</li>
+                    <li>Mini página web interactiva con código QR activo.</li>
                     <li>Galería interactiva de 5 fotos con dedicatoria de voz personalizada.</li>
                     <li>Lámina digital en PDF de alta resolución (300 DPI) lista para imprimir.</li>
                   </ul>
@@ -1118,8 +1133,8 @@ export default function PublicGiftPlayer() {
                     {isUpdatingOrder 
                       ? "Procesando..." 
                       : isSongPaidOnly 
-                        ? "Activar Upgrade Loveflix Digital ($199 MXN)" 
-                        : "Obtener Experiencia Loveflix Digital ($399 MXN)"}
+                        ? "Activar mi Netflix de Amor ($199 MXN)" 
+                        : "Obtener mi Netflix de Amor ($399 MXN)"}
                   </span>
                 </button>
               </div>
@@ -1331,10 +1346,10 @@ export default function PublicGiftPlayer() {
 
             <div className="space-y-2">
               <h3 className="text-2xl font-serif font-bold text-white">
-                ¿Te encantó cómo suena su serie?
+                ¿Te encantó cómo suena su canción?
               </h3>
               <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                Has escuchado el adelanto de 1 minuto de tu canción inédita. Tu producción Loveflix ya está lista para inmortalizarse.
+                Has escuchado el adelanto de 1 minuto de tu canción. Tu plantilla personalizada de Netflix de Amor está lista para activarse.
               </p>
             </div>
 
@@ -1342,7 +1357,7 @@ export default function PublicGiftPlayer() {
             <div className="space-y-3 text-left">
               {isSongPaidOnly ? (
                 <>
-                  {/* UPGRADE LOVEFLIX */}
+                  {/* ACTIVAR NETFLIX DE AMOR */}
                   <div 
                     onClick={() => {
                       setShowUnlockModal(false);
@@ -1353,7 +1368,7 @@ export default function PublicGiftPlayer() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black uppercase text-red-400 tracking-wider flex items-center gap-1.5">
-                        ✨ Upgrade Serie Loveflix (Descuento -$49)
+                        ✨ Activar mi Netflix de Amor ($199 MXN)
                       </span>
                       <span className="text-sm font-black text-white">$199 MXN</span>
                     </div>

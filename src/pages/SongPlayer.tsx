@@ -36,6 +36,7 @@ export default function SongPlayer() {
   const [activePreviewVersion, setActivePreviewVersion] = useState<1 | 2>(1);
   const [isAudioLoading, setIsAudioLoading] = useState(true);
   const [showDemoModal, setShowDemoModal] = useState(false);
+  const [existingMemory, setExistingMemory] = useState<any>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pdfRef = useRef<HTMLDivElement | null>(null);
@@ -120,6 +121,18 @@ export default function SongPlayer() {
                    (data.form_data?.nombreDestinatario ? `${data.form_data.nombreDestinatario} ${data.form_data.apellidoDestinatario || ''}`.trim() : null) || 
                    "Papá"
       });
+
+      // Consultar si ya tiene un Netflix de Amor guardado
+      if (id) {
+        const { data: mem } = await supabase
+          .from('memories')
+          .select('id, status')
+          .eq('song_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (mem) setExistingMemory(mem);
+      }
     } catch (err) {
       console.error("Error cargando canción:", err);
     } finally {
@@ -685,9 +698,15 @@ export default function SongPlayer() {
           {!isPaid ? (
             isSongForCouple ? (
               <div className="space-y-3">
-                {/* OPCIÓN 1: SERIE LOVEFLIX ($399 MXN) - RECOMENDADO */}
+                {/* OPCIÓN 1: NETFLIX DE AMOR - RECOMENDADO */}
                 <div 
-                  onClick={() => navigate(`/personalizar-cuadro?songId=${song.id}`)}
+                  onClick={() => {
+                    if (existingMemory) {
+                      navigate(`/escuchar/${existingMemory.id}`);
+                    } else {
+                      navigate(`/personalizar-cuadro?songId=${song.id}`);
+                    }
+                  }}
                   className="p-5 rounded-2xl bg-gradient-to-r from-red-950/70 via-zinc-900 to-black border-2 border-red-500 shadow-xl cursor-pointer hover:scale-[1.01] transition-all text-left relative overflow-hidden group"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -697,14 +716,14 @@ export default function SongPlayer() {
                     <span className="text-base font-black text-red-400">$399 MXN</span>
                   </div>
                   <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                    🎬 Experiencia Loveflix Digital
+                    🎬 {existingMemory ? "Ver tu Netflix de Amor" : "Crear tu Netflix de Amor"}
                   </h4>
                   <p className="text-zinc-300 text-xs mt-1 leading-relaxed">
                     Canción completa MP3 + Mini página web interactiva con código QR activo + galería de 5 fotos con dedicatoria + lámina digital PDF 300 DPI lista para imprimir.
                   </p>
                   <div className="pt-3">
                     <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-400 group-hover:text-red-300 uppercase tracking-wider">
-                      Personalizar Serie Ahora (Pruébalo Gratis) →
+                      {existingMemory ? "Abrir Experiencia Interactiva →" : "Personalizar Plantilla Ahora (Pruébalo Gratis) →"}
                     </span>
                   </div>
                 </div>
@@ -734,7 +753,7 @@ export default function SongPlayer() {
               </div>
             )
           ) : (
-            /* SI YA ESTÁ PAGADA: DESCARGA MP3 + (SI ES PAREJA: UPGRADE A LOVEFLIX DIGITAL $199 MXN) */
+            /* SI YA ESTÁ PAGADA: DESCARGA MP3 + (SI ES PAREJA: NETFLIX DE AMOR) */
             <div className="space-y-4">
               <button 
                 onClick={() => {
@@ -746,30 +765,41 @@ export default function SongPlayer() {
                 <span>Descargar Canción MP3 Completa</span>
               </button>
 
-              {/* UPGRADE LOVEFLIX POR $199 MXN EXTRA - SOLO SI ES PAREJA */}
+              {/* NETFLIX DE AMOR - SOLO SI ES PAREJA */}
               {isSongForCouple && (
                 <div className="p-5 rounded-2xl bg-gradient-to-r from-red-950/40 via-[#1C2A39] to-zinc-900 border border-red-800/40 text-left relative overflow-hidden shadow-xl">
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1.5">
                       <span className="px-2.5 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
-                        ✨ Upgrade Especial Parejas
+                        ✨ Plantilla de Parejas
                       </span>
                       <h4 className="text-white font-bold text-sm">
-                        ¿Quieres la Serie Loveflix para esta canción?
+                        {existingMemory ? "Tu Netflix de Amor está listo" : "¿Quieres tu Netflix de Amor para esta canción?"}
                       </h4>
                       <p className="text-zinc-300 text-xs leading-relaxed">
-                        Como ya desbloqueaste tu canción, obtén tu Mini Página Web Interactiva con código QR activo y lámina PDF 300 DPI por solo <strong className="text-red-400 font-bold">$199 MXN extra</strong>.
+                        {existingMemory 
+                          ? "Ya tienes una plantilla personalizada para esta canción. Haz clic abajo para abrirla o editarla." 
+                          : "Como ya desbloqueaste tu canción, obtén tu Mini Página Web Interactiva con código QR activo y lámina PDF 300 DPI por solo "}<strong className="text-red-400 font-bold">{!existingMemory && "$199 MXN"}</strong>.
                       </p>
                     </div>
                     <span className="text-2xl shrink-0">🎬</span>
                   </div>
                   <div className="pt-4">
-                    <button
-                      onClick={() => navigate(`/personalizar-cuadro?songId=${song.id}&upgrade=true`)}
-                      className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-950/50"
-                    >
-                      <Sparkles size={14} /> Inmortalizar en Serie Loveflix ($199 MXN)
-                    </button>
+                    {existingMemory ? (
+                      <button
+                        onClick={() => navigate(`/escuchar/${existingMemory.id}`)}
+                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 cursor-pointer"
+                      >
+                        <Sparkles size={14} /> Ver tu Netflix de Amor
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => navigate(`/personalizar-cuadro?songId=${song.id}`)}
+                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 cursor-pointer"
+                      >
+                        <Sparkles size={14} /> Crear tu Netflix de Amor ($199 MXN)
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -898,17 +928,21 @@ export default function SongPlayer() {
                 ¡Has escuchado el adelanto! ✨
               </h3>
               <p className="text-stone-600 text-xs md:text-sm leading-relaxed">
-                Has disfrutado de la muestra de 1.5 minutos de tu canción personalizada. Elige cómo quieres inmortalizar este regalo:
+                Has disfrutado de la muestra de 1.5 minutos de tu canción personalizada. Elige cómo prefieres tu regalo:
               </p>
             </div>
 
             {isSongForCouple ? (
               <div className="space-y-3 text-left">
-                {/* OPCIÓN 1: LOVEFLIX SERIE DIGITAL (RECOMENDADO / PRUÉBALO GRATIS) */}
+                {/* OPCIÓN 1: NETFLIX DE AMOR (RECOMENDADO / PRUÉBALO GRATIS) */}
                 <div 
                   onClick={() => {
                     setShowDemoModal(false);
-                    navigate(`/personalizar-cuadro?songId=${song.id}`);
+                    if (existingMemory) {
+                      navigate(`/escuchar/${existingMemory.id}`);
+                    } else {
+                      navigate(`/personalizar-cuadro?songId=${song.id}`);
+                    }
                   }}
                   className="p-4 rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white border-2 border-red-500 shadow-xl cursor-pointer hover:scale-[1.02] transition-all group"
                 >
@@ -919,10 +953,10 @@ export default function SongPlayer() {
                     <span className="text-sm font-black text-red-400">$399 MXN</span>
                   </div>
                   <h4 className="font-bold text-sm text-white flex items-center gap-1.5">
-                    🎬 Experiencia Loveflix Digital
+                    🎬 {existingMemory ? "Ver tu Netflix de Amor" : "Crear tu Netflix de Amor"}
                   </h4>
                   <p className="text-[11px] text-zinc-300 mt-1 leading-snug">
-                    Canción completa MP3 + Mini página web interactiva con fotos, dedicatoria de voz y QR activo + Lámina PDF 300 DPI. ¡Diseña tu demo gratis antes de pagar!
+                    Canción completa MP3 + Mini página web interactiva con fotos, dedicatoria de voz y QR activo + Lámina PDF 300 DPI.
                   </p>
                 </div>
 

@@ -130,7 +130,7 @@ export default function MyMemories() {
           <div className="text-center py-24 bg-white rounded-[4rem] shadow-sm border border-[#FFE4E4]">
              <Film className="mx-auto text-[#FFC0C0] mb-6" size={64} />
              <h2 className="text-2xl font-serif text-[#4A4A4A] mb-2">Tu cartelera está vacía</h2>
-             <p className="text-gray-400 mb-8 max-w-sm mx-auto">Empieza a inmortalizar tus mejores momentos con el estilo Loveflix.</p>
+             <p className="text-gray-400 mb-8 max-w-sm mx-auto">Empieza a crear tu Netflix de Amor con tus mejores momentos.</p>
              <Link to="/personalizar-cuadro" className="bg-gray-100 px-6 py-3 rounded-full text-sm font-bold text-gray-600 hover:bg-gray-200 transition-all">Crear mi primer poster</Link>
           </div>
         ) : (

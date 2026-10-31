@@ -77,8 +77,29 @@ export default function MemoryCustomizer() {
 
         setUserPaidSongs(songs || []);
 
-        // Si hay songId en URL, cargar y validar
+        // Si ya hay un ID específico de recuerdo en la URL
+        if (id) {
+          fetchSavedMemory(id);
+          return;
+        }
+
+        // Si hay songId en URL pero no ID de recuerdo, verificar si ya existe un diseño guardado para esta canción
         if (songIdParam) {
+          const { data: existingMem } = await supabase
+            .from('memories')
+            .select('*')
+            .eq('song_id', songIdParam)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (existingMem) {
+            fetchSavedMemory(existingMem.id);
+            return;
+          }
+
+          // Si es un diseño nuevo para esta canción, vincularla
           const targetSong = (songs || []).find(s => s.id === songIdParam);
           if (targetSong) {
             handleSelectSong(targetSong, user);
@@ -231,6 +252,24 @@ export default function MemoryCustomizer() {
           }
         }
         setMemoryUid(data.id);
+
+        // Si tiene canción asociada, cargarla para el reproductor y selector de versiones
+        if (data.song_id) {
+          const { data: s } = await supabase
+            .from('mn_songs')
+            .select('*')
+            .eq('id', data.song_id)
+            .single();
+          if (s) {
+            setSelectedSong(s);
+            setSelectedVersion(s.form_data?.selected_version === 2 ? 2 : 1);
+            if (s.is_paid || user?.email === 'ritohp@gmail.com') {
+              setSongNotPaidWarning(false);
+            } else {
+              setSongNotPaidWarning(true);
+            }
+          }
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -531,26 +570,34 @@ export default function MemoryCustomizer() {
 
       {/* HEADER DE NAVEGACIÓN */}
       <div className="max-w-[1500px] mx-auto px-6 mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Link 
-          to="/mis-recuerdos"
-          className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
-        >
-          <ArrowLeft size={16} /> Volver a mis recuerdos
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link 
+            to="/mis-canciones"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors text-xs font-bold uppercase tracking-wider shadow-sm"
+          >
+            <ArrowLeft size={14} /> Mis Canciones
+          </Link>
+          <Link 
+            to="/mis-recuerdos"
+            className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-xs font-medium"
+          >
+            Mis Recuerdos
+          </Link>
+        </div>
 
-        {/* INFORMACIÓN DE UPGRADE O MODO PRUEBA */}
+        {/* INFORMACIÓN DE PRECIO O MODO PRUEBA */}
         {(isUpgradeParam || (selectedSong && selectedSong.is_paid)) ? (
           <div className="bg-gradient-to-r from-red-950/80 via-amber-950/70 to-zinc-900 border border-amber-500/50 text-amber-200 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 shadow-lg">
             <span className="text-base shrink-0">✨</span>
             <div className="flex-1">
-              <span className="text-white font-black">¡Tu canción ya está pagada!</span> Al finalizar tu diseño, obtendrás el precio preferencial de Upgrade por solo <strong className="text-amber-400 font-black">$199 MXN</strong>.
+              <span className="text-white font-black">¡Tu canción ya está lista!</span> Tu plantilla personalizada de Netflix de Amor solo cuesta <strong className="text-amber-400 font-black">$199 MXN</strong>.
             </div>
           </div>
         ) : songNotPaidWarning ? (
           <div className="bg-zinc-900/90 border border-zinc-700 text-zinc-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-3">
             <Sparkles size={16} className="text-red-400 shrink-0" />
             <div className="flex-1">
-              <strong className="text-white">Estás diseñando tu serie en modo gratis.</strong> Al terminar podrás ver tu demo interactivo antes de elegir tu paquete.
+              <strong className="text-white">Estás diseñando tu Netflix de Amor.</strong> Al terminar podrás ver tu demo interactivo antes de elegir tu opción.
             </div>
           </div>
         ) : null}

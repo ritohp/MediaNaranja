@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw, Scroll } from 'lucide-react';
+import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw, Scroll, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 
@@ -19,6 +19,7 @@ interface Song {
 
 export default function MySongs() {
   const [songs, setSongs] = useState<Song[]>([]);
+  const [songMemories, setSongMemories] = useState<{[key: string]: any}>({});
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [showDemoModal, setShowDemoModal] = useState<string | null>(null);
@@ -181,6 +182,27 @@ export default function MySongs() {
       if (error) throw error;
       setSongs(data || []);
 
+      // Cargar recuerdos/Loveflix vinculados a las canciones del usuario
+      try {
+        const { data: mems } = await supabase
+          .from('memories')
+          .select('id, song_id, status, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (mems) {
+          const map: { [songId: string]: any } = {};
+          mems.forEach((m) => {
+            if (m.song_id && !map[m.song_id]) {
+              map[m.song_id] = m;
+            }
+          });
+          setSongMemories(map);
+        }
+      } catch (memErr) {
+        console.warn("Error fetching memories for songs:", memErr);
+      }
+
       // Recuperación automática para canciones "atrapadas" en grabación
       const { checkMusicStatus } = await import('../services/music');
       
@@ -331,12 +353,16 @@ export default function MySongs() {
             </p>
 
             <div className="space-y-3 text-left">
-              {/* OPCIÓN 1: LOVEFLIX DIGITAL 399 */}
+              {/* OPCIÓN 1: NETFLIX DE AMOR / LOVEFLIX */}
               <div
                 onClick={() => {
                   const sId = showDemoModal;
                   setShowDemoModal(null);
-                  window.location.href = `/personalizar-cuadro?songId=${sId}`;
+                  if (sId && songMemories[sId]) {
+                    window.location.href = `/escuchar/${songMemories[sId].id}`;
+                  } else {
+                    window.location.href = `/personalizar-cuadro?songId=${sId}`;
+                  }
                 }}
                 className="p-4 rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white border-2 border-red-500 shadow-xl cursor-pointer hover:scale-[1.01] transition-all"
               >
@@ -346,7 +372,9 @@ export default function MySongs() {
                   </span>
                   <span className="text-sm font-black text-red-400">$399 MXN</span>
                 </div>
-                <h4 className="font-bold text-sm text-white">🎬 Experiencia Loveflix Digital</h4>
+                <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                  🎬 {showDemoModal && songMemories[showDemoModal] ? "Ver tu Netflix de Amor" : "Crear tu Netflix de Amor"}
+                </h4>
                 <p className="text-[11px] text-zinc-300 mt-1 leading-snug">
                   Canción completa MP3 + Mini web interactiva con fotos, dedicatoria de voz y QR activo + Lámina PDF 300 DPI.
                 </p>
@@ -649,14 +677,23 @@ export default function MySongs() {
                       </a>
                     )}
 
-                    {/* Botón Upgrade Loveflix por $199 MXN - SOLO PARA PAREJAS */}
+                    {/* Botón Loveflix / Netflix de amor - SOLO PARA PAREJAS */}
                     {isLoveSong(song) && (
-                      <Link
-                        to={`/personalizar-cuadro?songId=${song.id}&upgrade=true`}
-                        className="w-full py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm shadow-red-200"
-                      >
-                        <Heart size={14} fill="currentColor" /> Inmortalizar en Loveflix (Upgrade $199)
-                      </Link>
+                      songMemories[song.id] ? (
+                        <Link
+                          to={`/escuchar/${songMemories[song.id].id}`}
+                          className="w-full py-3 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm shadow-red-200"
+                        >
+                          <Eye size={14} /> Ver tu Netflix de Amor
+                        </Link>
+                      ) : (
+                        <Link
+                          to={`/personalizar-cuadro?songId=${song.id}`}
+                          className="w-full py-3 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm shadow-red-200"
+                        >
+                          <Heart size={14} fill="currentColor" /> Crear tu Netflix de Amor ($199 MXN)
+                        </Link>
+                      )
                     )}
 
                     {/* Botón Ver Canción */}
@@ -673,12 +710,21 @@ export default function MySongs() {
                     {/* SI ES DE PAREJA: Ofrecer paquete completo ($399 MXN) y solo canción ($249 MXN) */}
                     {isLoveSong(song) ? (
                       <>
-                        <Link
-                          to={`/personalizar-cuadro?songId=${song.id}`}
-                          className="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-red-200"
-                        >
-                          <Heart size={14} fill="currentColor" /> Crear Serie Loveflix ($399 MXN)
-                        </Link>
+                        {songMemories[song.id] ? (
+                          <Link
+                            to={`/escuchar/${songMemories[song.id].id}`}
+                            className="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-red-200"
+                          >
+                            <Eye size={14} /> Ver tu Netflix de Amor
+                          </Link>
+                        ) : (
+                          <Link
+                            to={`/personalizar-cuadro?songId=${song.id}`}
+                            className="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-red-200"
+                          >
+                            <Heart size={14} fill="currentColor" /> Crear tu Netflix de Amor ($399 MXN)
+                          </Link>
+                        )}
 
                         <button 
                           onClick={() => {
