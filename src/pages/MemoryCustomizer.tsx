@@ -16,6 +16,7 @@ export default function MemoryCustomizer() {
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(window.location.search);
   const songIdParam = searchParams.get('songId');
+  const isUpgradeParam = searchParams.get('upgrade') === 'true';
 
   const [user, setUser] = useState<any>(null);
   const [loadingMemory, setLoadingMemory] = useState(true);
@@ -435,7 +436,8 @@ export default function MemoryCustomizer() {
       if (error) throw error;
 
       // Navegar inmediatamente a la mini página web en modo demo interactivo
-      navigate(`/escuchar/${targetId}?demo=true`);
+      const isUpgrade = isUpgradeParam || !!selectedSong?.is_paid;
+      navigate(`/escuchar/${targetId}?demo=true${isUpgrade ? '&upgrade=true' : ''}`);
 
     } catch (err: any) {
       console.error("Error generando demo:", err);
@@ -502,23 +504,22 @@ export default function MemoryCustomizer() {
           <ArrowLeft size={16} /> Volver a mis recuerdos
         </Link>
 
-        {/* ALERTA DE CANCIÓN SIN DESBLOQUEAR */}
-        {songNotPaidWarning && (
-          <div className="bg-amber-950/80 border border-amber-600/80 text-amber-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-3">
-            <Lock size={14} className="text-amber-400" />
-            <span>Esta canción aún no está desbloqueada.</span>
-            <button
-              onClick={() => {
-                if (songId) {
-                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${songId}`;
-                }
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1 rounded-lg text-[10px] uppercase font-black tracking-wider transition-all"
-            >
-              Desbloquear ($249 MXN)
-            </button>
+        {/* INFORMACIÓN DE UPGRADE O MODO PRUEBA */}
+        {(isUpgradeParam || (selectedSong && selectedSong.is_paid)) ? (
+          <div className="bg-gradient-to-r from-red-950/80 via-amber-950/70 to-zinc-900 border border-amber-500/50 text-amber-200 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 shadow-lg">
+            <span className="text-base shrink-0">✨</span>
+            <div className="flex-1">
+              <span className="text-white font-black">¡Tu canción ya está pagada!</span> Al finalizar tu diseño, obtendrás el precio preferencial de Upgrade por solo <strong className="text-amber-400 font-black">$199 MXN</strong>.
+            </div>
           </div>
-        )}
+        ) : songNotPaidWarning ? (
+          <div className="bg-zinc-900/90 border border-zinc-700 text-zinc-300 px-4 py-2.5 rounded-xl text-xs flex items-center gap-3">
+            <Sparkles size={16} className="text-red-400 shrink-0" />
+            <div className="flex-1">
+              <strong className="text-white">Estás diseñando tu serie en modo gratis.</strong> Al terminar podrás ver tu demo interactivo antes de elegir tu paquete.
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="max-w-[1500px] mx-auto px-6 grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">

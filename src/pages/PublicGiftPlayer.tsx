@@ -47,8 +47,8 @@ export default function PublicGiftPlayer() {
   const [isInMyList, setIsInMyList] = useState(true);
   const [liked, setLiked] = useState(false);
 
-  // Sección de Compra Post-Demo
-  const [selectedProduct, setSelectedProduct] = useState<'physical_box' | 'digital_poster'>('physical_box');
+  // Sección de Compra Post-Demo: 3 Paquetes o Upgrade
+  const [selectedProduct, setSelectedProduct] = useState<'physical_box' | 'digital_poster' | 'solo_cancion'>('digital_poster');
   const [shippingAddress, setShippingAddress] = useState({
     street: '',
     colony: '',
@@ -112,16 +112,19 @@ export default function PublicGiftPlayer() {
     }
   };
 
-  // Determinar si está pagado o en modo demo
-  const isPaid = 
+  // Determinar si la serie Loveflix está pagada
+  const isMemoryPaid = 
     memory?.status === 'paid' || 
     memory?.status === 'in_production' || 
     memory?.status === 'shipped' || 
     memory?.status === 'delivered' || 
-    song?.is_paid ||
     currentUser?.email === 'ritohp@gmail.com';
 
-  const isDemoMode = isExplicitDemo || !isPaid;
+  // Determinar si el usuario ya pagó la canción por separado (Upgrade Flow: +$199 MXN)
+  const isSongPaidOnly = !isMemoryPaid && (song?.is_paid === true);
+
+  const isPaid = isMemoryPaid;
+  const isDemoMode = isExplicitDemo || !isMemoryPaid;
 
   const isCreator = currentUser && (
     currentUser.id === memory?.user_id || 
@@ -288,21 +291,39 @@ export default function PublicGiftPlayer() {
     }
   };
 
-  // Guardar y Confirmar Lámina Digital
-  const handleOrderDigitalPoster = async () => {
+  // Guardar y Confirmar Experiencia Loveflix Digital o Upgrade
+  const handleOrderDigitalLoveflix = async () => {
     setIsUpdatingOrder(true);
     try {
       await supabase.from('memories').update({
         product_type: 'digital_poster',
+        status: 'pending_payment',
       }).eq('id', memory.id);
 
-      const stripeUrl = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song?.id || memory.id}`;
-      window.location.href = stripeUrl;
+      const price = isSongPaidOnly ? '199' : '399';
+      const packageName = isSongPaidOnly 
+        ? 'Upgrade Serie Loveflix Digital ($199 MXN)' 
+        : 'Experiencia Loveflix Digital ($399 MXN)';
+
+      const message = encodeURIComponent(
+        `¡Hola Media Naranja! Quiero confirmar mi pedido de ${packageName} para ${memory.names || 'mi pareja'}.\n\n` +
+        `✨ Paquete: ${packageName}\n` +
+        `🎵 Canción: ${song?.title || 'Canción Personalizada'}\n` +
+        `🔗 Ver Serie Loveflix: ${window.location.origin}/escuchar/${memory.id}\n` +
+        `🆔 ID de Pedido: ${memory.id}`
+      );
+      window.open(`https://wa.me/5215512345678?text=${message}`, '_blank');
     } catch (err: any) {
       alert("Error: " + err.message);
     } finally {
       setIsUpdatingOrder(false);
     }
+  };
+
+  // Redirigir a compra de Solo Canción MP3 ($249 MXN)
+  const handleOrderSoloCancion = () => {
+    const stripeUrl = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song?.id || memory.id}`;
+    window.location.href = stripeUrl;
   };
 
   // Loading
@@ -864,67 +885,247 @@ export default function PublicGiftPlayer() {
                 <Sparkles size={24} />
               </div>
               <h2 className="text-2xl font-serif font-bold text-white">
-                Inmortaliza Esta Serie en la Vida Real
+                {isSongPaidOnly ? "Activa la Serie Loveflix para tu Pareja" : "Inmortaliza Esta Historia de Amor"}
               </h2>
               <p className="text-xs sm:text-sm text-zinc-400 max-w-lg mx-auto leading-relaxed">
-                Elige cómo quieres regalar este momento a tu pareja. Puedes recibir la caja de madera física con chip musical o la lámina digital en alta resolución.
+                {isSongPaidOnly 
+                  ? "Como ya desbloqueaste tu canción en MP3, obtén tu serie interactiva con QR activo y lámina de alta resolución con precio preferencial de Upgrade." 
+                  : "Elige el paquete que mejor se adapte a tu regalo. Puedes elegir solo la canción en MP3, la experiencia Loveflix completa con página web y lámina, o la caja física artesanal de madera."}
               </p>
             </div>
 
-            {/* SELECTOR DE PRODUCTO: CAJA MDF vs LÁMINA DIGITAL */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              {/* OPCIÓN 1: CAJA MUSICAL MDF */}
-              <div
-                onClick={() => setSelectedProduct('physical_box')}
-                className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                  selectedProduct === 'physical_box' 
-                    ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50 shadow-xl shadow-red-950/40' 
-                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl">📦</span>
-                  {selectedProduct === 'physical_box' ? (
-                    <CheckCircle2 size={18} className="text-red-500" />
-                  ) : (
-                    <span className="text-xs text-zinc-500">Seleccionar</span>
-                  )}
+            {/* SI LA CANCIÓN YA FUE PAGADA (UPGRADE FLOW) */}
+            {isSongPaidOnly ? (
+              <div className="space-y-4">
+                <div className="p-3.5 bg-amber-950/40 border border-amber-500/30 rounded-2xl flex items-center gap-3 text-xs text-amber-200">
+                  <span className="text-xl shrink-0">✨</span>
+                  <span>
+                    <strong>¡Canción desbloqueada!</strong> Tienes un descuento exclusivo de <strong>-$49 MXN</strong> para activar la experiencia Loveflix completa.
+                  </span>
                 </div>
-                <div className="flex items-baseline justify-between">
-                  <h4 className="text-base font-bold text-white">Caja Musical MDF</h4>
-                  <span className="text-base font-black text-red-400">$899 MXN</span>
-                </div>
-                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  Caja de madera con chip de música recargable + impresión en la tapa + código QR grabado + envío a domicilio en México.
-                </p>
-              </div>
 
-              {/* OPCIÓN 2: LÁMINA DIGITAL */}
-              <div
-                onClick={() => setSelectedProduct('digital_poster')}
-                className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                  selectedProduct === 'digital_poster' 
-                    ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50 shadow-xl shadow-red-950/40' 
-                    : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-2xl">🖼️</span>
-                  {selectedProduct === 'digital_poster' ? (
-                    <CheckCircle2 size={18} className="text-red-500" />
-                  ) : (
-                    <span className="text-xs text-zinc-500">Seleccionar</span>
-                  )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {/* OPCIÓN 1: UPGRADE DIGITAL ($199 MXN) */}
+                  <div
+                    onClick={() => setSelectedProduct('digital_poster')}
+                    className={`p-5 rounded-2xl border cursor-pointer transition-all ${
+                      selectedProduct === 'digital_poster' 
+                        ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50 shadow-xl shadow-red-950/40' 
+                        : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="px-2 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
+                        ✨ UPGRADE PREFERENCIAL
+                      </span>
+                      {selectedProduct === 'digital_poster' ? (
+                        <CheckCircle2 size={18} className="text-red-500" />
+                      ) : (
+                        <span className="text-xs text-zinc-500">Seleccionar</span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <h4 className="text-base font-bold text-white">Serie Loveflix Digital</h4>
+                      <span className="text-base font-black text-red-400">$199 MXN</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                      Mini página web interactiva con código QR activo + galería de 5 fotos con dedicatoria de voz + lámina digital PDF 300 DPI lista para imprimir.
+                    </p>
+                  </div>
+
+                  {/* OPCIÓN 2: CAJA MUSICAL MDF ($899 MXN) */}
+                  <div
+                    onClick={() => setSelectedProduct('physical_box')}
+                    className={`p-5 rounded-2xl border cursor-pointer transition-all ${
+                      selectedProduct === 'physical_box' 
+                        ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50 shadow-xl shadow-red-950/40' 
+                        : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="px-2 py-0.5 bg-amber-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
+                        👑 FÍSICO ARTESANAL
+                      </span>
+                      {selectedProduct === 'physical_box' ? (
+                        <CheckCircle2 size={18} className="text-red-500" />
+                      ) : (
+                        <span className="text-xs text-zinc-500">Seleccionar</span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <h4 className="text-base font-bold text-white">Caja Musical MDF</h4>
+                      <span className="text-base font-black text-white">$899 MXN</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                      Caja de madera MDF con chip recargable al abrirse + portada Loveflix a color + QR grabado + envío a domicilio en México incluido.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-baseline justify-between">
-                  <h4 className="text-base font-bold text-white">Lámina Digital con QR</h4>
-                  <span className="text-base font-black text-white">$249 MXN</span>
-                </div>
-                <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                  Descarga inmediata en calidad 300 DPI lista para imprimir en tu ciudad con el código QR activado de por vida.
-                </p>
               </div>
-            </div>
+            ) : (
+              /* SI NADA ESTÁ PAGADO: LOS 3 PAQUETES COMERCIALES */
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                {/* PAQUETE 1: SOLO CANCIÓN ($249 MXN) */}
+                <div
+                  onClick={() => setSelectedProduct('solo_cancion')}
+                  className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                    selectedProduct === 'solo_cancion' 
+                      ? 'bg-zinc-800/90 border-zinc-400 ring-2 ring-zinc-400/50 shadow-xl' 
+                      : 'bg-zinc-900/70 border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-2xl">🎵</span>
+                      {selectedProduct === 'solo_cancion' ? (
+                        <CheckCircle2 size={18} className="text-zinc-300" />
+                      ) : (
+                        <span className="text-xs text-zinc-500">Elegir</span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <h4 className="text-base font-bold text-white">Solo Canción</h4>
+                      <span className="text-base font-black text-white">$249 MXN</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                      Canción completa en MP3 de alta fidelidad para descargar y escuchar sin interrupciones. Reproductor digital privado incluido.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-zinc-800/80 text-[11px] text-zinc-400">
+                    Solo archivo de audio MP3
+                  </div>
+                </div>
+
+                {/* PAQUETE 2: EXPERIENCIA LOVEFLIX DIGITAL ($399 MXN) - DESTACADO */}
+                <div
+                  onClick={() => setSelectedProduct('digital_poster')}
+                  className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between relative ${
+                    selectedProduct === 'digital_poster' 
+                      ? 'bg-red-950/50 border-red-500 ring-2 ring-red-500/50 shadow-2xl shadow-red-950/60 scale-[1.02]' 
+                      : 'bg-gradient-to-b from-red-950/30 to-zinc-900 border-red-900/60 hover:border-red-600'
+                  }`}
+                >
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-red-600 text-white rounded-full text-[9px] font-black uppercase tracking-wider shadow-md">
+                    ⭐ MÁS ELEGIDO (RECOMENDADO)
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-3 mt-1">
+                      <span className="text-2xl">🎬</span>
+                      {selectedProduct === 'digital_poster' ? (
+                        <CheckCircle2 size={18} className="text-red-500" />
+                      ) : (
+                        <span className="text-xs text-zinc-400 font-bold">Elegir</span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <h4 className="text-base font-bold text-white">Loveflix Digital</h4>
+                      <span className="text-base font-black text-red-400">$399 MXN</span>
+                    </div>
+                    <p className="text-xs text-zinc-300 mt-2 leading-relaxed">
+                      Canción MP3 completa + Mini página web interactiva con código QR activo + galería de 5 fotos con dedicatoria + lámina digital PDF 300 DPI lista para imprimir.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-red-900/40 text-[11px] text-red-300 font-medium">
+                    Experiencia interactiva completa
+                  </div>
+                </div>
+
+                {/* PAQUETE 3: CAJA MUSICAL DE MADERA MDF ($899 MXN) - FÍSICO */}
+                <div
+                  onClick={() => setSelectedProduct('physical_box')}
+                  className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                    selectedProduct === 'physical_box' 
+                      ? 'bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/50 shadow-xl shadow-amber-950/40' 
+                      : 'bg-zinc-900/70 border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-2xl">📦</span>
+                      {selectedProduct === 'physical_box' ? (
+                        <CheckCircle2 size={18} className="text-amber-500" />
+                      ) : (
+                        <span className="text-xs text-zinc-500">Elegir</span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <h4 className="text-base font-bold text-white">Caja Musical MDF</h4>
+                      <span className="text-base font-black text-amber-400">$899 MXN</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                      Todo lo digital incluido + Caja artesanal de madera MDF con portada impresa + chip de música recargable al abrirse + QR grabado + envío a México incluido.
+                    </p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-zinc-800/80 text-[11px] text-amber-300 font-medium">
+                    👑 El regalo físico definitivo
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ACCIÓN SI ELIGE SOLO CANCIÓN */}
+            {selectedProduct === 'solo_cancion' && (
+              <div className="space-y-4 pt-4 border-t border-zinc-800 animate-in fade-in duration-300">
+                <div className="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300 space-y-2">
+                  <p className="font-bold text-white flex items-center gap-2">
+                    <Music size={16} className="text-zinc-300" />
+                    ¿Qué recibirás con Solo Canción?
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1 text-zinc-400 text-[11px]">
+                    <li>Archivo de audio MP3 completo en máxima fidelidad sin cortes.</li>
+                    <li>Reproductor digital privado para escuchar desde cualquier teléfono o computadora.</li>
+                    <li>Descarga permanente para guardar en tu biblioteca.</li>
+                  </ul>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOrderSoloCancion}
+                  className="w-full py-4.5 bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Download size={18} />
+                  <span>Desbloquear Solo Canción MP3 ($249 MXN)</span>
+                </button>
+              </div>
+            )}
+
+            {/* ACCIÓN SI ELIGE LÁMINA / EXPERIENCIA DIGITAL */}
+            {selectedProduct === 'digital_poster' && (
+              <div className="space-y-4 pt-4 border-t border-zinc-800 animate-in fade-in duration-300">
+                <div className="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300 space-y-2">
+                  <p className="font-bold text-white flex items-center gap-2">
+                    <Sparkles size={16} className="text-red-400" />
+                    {isSongPaidOnly ? "¿Qué incluye tu Upgrade Loveflix Digital?" : "¿Qué recibirás con tu Experiencia Loveflix Digital?"}
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1 text-zinc-400 text-[11px]">
+                    {!isSongPaidOnly && <li>Canción completa en MP3 de máxima calidad sin límites de reproducción.</li>}
+                    <li>Mini página web interactiva Loveflix con código QR activo.</li>
+                    <li>Galería interactiva de 5 fotos con dedicatoria de voz personalizada.</li>
+                    <li>Lámina digital en PDF de alta resolución (300 DPI) lista para imprimir.</li>
+                  </ul>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOrderDigitalLoveflix}
+                  disabled={isUpdatingOrder}
+                  className="w-full py-4.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-red-700 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-red-950 flex items-center justify-center gap-2.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isUpdatingOrder ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={18} />
+                  )}
+                  <span>
+                    {isUpdatingOrder 
+                      ? "Procesando..." 
+                      : isSongPaidOnly 
+                        ? "Activar Upgrade Loveflix Digital ($199 MXN)" 
+                        : "Obtener Experiencia Loveflix Digital ($399 MXN)"}
+                  </span>
+                </button>
+              </div>
+            )}
 
             {/* FORMULARIO DE ENVÍO SI ELIGE CAJA MUSICAL FÍSICA */}
             {selectedProduct === 'physical_box' && (
@@ -1027,39 +1228,6 @@ export default function PublicGiftPlayer() {
                   )}
                   <span>
                     {isUpdatingOrder ? "Guardando..." : "Confirmar Pedido de Caja Musical ($899 MXN)"}
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {/* ACCIÓN SI ELIGE LÁMINA DIGITAL */}
-            {selectedProduct === 'digital_poster' && (
-              <div className="space-y-4 pt-4 border-t border-zinc-800 animate-in fade-in duration-300">
-                <div className="bg-zinc-900/60 p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300 space-y-2">
-                  <p className="font-bold text-white flex items-center gap-2">
-                    <Sparkles size={16} className="text-amber-400" />
-                    ¿Qué recibirás con tu Lámina Digital?
-                  </p>
-                  <ul className="list-disc pl-5 space-y-1 text-zinc-400 text-[11px]">
-                    <li>Archivo de impresión en 300 DPI listo para tamaño póster (A4 / A3 / Cuadro).</li>
-                    <li>Código QR activo de por vida vinculado directamente a esta serie interactiva.</li>
-                    <li>Reproducción ilimitada de su canción completa y dedicatoria de voz.</li>
-                  </ul>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleOrderDigitalPoster}
-                  disabled={isUpdatingOrder}
-                  className="w-full py-4.5 bg-white hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl flex items-center justify-center gap-2.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  {isUpdatingOrder ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <ShoppingBag size={18} />
-                  )}
-                  <span>
-                    {isUpdatingOrder ? "Procesando..." : "Obtener Lámina Digital con QR ($249 MXN)"}
                   </span>
                 </button>
               </div>
@@ -1174,45 +1342,111 @@ export default function PublicGiftPlayer() {
 
             {/* OPCIONES DE PRODUCTO */}
             <div className="space-y-3 text-left">
-              {/* OPCIÓN 1: CAJA MDF */}
-              <div 
-                onClick={() => {
-                  setShowUnlockModal(false);
-                  setSelectedProduct('physical_box');
-                  document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="p-4 bg-gradient-to-r from-red-950/50 to-zinc-800 rounded-2xl border border-red-600/70 hover:border-red-500 cursor-pointer transition-all hover:scale-[1.01] shadow-lg space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase text-red-400 tracking-wider flex items-center gap-1.5">
-                    📦 Caja Musical MDF Física (Recomendado)
-                  </span>
-                  <span className="text-sm font-black text-white">$899 MXN</span>
-                </div>
-                <p className="text-[11px] text-zinc-300 leading-snug">
-                  Caja de madera con chip de música recargable + impresión en la tapa + QR grabado + envío a domicilio en México.
-                </p>
-              </div>
+              {isSongPaidOnly ? (
+                <>
+                  {/* UPGRADE LOVEFLIX */}
+                  <div 
+                    onClick={() => {
+                      setShowUnlockModal(false);
+                      setSelectedProduct('digital_poster');
+                      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="p-4 bg-gradient-to-r from-red-950/60 to-zinc-900 rounded-2xl border-2 border-red-500 hover:border-red-400 cursor-pointer transition-all hover:scale-[1.01] shadow-lg space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase text-red-400 tracking-wider flex items-center gap-1.5">
+                        ✨ Upgrade Serie Loveflix (Descuento -$49)
+                      </span>
+                      <span className="text-sm font-black text-white">$199 MXN</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-300 leading-snug">
+                      Mini web interactiva con código QR activo + galería de 5 fotos con voz + lámina digital PDF 300 DPI lista para imprimir.
+                    </p>
+                  </div>
 
-              {/* OPCIÓN 2: LÁMINA DIGITAL */}
-              <div 
-                onClick={() => {
-                  setShowUnlockModal(false);
-                  setSelectedProduct('digital_poster');
-                  document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="p-4 bg-zinc-800/60 rounded-2xl border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-all hover:scale-[1.01] space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase text-zinc-300 tracking-wider flex items-center gap-1.5">
-                    🖼️ Lámina Digital con QR Activo
-                  </span>
-                  <span className="text-sm font-black text-white">$249 MXN</span>
-                </div>
-                <p className="text-[11px] text-zinc-400 leading-snug">
-                  Descarga inmediata en 300 DPI lista para imprimir en tu ciudad con el código QR activado de por vida.
-                </p>
-              </div>
+                  {/* CAJA MDF */}
+                  <div 
+                    onClick={() => {
+                      setShowUnlockModal(false);
+                      setSelectedProduct('physical_box');
+                      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="p-3.5 bg-zinc-800/60 rounded-2xl border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-all hover:scale-[1.01] space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                        📦 Caja Musical MDF Física
+                      </span>
+                      <span className="text-sm font-black text-white">$899 MXN</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-snug">
+                      Caja de madera con chip de música recargable + impresión en la tapa + QR grabado + envío a domicilio en México.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* LOVEFLIX DIGITAL 399 (RECOMENDADO) */}
+                  <div 
+                    onClick={() => {
+                      setShowUnlockModal(false);
+                      setSelectedProduct('digital_poster');
+                      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="p-4 bg-gradient-to-r from-red-950/60 to-zinc-900 rounded-2xl border-2 border-red-500 hover:border-red-400 cursor-pointer transition-all hover:scale-[1.01] shadow-lg space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black uppercase text-red-400 tracking-wider flex items-center gap-1.5">
+                        ⭐ Loveflix Digital (Recomendado)
+                      </span>
+                      <span className="text-sm font-black text-white">$399 MXN</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-300 leading-snug">
+                      Canción MP3 completa + Mini página web interactiva con QR activo + Galería de 5 fotos con voz + Lámina PDF 300 DPI.
+                    </p>
+                  </div>
+
+                  {/* SOLO CANCIÓN 249 (DOWNSELL) */}
+                  <div 
+                    onClick={() => {
+                      setShowUnlockModal(false);
+                      setSelectedProduct('solo_cancion');
+                      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="p-3.5 bg-zinc-800/60 rounded-2xl border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-all hover:scale-[1.01] space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase text-zinc-300 tracking-wider flex items-center gap-1.5">
+                        🎵 Solo Canción MP3
+                      </span>
+                      <span className="text-sm font-black text-white">$249 MXN</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-snug">
+                      Canción completa en MP3 de alta fidelidad sin extras digitales ni lámina.
+                    </p>
+                  </div>
+
+                  {/* CAJA MDF 899 (VIP FÍSICO) */}
+                  <div 
+                    onClick={() => {
+                      setShowUnlockModal(false);
+                      setSelectedProduct('physical_box');
+                      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="p-3.5 bg-zinc-800/60 rounded-2xl border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-all hover:scale-[1.01] space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                        👑 Caja Musical MDF Física
+                      </span>
+                      <span className="text-sm font-black text-white">$899 MXN</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-snug">
+                      Todo lo digital + Caja de madera MDF física con chip musical y envío express en México.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="pt-2 flex flex-col gap-2">

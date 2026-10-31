@@ -318,23 +318,57 @@ export default function MySongs() {
             <div className="bg-naranja-50 text-naranja-500 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-2">
               <Music2 size={40} />
             </div>
-            <h3 className="text-3xl font-serif text-blush-800">¡Sigue el ritmo! ✨</h3>
-            <p className="text-ink-600 leading-relaxed">
-              Has escuchado el adelanto de 1 minuto. La versión completa de esta canción está disponible para descarga permanente tras realizar el pago.
+            <h3 className="text-2xl md:text-3xl font-serif text-blush-800 font-bold">¡Has escuchado el adelanto! ✨</h3>
+            <p className="text-ink-600 text-xs md:text-sm leading-relaxed">
+              Has escuchado la muestra de 1.5 minutos de tu canción personalizada. Elige la mejor forma de conservarla:
             </p>
-            <button 
-              onClick={() => {
-                if (showDemoModal) {
-                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${showDemoModal}`;
-                }
-              }}
-              className="w-full py-5 bg-gradient-to-r from-naranja-500 to-naranja-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-naranja-200 hover:scale-105 transition-all"
-            >
-              DESBLOQUEAR CANCIÓN
-            </button>
+
+            <div className="space-y-3 text-left">
+              {/* OPCIÓN 1: LOVEFLIX DIGITAL 399 */}
+              <div
+                onClick={() => {
+                  const sId = showDemoModal;
+                  setShowDemoModal(null);
+                  window.location.href = `/personalizar-cuadro?songId=${sId}`;
+                }}
+                className="p-4 rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white border-2 border-red-500 shadow-xl cursor-pointer hover:scale-[1.01] transition-all"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="px-2 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
+                    ⭐ MÁS ELEGIDO (RECOMENDADO)
+                  </span>
+                  <span className="text-sm font-black text-red-400">$399 MXN</span>
+                </div>
+                <h4 className="font-bold text-sm text-white">🎬 Experiencia Loveflix Digital</h4>
+                <p className="text-[11px] text-zinc-300 mt-1 leading-snug">
+                  Canción completa MP3 + Mini web interactiva con fotos, dedicatoria de voz y QR activo + Lámina PDF 300 DPI.
+                </p>
+              </div>
+
+              {/* OPCIÓN 2: SOLO CANCIÓN 249 */}
+              <div
+                onClick={() => {
+                  const sId = showDemoModal;
+                  setShowDemoModal(null);
+                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${sId}`;
+                }}
+                className="p-4 rounded-2xl bg-white border border-gray-200 hover:border-gray-400 cursor-pointer hover:scale-[1.01] transition-all"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                    🎵 Solo Canción MP3
+                  </span>
+                  <span className="text-sm font-black text-gray-900">$249 MXN</span>
+                </div>
+                <p className="text-[11px] text-gray-500 leading-snug">
+                  Descarga directa de tu canción completa en MP3 de máxima calidad y reproductor digital privado.
+                </p>
+              </div>
+            </div>
+
             <button 
               onClick={() => setShowDemoModal(null)}
-              className="text-ink-400 text-xs font-bold uppercase tracking-widest hover:text-naranja-500 transition-all"
+              className="text-ink-400 text-xs font-bold uppercase tracking-widest hover:text-naranja-500 transition-all underline"
             >
               CERRAR
             </button>
@@ -592,84 +626,77 @@ export default function MySongs() {
                 </div>
               </div>
 
-              <div className="px-8 pb-8 pt-2 flex flex-col gap-3">
+              <div className="px-8 pb-8 pt-2 flex flex-col gap-2.5">
                 
-                {/* Botón Descarga Grande si está pagada o admin */}
-                {(song.is_paid || user?.email === 'ritohp@gmail.com') && (song.audio_url || song.form_data?.version2?.audio_url) && (
-                  <a 
-                    href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
-                    target="_blank" rel="noreferrer" download 
-                    className="w-full py-3 bg-white text-naranja-600 border border-naranja-200 rounded-xl font-bold text-xs hover:bg-naranja-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-1 shadow-sm"
-                  >
-                    <Download size={14} /> Descargar Canción (MP3)
-                  </a>
-                )}
-
-                {/* Botón Caja Musical Loveflix */}
-                {song.status === 'completed' && (
-                  <Link
-                    to={`/personalizar-cuadro?songId=${song.id}`}
-                    className={`w-full py-3 rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-2 shadow-sm ${
-                      isLoveSong(song)
-                        ? 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white shadow-red-200'
-                        : 'bg-zinc-900 text-white hover:bg-black'
-                    }`}
-                  >
-                    <Heart size={14} fill="currentColor" /> {isLoveSong(song) ? "Preparar Caja Musical Loveflix" : "Crear Caja Musical o Lámina"}
-                  </Link>
-                )}
-
-                {song.form_data?.infographic_data ? (
+                {/* CASO 1: CANCIÓN YA PAGADA O ADMIN */}
+                {(song.is_paid || user?.email === 'ritohp@gmail.com') ? (
                   <>
+                    {/* Botón Descarga MP3 */}
+                    {(song.audio_url || song.form_data?.version2?.audio_url) && (
+                      <a 
+                        href={(!selectedVersions[song.id] || selectedVersions[song.id] === 1) ? (song.audio_url || '') : (song.form_data?.version2?.audio_url || '')} 
+                        target="_blank" rel="noreferrer" download 
+                        className="w-full py-3 bg-[#1C2A39] text-white rounded-xl font-bold text-xs hover:bg-[#2A3F54] transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <Download size={14} /> Descargar Canción (MP3)
+                      </a>
+                    )}
+
+                    {/* Botón Upgrade Loveflix por $199 MXN */}
+                    <Link
+                      to={`/personalizar-cuadro?songId=${song.id}&upgrade=true`}
+                      className="w-full py-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm shadow-red-200"
+                    >
+                      <Heart size={14} fill="currentColor" /> Inmortalizar en Loveflix (Upgrade $199)
+                    </Link>
+
+                    {/* Botón Ver Canción */}
                     <Link 
                       to={`/cancion/${song.id}`}
-                      className="w-full py-3 bg-[#1C2A39] text-white rounded-xl font-bold text-xs hover:bg-[#2A3F54] transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-3"
+                      className="w-full py-2.5 bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2"
                     >
-                      <Scroll size={14} /> Ver Mi Legado
-                    </Link>
-                    <Link 
-                      to={`/legado/${song.id}`}
-                      className="w-full py-3 bg-blush-50 text-[#1C2A39] border border-[#1C2A39]/20 rounded-xl font-bold text-xs hover:bg-[#1C2A39] hover:text-white transition-all uppercase tracking-widest flex items-center justify-center gap-2"
-                    >
-                      <RefreshCw size={14} /> Modificar Legado / Foto
+                      Ver Reproductor Privado
                     </Link>
                   </>
                 ) : (
+                  /* CASO 2: CANCIÓN AÚN NO PAGADA (DEMO) */
                   <>
-                    {/* Botón Ver Regalo */}
-                    {song.status === 'completed' && (
-                      <Link 
-                        to={song.is_paid ? `/cancion/${song.id}` : '#'}
-                        onClick={(e) => {
-                          if (!song.is_paid) {
-                            e.preventDefault();
-                            window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
-                          }
-                        }}
-                        className={`w-full py-3 ${!song.is_paid ? 'bg-naranja-500 hover:bg-naranja-600' : 'bg-blush-500 hover:bg-blush-600'} text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 mb-3`}
-                      >
-                        {!song.is_paid ? <Lock size={14} /> : <Heart size={14} />} 
-                        {!song.is_paid ? "DESBLOQUEAR Y VER REGALO" : "VER MI REGALO"}
-                      </Link>
-                    )}
-                    
+                    {/* Botón Primario: Crear Serie Loveflix ($399 MXN) */}
+                    <Link
+                      to={`/personalizar-cuadro?songId=${song.id}`}
+                      className="w-full py-3.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-700 hover:to-rose-700 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-red-200"
+                    >
+                      <Heart size={14} fill="currentColor" /> Crear Serie Loveflix ($399 MXN)
+                    </Link>
+
+                    {/* Botón Secundario: Solo Canción ($249 MXN) */}
                     <button 
                       onClick={() => {
-                        const draft = {
-                          ...song.form_data,
-                          lyrics: song.lyrics,
-                          step: 2, // Saltar directamente al taller de letra
-                          currentSongId: song.status === 'draft' ? song.id : null // Solo sobreescribir si es borrador
-                        };
-                        localStorage.setItem('mn_draft_song', JSON.stringify(draft));
-                        window.location.href = '/crear-cancion';
+                        window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
                       }}
-                      className="w-full py-3 bg-blush-50 text-blush-600 rounded-xl font-bold text-xs hover:bg-naranja-50 hover:text-naranja-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                      className="w-full py-2.5 bg-white text-gray-700 border border-gray-300 hover:border-gray-500 rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2"
                     >
-                      <RefreshCw size={14} /> Ver Letra / Modificar
+                      <Lock size={12} className="opacity-60" /> Solo Canción MP3 ($249 MXN)
                     </button>
                   </>
                 )}
+
+                {/* Modificar Letra / Datos */}
+                <button 
+                  onClick={() => {
+                    const draft = {
+                      ...song.form_data,
+                      lyrics: song.lyrics,
+                      step: 2,
+                      currentSongId: song.status === 'draft' ? song.id : null
+                    };
+                    localStorage.setItem('mn_draft_song', JSON.stringify(draft));
+                    window.location.href = '/crear-cancion';
+                  }}
+                  className="w-full py-2 text-ink-400 hover:text-ink-700 text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <RefreshCw size={12} /> Ver Letra / Modificar
+                </button>
               </div>
             </div>
           ))}

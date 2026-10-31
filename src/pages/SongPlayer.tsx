@@ -644,46 +644,81 @@ export default function SongPlayer() {
           
 
 
-          <button 
-            onClick={() => {
-              if (isPaid) {
-                 window.open(song.selected_version ? song.selected_version.url : currentAudioUrl, '_blank');
-              } else {
-                 window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
-              }
-            }}
-            className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[10px] md:text-xs uppercase
-              ${isPaid ? 'bg-[#1C2A39] text-white hover:bg-[#2A3F54]' : 'bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white'}`}
-          >
-            {isPaid ? <Download size={16} /> : <Lock size={16} className="opacity-60" />}
-            {isPaid ? "Descargar Canción MP3" : "Desbloquear Canción Completa ($249 MXN)"}
-          </button>
-          
-
-          
-          {isPaid && (
-            <div className="mt-3 p-5 rounded-2xl bg-gradient-to-r from-red-950/40 via-[#1C2A39] to-zinc-900 border border-red-800/40 text-left relative overflow-hidden shadow-xl">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1.5">
-                  <span className="px-2.5 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
-                    Nuevo Producto Especial
+          {/* SI LA CANCIÓN NO ESTÁ PAGADA: OPCIONES DE COMPRA (LOVEFLIX vs SOLO CANCIÓN) */}
+          {!isPaid ? (
+            <div className="space-y-3">
+              {/* OPCIÓN 1: SERIE LOVEFLIX ($399 MXN) - RECOMENDADO */}
+              <div 
+                onClick={() => navigate(`/personalizar-cuadro?songId=${song.id}`)}
+                className="p-5 rounded-2xl bg-gradient-to-r from-red-950/70 via-zinc-900 to-black border-2 border-red-500 shadow-xl cursor-pointer hover:scale-[1.01] transition-all text-left relative overflow-hidden group"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="px-2.5 py-0.5 bg-red-600 text-white rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                    ⭐ MÁS ELEGIDO (RECOMENDADO)
                   </span>
-                  <h4 className="text-white font-bold text-sm">
-                    Caja Musical Loveflix (Madera MDF)
-                  </h4>
-                  <p className="text-zinc-300 text-xs leading-relaxed">
-                    Graba esta canción y un mensaje de voz en una caja musical de madera con el diseño Loveflix impreso o descarga tu lámina con código QR.
-                  </p>
+                  <span className="text-base font-black text-red-400">$399 MXN</span>
                 </div>
-                <span className="text-2xl shrink-0">🎁</span>
+                <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                  🎬 Experiencia Loveflix Digital
+                </h4>
+                <p className="text-zinc-300 text-xs mt-1 leading-relaxed">
+                  Canción completa MP3 + Mini página web interactiva con código QR activo + galería de 5 fotos con dedicatoria + lámina digital PDF 300 DPI lista para imprimir.
+                </p>
+                <div className="pt-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-400 group-hover:text-red-300 uppercase tracking-wider">
+                    Personalizar Serie Ahora (Pruébalo Gratis) →
+                  </span>
+                </div>
               </div>
-              <div className="pt-4">
-                <button
-                  onClick={() => navigate(`/personalizar-cuadro?songId=${song.id}`)}
-                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-950/50"
-                >
-                  <Sparkles size={14} /> Personalizar Caja o Lámina con QR
-                </button>
+
+              {/* OPCIÓN 2: SOLO CANCIÓN MP3 ($249 MXN) - DOWNSELL */}
+              <button 
+                onClick={() => {
+                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                }}
+                className="w-full py-3.5 bg-white text-[#1C2A39] border border-stone-300 hover:border-stone-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm tracking-wider text-[11px] uppercase hover:bg-stone-50"
+              >
+                <Lock size={14} className="opacity-60" />
+                <span>Solo Desbloquear Canción MP3 ($249 MXN)</span>
+              </button>
+            </div>
+          ) : (
+            /* SI YA ESTÁ PAGADA: DESCARGA MP3 + UPGRADE A LOVEFLIX DIGITAL ($199 MXN) */
+            <div className="space-y-4">
+              <button 
+                onClick={() => {
+                  window.open(song.selected_version ? song.selected_version.url : currentAudioUrl, '_blank');
+                }}
+                className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-colors shadow-md tracking-wider text-[11px] md:text-xs uppercase bg-[#1C2A39] text-white hover:bg-[#2A3F54]"
+              >
+                <Download size={16} />
+                <span>Descargar Canción MP3 Completa</span>
+              </button>
+
+              {/* UPGRADE LOVEFLIX POR $199 MXN EXTRA */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-red-950/40 via-[#1C2A39] to-zinc-900 border border-red-800/40 text-left relative overflow-hidden shadow-xl">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <span className="px-2.5 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
+                      ✨ Upgrade Especial Parejas
+                    </span>
+                    <h4 className="text-white font-bold text-sm">
+                      ¿Quieres la Serie Loveflix para esta canción?
+                    </h4>
+                    <p className="text-zinc-300 text-xs leading-relaxed">
+                      Como ya desbloqueaste tu canción, obtén tu Mini Página Web Interactiva con código QR activo y lámina PDF 300 DPI por solo <strong className="text-red-400 font-bold">$199 MXN extra</strong>.
+                    </p>
+                  </div>
+                  <span className="text-2xl shrink-0">🎬</span>
+                </div>
+                <div className="pt-4">
+                  <button
+                    onClick={() => navigate(`/personalizar-cuadro?songId=${song.id}&upgrade=true`)}
+                    className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-950/50"
+                  >
+                    <Sparkles size={14} /> Inmortalizar en Serie Loveflix ($199 MXN)
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -800,23 +835,71 @@ export default function SongPlayer() {
       {showDemoModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-in fade-in zoom-in duration-300">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowDemoModal(false)}></div>
-          <div className={`${tokens.bg} rounded-[2rem] p-10 md:p-12 max-w-lg w-full shadow-2xl relative z-10 border ${tokens.border} border-opacity-30 text-center space-y-6`}>
-            <div className="w-20 h-20 bg-naranja-50 text-naranja-500 rounded-full flex items-center justify-center mx-auto mb-2 border border-naranja-100 shadow-inner">
-              <Lock size={40} className="text-[#B69D74]" />
+          <div className={`${tokens.bg} rounded-[2rem] p-8 md:p-10 max-w-lg w-full shadow-2xl relative z-10 border ${tokens.border} border-opacity-30 text-center space-y-6`}>
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+              <Sparkles size={32} className="text-[#D64060]" />
             </div>
-            <h3 className={`text-2xl md:text-3xl font-serif ${tokens.text}`}>¡La magia continúa! ✨</h3>
-            <p className="text-ink-600/80 leading-relaxed text-sm">
-              Has escuchado la muestra de 1.5 minutos de tu regalo. La versión completa de la canción contiene toda la letra personalizada sin interrupciones y con la máxima calidad de audio.
-            </p>
-            <button 
-              onClick={() => {
-                setShowDemoModal(false);
-                window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
-              }}
-              className="w-full py-5 bg-gradient-to-r from-[#D64060] to-[#B69D74] text-white rounded-2xl font-bold text-base shadow-xl hover:scale-[1.02] transition-all uppercase tracking-widest text-xs"
-            >
-              DESBLOQUEAR AHORA
-            </button>
+            
+            <div className="space-y-2">
+              <h3 className={`text-2xl md:text-3xl font-serif ${tokens.text} font-bold`}>
+                ¡Has escuchado el adelanto! ✨
+              </h3>
+              <p className="text-stone-600 text-xs md:text-sm leading-relaxed">
+                Has disfrutado de la muestra de 1.5 minutos de tu canción personalizada. Elige cómo quieres inmortalizar este regalo:
+              </p>
+            </div>
+
+            <div className="space-y-3 text-left">
+              {/* OPCIÓN 1: LOVEFLIX SERIE DIGITAL (RECOMENDADO / PRUÉBALO GRATIS) */}
+              <div 
+                onClick={() => {
+                  setShowDemoModal(false);
+                  navigate(`/personalizar-cuadro?songId=${song.id}`);
+                }}
+                className="p-4 rounded-2xl bg-gradient-to-r from-red-950 via-zinc-900 to-black text-white border-2 border-red-500 shadow-xl cursor-pointer hover:scale-[1.02] transition-all group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="px-2 py-0.5 bg-red-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
+                    ⭐ MÁS ELEGIDO (PRUÉBALO GRATIS)
+                  </span>
+                  <span className="text-sm font-black text-red-400">$399 MXN</span>
+                </div>
+                <h4 className="font-bold text-sm text-white flex items-center gap-1.5">
+                  🎬 Experiencia Loveflix Digital
+                </h4>
+                <p className="text-[11px] text-zinc-300 mt-1 leading-snug">
+                  Canción completa MP3 + Mini página web interactiva con fotos, dedicatoria de voz y QR activo + Lámina PDF 300 DPI. ¡Diseña tu demo gratis antes de pagar!
+                </p>
+              </div>
+
+              {/* OPCIÓN 2: SOLO CANCIÓN MP3 (DOWNSELL) */}
+              <div 
+                onClick={() => {
+                  setShowDemoModal(false);
+                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                }}
+                className="p-4 rounded-2xl bg-white/90 border border-stone-300 hover:border-stone-500 cursor-pointer hover:scale-[1.01] transition-all"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-stone-700 uppercase tracking-wider">
+                    🎵 Solo Canción Completa
+                  </span>
+                  <span className="text-sm font-black text-stone-900">$249 MXN</span>
+                </div>
+                <p className="text-[11px] text-stone-500 leading-snug">
+                  Descarga directa de tu canción completa en MP3 de máxima fidelidad y reproductor digital privado.
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <button 
+                onClick={() => setShowDemoModal(false)}
+                className="text-stone-500 hover:text-stone-800 text-xs font-bold uppercase tracking-wider underline cursor-pointer"
+              >
+                Cerrar y seguir escuchando
+              </button>
+            </div>
 
           </div>
         </div>
