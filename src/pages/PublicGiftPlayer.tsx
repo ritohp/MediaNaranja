@@ -4,8 +4,9 @@ import {
   Play, Pause, Heart, Sparkles, Volume2, Music, Share2, 
   Copy, Check, X, ChevronLeft, ChevronRight, Lock, 
   ArrowLeft, ShieldCheck, Gift, CheckCircle2, ShoppingBag, Eye, Edit3,
-  MapPin, Loader2, Phone
+  MapPin, Loader2, Phone, Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabase';
 import { getStripeCheckoutUrl } from '../config/payments';
 
@@ -62,6 +63,7 @@ export default function PublicGiftPlayer() {
   const [phone, setPhone] = useState('');
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
   const [orderSavedSuccess, setOrderSavedSuccess] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -322,6 +324,85 @@ export default function PublicGiftPlayer() {
     window.location.href = getStripeCheckoutUrl('solo_cancion', referenceId);
   };
 
+  // Descargar Lámina en PDF de Alta Resolución (300 DPI) para Imprimir
+  const handleDownloadPdf = async () => {
+    if (!isPaid) {
+      const checkoutEl = document.getElementById('checkout-section');
+      if (checkoutEl) {
+        checkoutEl.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        setShowUnlockModal(true);
+      }
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    try {
+      let masterUrl = memory?.full_design_url || memory?.main_photo_url;
+      if (!masterUrl) {
+        throw new Error("No se encontró el arte maestro de la lámina para exportar.");
+      }
+
+      if (masterUrl.startsWith('data:')) {
+        const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+        pdf.addImage(masterUrl, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+        const cleanName = (memory?.names || 'Amor').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        pdf.save(`MediaNaranja_Lamina_${cleanName}.pdf`);
+        setIsDownloadingPdf(false);
+        return;
+      }
+
+      const response = await fetch(masterUrl);
+      if (!response.ok) throw new Error("No se pudo descargar la imagen maestra.");
+      const blob = await response.blob();
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+        pdf.addImage(base64data, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+        const cleanName = (memory?.names || 'Amor').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+        pdf.save(`MediaNaranja_Lamina_${cleanName}.pdf`);
+        setIsDownloadingPdf(false);
+      };
+      reader.onerror = () => {
+        setIsDownloadingPdf(false);
+        alert("Error al procesar la imagen de la lámina.");
+      };
+      reader.readAsDataURL(blob);
+    } catch (err: any) {
+      console.error("PDF download error:", err);
+      setIsDownloadingPdf(false);
+      alert("Hubo un detalle al generar el PDF: " + err.message);
+    }
+  };
+
+  // Descargar Canción MP3 Completa
+  const handleDownloadMp3 = () => {
+    const audioUrl = song?.audio_url || song?.demo_url || songAudioUrl;
+    if (!audioUrl) {
+      alert("Audio no disponible para descarga.");
+      return;
+    }
+    const cleanTitle = (song?.title || memory?.names || 'Cancion_Personalizada').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const a = document.createElement('a');
+    a.href = audioUrl;
+    a.download = `${cleanTitle}.mp3`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Enviar mensaje de dedicatoria romántica por WhatsApp
+  const handleShareWhatsApp = () => {
+    const giftUrl = `${window.location.origin}/escuchar/${memory.id}`;
+    const text = encodeURIComponent(
+      `Mi amor, preparé una sorpresa única para ti... Nuestra propia serie en Loveflix con nuestra canción personalizada y nuestros recuerdos. Toca aquí para verla: ${giftUrl} ❤️✨`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
   // Loading
   if (loading) {
     return (
@@ -464,7 +545,16 @@ export default function PublicGiftPlayer() {
               <span>Editar Plantilla</span>
             </button>
 
-            {isDemoMode && (
+            {isPaid ? (
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-950 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {isDownloadingPdf ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                <span>{isDownloadingPdf ? "Generando..." : "Lámina PDF"}</span>
+              </button>
+            ) : (
               <button
                 onClick={() => {
                   const checkoutEl = document.getElementById('checkout-section');
@@ -887,9 +977,115 @@ export default function PublicGiftPlayer() {
         )}
 
         {/* ============================================================== */}
+        {/* PANEL DE ENTREGA Y DESCARGA POST-COMPRA (SI YA ESTÁ PAGADO)    */}
+        {/* ============================================================== */}
+        {isPaid && isCreator && (
+          <section className="bg-gradient-to-b from-zinc-900 via-zinc-900 to-black border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden animate-in fade-in duration-300">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto mb-2 shadow-lg shadow-emerald-950/40">
+                <CheckCircle2 size={30} />
+              </div>
+              <span className="px-3 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[10px] font-black uppercase tracking-wider">
+                ✨ SERIE ACTIVA Y DESBLOQUEADA
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white pt-1">
+                ¡Tu regalo está listo para sorprender!
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-300 max-w-xl mx-auto leading-relaxed">
+                Tu mini página web interactiva con fotos, canción completa y nota de voz está disponible de forma permanente. Descarga tu lámina digital en PDF de alta resolución con código QR lista para imprimir o compártela con tu pareja.
+              </p>
+            </div>
+
+            {/* GRILLA DE ACCIONES PRINCIPALES */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {/* ACCIÓN 1: DESCARGAR LÁMINA PDF 300 DPI */}
+              <div className="p-5 bg-zinc-950/80 border border-zinc-800 rounded-2xl flex flex-col justify-between hover:border-emerald-500/50 transition-all space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">🖼️</span>
+                    <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded text-[9px] font-bold uppercase">
+                      300 DPI Alta Fidelidad
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-white text-sm">Lámina en PDF con QR</h3>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Archivo en formato A4 listo para imprimir en papel fotográfico o cartulina y colocar en un cuadro.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={isDownloadingPdf}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-950 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isDownloadingPdf ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                  <span>{isDownloadingPdf ? "Generando..." : "Descargar Lámina PDF"}</span>
+                </button>
+              </div>
+
+              {/* ACCIÓN 2: DESCARGAR CANCIÓN MP3 */}
+              <div className="p-5 bg-zinc-950/80 border border-zinc-800 rounded-2xl flex flex-col justify-between hover:border-zinc-700 transition-all space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">🎵</span>
+                    <span className="px-2 py-0.5 bg-white/10 text-zinc-300 rounded text-[9px] font-bold uppercase">
+                      Audio MP3
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-white text-sm">Canción Completa</h3>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Descarga el audio MP3 en máxima calidad sin cortes para guardarlo en tu teléfono o computadora.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadMp3}
+                  className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Download size={16} />
+                  <span>Descargar Audio MP3</span>
+                </button>
+              </div>
+
+              {/* ACCIÓN 3: ENVIAR POR WHATSAPP */}
+              <div className="p-5 bg-zinc-950/80 border border-zinc-800 rounded-2xl flex flex-col justify-between hover:border-emerald-500/50 transition-all space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">💌</span>
+                    <span className="px-2 py-0.5 bg-emerald-600/30 text-emerald-300 rounded text-[9px] font-bold uppercase">
+                      Dedicatoria
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-white text-sm">Compartir con tu Pareja</h3>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Envíale el enlace privado por WhatsApp con una dedicatoria romántica personalizada lista para abrir.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleShareWhatsApp}
+                  className="w-full py-3 bg-[#25D366] hover:bg-[#20ba5a] text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Share2 size={16} />
+                  <span>Enviar por WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            {/* CONSEJO DE IMPRESIÓN */}
+            <div className="bg-zinc-950/60 p-4 rounded-2xl border border-zinc-800/80 text-xs text-zinc-400 flex items-start gap-3">
+              <span className="text-base shrink-0">💡</span>
+              <p className="leading-relaxed">
+                <strong className="text-white">Consejo para enmarcar:</strong> Puedes llevar el archivo PDF que descargas aquí a cualquier papelería o centro de impresión (ej: Office Depot, Lumen o imprenta local). Pide imprimirlo en papel fotográfico o cartulina opalina tamaño carta o A4 para obtener el acabado perfecto.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* ============================================================== */}
         {/* SECCIÓN DE ELECCIÓN DE PRODUCTO Y CONFIRMACIÓN POST-DEMO       */}
         {/* ============================================================== */}
-        {isCreator && (
+        {!isPaid && isCreator && (
           <section id="checkout-section" className="bg-[#121212] border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
             <div className="text-center space-y-2">
               <div className="w-12 h-12 rounded-full bg-red-600/20 text-red-500 flex items-center justify-center mx-auto mb-2">

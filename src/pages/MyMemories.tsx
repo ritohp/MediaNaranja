@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Download, Trash2, Heart, Plus, Loader2, Calendar, Eye, Play, Film } from 'lucide-react';
+import { Download, Trash2, Heart, Plus, Loader2, Calendar, Eye, Play, Film, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import jsPDF from 'jspdf';
 
 export default function MyMemories() {
   const [memories, setMemories] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function MyMemories() {
         navigate('/');
         return;
       }
+      setUser(session.user);
 
       const { data, error } = await supabase
         .from('memories')
@@ -53,6 +55,13 @@ export default function MyMemories() {
   const downloadMasterPDF = async (memory: any, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    const isMemoryPaid = memory.status === 'paid' || memory.status === 'in_production' || memory.status === 'shipped' || user?.email === 'ritohp@gmail.com';
+    if (!isMemoryPaid) {
+      alert("Para descargar tu lámina digital en PDF (300 DPI) con tu código QR activo, primero activa tu Serie Loveflix.");
+      navigate(`/escuchar/${memory.id}?demo=true`);
+      return;
+    }
     
     if (!memory || !memory.full_design_url) {
       alert("Este diseño requiere una captura maestra. Ábrelo y dale a 'Guardar'.");
@@ -161,38 +170,56 @@ export default function MyMemories() {
                   <p className="text-xs text-gray-500 italic line-clamp-2 mb-6">"{memory.synopsis || 'Sin sinopsis'}"</p>
 
                   <div className="mt-auto space-y-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/escuchar/${memory.id}?demo=true`);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-[#E50914] hover:bg-[#b80710] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md active:scale-95"
-                    >
-                      <Play size={14} fill="currentColor" /> Ver Demo Interactivo
-                    </button>
+                    {(() => {
+                      const isPaid = memory.status === 'paid' || memory.status === 'in_production' || memory.status === 'shipped' || user?.email === 'ritohp@gmail.com';
+                      return (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/escuchar/${memory.id}${isPaid ? '' : '?demo=true'}`);
+                            }}
+                            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md active:scale-95 ${
+                              isPaid
+                                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                : 'bg-[#E50914] hover:bg-[#b80710] text-white'
+                            }`}
+                          >
+                            <Play size={14} fill="currentColor" />
+                            {isPaid ? 'Ver Serie Loveflix' : 'Ver Demo Interactivo'}
+                          </button>
 
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={(e) => downloadMasterPDF(memory, e)}
-                        disabled={downloadingId === memory.id}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
-                          memory.full_design_url 
-                            ? 'bg-zinc-800 text-zinc-200 hover:bg-white hover:text-black' 
-                            : 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
-                        }`}
-                      >
-                        {downloadingId === memory.id ? <Loader2 className="animate-spin" size={14}/> : <Download size={14}/>}
-                        {downloadingId === memory.id ? 'GENERANDO...' : 'DESCARGAR PDF'}
-                      </button>
-                      
-                      <button 
-                        onClick={(e) => deleteMemory(memory.id, e)}
-                        className="p-3 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 transition-all rounded-xl border border-white/5"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={(e) => downloadMasterPDF(memory, e)}
+                              disabled={downloadingId === memory.id}
+                              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                                isPaid
+                                  ? (memory.full_design_url ? 'bg-zinc-800 text-zinc-200 hover:bg-white hover:text-black' : 'bg-zinc-900 text-zinc-600 cursor-not-allowed')
+                                  : 'bg-zinc-900 text-amber-400 border border-amber-500/30 hover:bg-zinc-800'
+                              }`}
+                            >
+                              {downloadingId === memory.id ? (
+                                <Loader2 className="animate-spin" size={14}/>
+                              ) : isPaid ? (
+                                <Download size={14}/>
+                              ) : (
+                                <Lock size={14}/>
+                              )}
+                              {downloadingId === memory.id ? 'GENERANDO...' : isPaid ? 'DESCARGAR PDF' : 'DESBLOQUEAR PDF'}
+                            </button>
+                            
+                            <button 
+                              onClick={(e) => deleteMemory(memory.id, e)}
+                              className="p-3 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 transition-all rounded-xl border border-white/5"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   
                   {!memory.full_design_url && (
