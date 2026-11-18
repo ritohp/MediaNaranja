@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { supabase } from '../lib/supabase';
-import { getStripeCheckoutUrl } from '../config/payments';
+import { getStripeCheckoutUrl, recordPendingCheckout } from '../config/payments';
 
 export default function PublicGiftPlayer() {
   const { id } = useParams();
@@ -306,12 +306,14 @@ export default function PublicGiftPlayer() {
 
       const productType = isSongPaidOnly ? 'loveflix_upgrade' : 'loveflix_full';
       const referenceId = memory?.id || song?.id;
+      recordPendingCheckout(productType, referenceId, { memoryId: memory?.id, songId: song?.id });
       const stripeUrl = getStripeCheckoutUrl(productType, referenceId);
       window.location.href = stripeUrl;
     } catch (err: any) {
       console.error("Error al registrar intención de compra:", err);
       const productType = isSongPaidOnly ? 'loveflix_upgrade' : 'loveflix_full';
       const referenceId = memory?.id || song?.id;
+      recordPendingCheckout(productType, referenceId, { memoryId: memory?.id, songId: song?.id });
       window.location.href = getStripeCheckoutUrl(productType, referenceId);
     } finally {
       setIsUpdatingOrder(false);
@@ -321,6 +323,7 @@ export default function PublicGiftPlayer() {
   // Redirigir a compra de Solo Canción MP3 ($249 MXN)
   const handleOrderSoloCancion = () => {
     const referenceId = song?.id || memory?.song_id || memory?.id;
+    recordPendingCheckout('solo_cancion', referenceId, { memoryId: memory?.id, songId: song?.id });
     window.location.href = getStripeCheckoutUrl('solo_cancion', referenceId);
   };
 

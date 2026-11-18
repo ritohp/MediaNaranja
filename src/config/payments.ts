@@ -40,3 +40,30 @@ export const getStripeCheckoutUrl = (
   }
   return `${baseUrl}?client_reference_id=${encodeURIComponent(referenceId)}`;
 };
+
+/**
+ * Registra en almacenamiento local una intención de compra iniciada hacia Stripe.
+ * Permite que al volver de la pasarela (ej: a /mis-canciones), la web detecte
+ * automáticamente el pago y verifique la liberación sin depender exclusivamente de parámetros URL.
+ */
+export const recordPendingCheckout = (
+  productType: StripeProductType,
+  referenceId: string,
+  extra?: { memoryId?: string; songId?: string }
+) => {
+  try {
+    const payload = {
+      productType,
+      referenceId,
+      memoryId: extra?.memoryId || (productType.startsWith('loveflix') ? referenceId : undefined),
+      songId: extra?.songId || (productType === 'solo_cancion' ? referenceId : undefined),
+      timestamp: Date.now()
+    };
+    const serialized = JSON.stringify(payload);
+    localStorage.setItem('mn_pending_checkout', serialized);
+    sessionStorage.setItem('mn_pending_checkout', serialized);
+  } catch (e) {
+    console.warn("Error storing pending checkout:", e);
+  }
+};
+

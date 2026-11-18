@@ -4,6 +4,7 @@ import { Music, Sparkles, BookOpen, User, Users, Heart, Baby, Mic, Target, Calen
 import { supabase } from '../lib/supabase';
 import { generateLyrics, generateInterviewQuestions, cleanStylePrompt, generateDetailsPrompt, generateInfographicData } from '../services/ai';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { getStripeCheckoutUrl, recordPendingCheckout } from '../config/payments';
 
 
 
@@ -385,7 +386,8 @@ INSTRUCCIONES:
       alert("Hubo un problema al procesar el identificador de la canción. Por favor, ve a 'Mis Canciones' para realizar el pago de forma segura.");
       return;
     }
-    window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${currentSongId}`;
+    recordPendingCheckout('solo_cancion', currentSongId, { songId: currentSongId });
+    window.location.href = getStripeCheckoutUrl('solo_cancion', currentSongId);
   };
 
   const handleStartLyrics = async (e: React.FormEvent) => {

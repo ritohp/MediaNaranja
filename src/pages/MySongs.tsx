@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Music, Calendar, Clock, Play, Download, ExternalLink, Heart, ChevronRight, Music2, Lock, RefreshCw, Scroll, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getStripeCheckoutUrl, recordPendingCheckout } from '../config/payments';
 
 
 interface Song {
@@ -100,73 +101,139 @@ export default function MySongs() {
     });
 
     const params = new URLSearchParams(window.location.search);
-    const refId = params.get('client_reference_id');
+    let refId = params.get('client_reference_id');
     const sessionId = params.get('session_id');
 
-    if (sessionId || refId) {
+    let pendingCheckout: any = null;
+    if (!refId && !sessionId) {
+      try {
+        const raw = sessionStorage.getItem('mn_pending_checkout') || localStorage.getItem('mn_pending_checkout');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // Si el checkout se inició en los últimos 20 minutos
+          if (Date.now() - parsed.timestamp < 20 * 60 * 1000) {
+            pendingCheckout = parsed;
+            refId = parsed.referenceId;
+          }
+        }
+      } catch (e) {
+        console.warn("Error reading pending checkout:", e);
+      }
+    }
+
+    if (sessionId || refId || pendingCheckout) {
       setUnlockingSongId(refId || 'detecting');
+      setUnlockingStatus('checking');
+
       let attempts = 0;
       const interval = setInterval(async () => {
         attempts++;
-        if (sessionId) {
-          // Poll mn_payments to find the associated song_id
-          const { data, error } = await supabase
-            .from('mn_payments')
-            .select('song_id')
-            .eq('external_id', sessionId)
-            .maybeSingle();
 
-          if (data && data.song_id) {
-            clearInterval(interval);
-            setUnlockingSongId(data.song_id);
-            setUnlockingStatus('success');
-            
-            // Trigger pixels purchase conversion
-            if (window.fbq) {
-              window.fbq('track', 'Purchase', { value: 249.00, currency: 'MXN' });
-            }
-            if (window.ttq) {
-              window.ttq.track('CompletePayment', { value: 249.00, currency: 'MXN' });
-            }
+        // A. Verificar si refId corresponde a un recuerdo (Loveflix)
+        if (refId) {
+          try {
+            const { data: mem } = await supabase
+              .from('memories')
+              .select('id, song_id, status')
+              .eq('id', refId)
+              .maybeSingle();
 
-            setTimeout(() => {
-              window.location.href = `/cancion/${data.song_id}`;
-            }, 1500);
-            return;
+            if (mem && (mem.status === 'paid' || mem.status === 'in_production' || mem.status === 'shipped')) {
+              clearInterval(interval);
+              setUnlockingStatus('success');
+              localStorage.removeItem('mn_pending_checkout');
+              sessionStorage.removeItem('mn_pending_checkout');
+
+              if (window.fbq) window.fbq('track', 'Purchase', { value: 399.00, currency: 'MXN' });
+              if (window.ttq) window.ttq.track('CompletePayment', { value: 399.00, currency: 'MXN' });
+
+              setTimeout(() => {
+                window.location.href = `/escuchar/${mem.id}`;
+              }, 1500);
+              return;
+            }
+          } catch (e) {
+            console.warn("Polling memory check:", e);
           }
-        } else if (refId) {
-          // Poll mn_songs directly for is_paid status
-          const { data, error } = await supabase
-            .from('mn_songs')
-            .select('is_paid')
-            .eq('id', refId)
-            .single();
-          
-          if (data && data.is_paid) {
-            clearInterval(interval);
-            setUnlockingStatus('success');
 
-            // Trigger pixels purchase conversion
-            if (window.fbq) {
-              window.fbq('track', 'Purchase', { value: 249.00, currency: 'MXN' });
-            }
-            if (window.ttq) {
-              window.ttq.track('CompletePayment', { value: 249.00, currency: 'MXN' });
-            }
+          // B. Verificar en mn_songs
+          try {
+            const { data: songData } = await supabase
+              .from('mn_songs')
+              .select('id, is_paid')
+              .eq('id', refId)
+              .maybeSingle();
 
-            setTimeout(() => {
-              window.location.href = `/cancion/${refId}`;
-            }, 1500);
-            return;
+            if (songData && songData.is_paid) {
+              clearInterval(interval);
+              setUnlockingStatus('success');
+              localStorage.removeItem('mn_pending_checkout');
+              sessionStorage.removeItem('mn_pending_checkout');
+
+              if (window.fbq) window.fbq('track', 'Purchase', { value: 249.00, currency: 'MXN' });
+              if (window.ttq) window.ttq.track('CompletePayment', { value: 249.00, currency: 'MXN' });
+
+              // Si tiene un recuerdo asociado a esta canción, llevarlo a la experiencia Loveflix
+              const { data: assocMem } = await supabase
+                .from('memories')
+                .select('id')
+                .eq('song_id', songData.id)
+                .maybeSingle();
+
+              setTimeout(() => {
+                if (assocMem) {
+                  window.location.href = `/escuchar/${assocMem.id}`;
+                } else {
+                  window.location.href = `/cancion/${songData.id}`;
+                }
+              }, 1500);
+              return;
+            }
+          } catch (e) {
+            console.warn("Polling song check:", e);
           }
         }
 
-        if (attempts >= 15) {
+        // C. Si viene con sessionId de Stripe
+        if (sessionId) {
+          try {
+            const { data: payment } = await supabase
+              .from('mn_payments')
+              .select('song_id, status')
+              .eq('external_id', sessionId)
+              .maybeSingle();
+
+            if (payment && payment.status === 'completed') {
+              clearInterval(interval);
+              setUnlockingStatus('success');
+              localStorage.removeItem('mn_pending_checkout');
+              sessionStorage.removeItem('mn_pending_checkout');
+
+              const targetId = payment.song_id || refId;
+              let dest = targetId ? `/cancion/${targetId}` : '/mis-canciones';
+              if (targetId) {
+                const { data: mem } = await supabase.from('memories').select('id').eq('song_id', targetId).maybeSingle();
+                if (mem) dest = `/escuchar/${mem.id}`;
+              }
+
+              setTimeout(() => {
+                window.location.href = dest;
+              }, 1500);
+              return;
+            }
+          } catch (e) {
+            console.warn("Polling payment check:", e);
+          }
+        }
+
+        if (attempts >= 10) {
           clearInterval(interval);
           setUnlockingStatus('failed');
+          localStorage.removeItem('mn_pending_checkout');
+          sessionStorage.removeItem('mn_pending_checkout');
         }
-      }, 2000);
-      
+      }, 1500);
+
       return () => clearInterval(interval);
     }
   }, []);
@@ -385,7 +452,10 @@ export default function MySongs() {
                 onClick={() => {
                   const sId = showDemoModal;
                   setShowDemoModal(null);
-                  window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${sId}`;
+                  if (sId) {
+                    recordPendingCheckout('solo_cancion', sId, { songId: sId });
+                    window.location.href = getStripeCheckoutUrl('solo_cancion', sId);
+                  }
                 }}
                 className="p-4 rounded-2xl bg-white border border-gray-200 hover:border-gray-400 cursor-pointer hover:scale-[1.01] transition-all"
               >
@@ -728,7 +798,8 @@ export default function MySongs() {
 
                         <button 
                           onClick={() => {
-                            window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                            recordPendingCheckout('solo_cancion', song.id, { songId: song.id });
+                            window.location.href = getStripeCheckoutUrl('solo_cancion', song.id);
                           }}
                           className="w-full py-2.5 bg-white text-gray-700 border border-gray-300 hover:border-gray-500 rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2"
                         >
@@ -739,7 +810,8 @@ export default function MySongs() {
                       /* SI NO ES DE PAREJA (ej: mamá, papá, etc.): Desbloqueo regular de canción */
                       <button 
                         onClick={() => {
-                          window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                          recordPendingCheckout('solo_cancion', song.id, { songId: song.id });
+                          window.location.href = getStripeCheckoutUrl('solo_cancion', song.id);
                         }}
                         className="w-full py-3.5 bg-naranja-500 hover:bg-naranja-600 text-white rounded-xl font-bold text-xs transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-naranja-200"
                       >

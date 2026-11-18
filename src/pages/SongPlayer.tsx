@@ -12,6 +12,7 @@ import { toJpeg } from 'html-to-image';
 import html2canvas from 'html2canvas';
 import type { InfographicData } from '../services/ai';
 import AnchorGraphic from '../components/tribute/AnchorGraphics';
+import { getStripeCheckoutUrl, recordPendingCheckout } from '../config/payments';
 
 
 // Mapeo dinámico de iconos de Lucide
@@ -731,7 +732,8 @@ export default function SongPlayer() {
                 {/* OPCIÓN 2: SOLO CANCIÓN MP3 ($249 MXN) - DOWNSELL */}
                 <button 
                   onClick={() => {
-                    window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                    recordPendingCheckout('solo_cancion', song.id, { songId: song.id });
+                    window.location.href = getStripeCheckoutUrl('solo_cancion', song.id);
                   }}
                   className="w-full py-3.5 bg-white text-[#1C2A39] border border-stone-300 hover:border-stone-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm tracking-wider text-[11px] uppercase hover:bg-stone-50"
                 >
@@ -743,7 +745,8 @@ export default function SongPlayer() {
               <div className="space-y-3">
                 <button 
                   onClick={() => {
-                    window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                    recordPendingCheckout('solo_cancion', song.id, { songId: song.id });
+                    window.location.href = getStripeCheckoutUrl('solo_cancion', song.id);
                   }}
                   className="w-full py-4 bg-[#B69D74] hover:bg-[#a38a62] text-[#1C2A39] rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md tracking-wider text-xs uppercase"
                 >
@@ -964,7 +967,8 @@ export default function SongPlayer() {
                 <div 
                   onClick={() => {
                     setShowDemoModal(false);
-                    window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                    recordPendingCheckout('solo_cancion', song.id, { songId: song.id });
+                    window.location.href = getStripeCheckoutUrl('solo_cancion', song.id);
                   }}
                   className="p-4 rounded-2xl bg-white/90 border border-stone-300 hover:border-stone-500 cursor-pointer hover:scale-[1.01] transition-all"
                 >
@@ -984,7 +988,8 @@ export default function SongPlayer() {
                 <button
                   onClick={() => {
                     setShowDemoModal(false);
-                    window.location.href = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song.id}`;
+                    recordPendingCheckout('solo_cancion', song.id, { songId: song.id });
+                    window.location.href = getStripeCheckoutUrl('solo_cancion', song.id);
                   }}
                   className="w-full py-4 bg-[#B69D74] hover:bg-[#a38a62] text-[#1C2A39] rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-md tracking-wider text-xs uppercase"
                 >
