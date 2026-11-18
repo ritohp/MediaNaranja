@@ -43,8 +43,8 @@ export default function MemoryCustomizer() {
   // Audio / Nota de Voz
   const [voiceNoteUrl, setVoiceNoteUrl] = useState<string>('');
 
-  // Tipo de producto y envío
-  const [productType, setProductType] = useState<'physical_box' | 'digital_poster'>('physical_box');
+  // Tipo de producto
+  const [productType, setProductType] = useState<'physical_box' | 'digital_poster'>('digital_poster');
   const [shippingAddress, setShippingAddress] = useState({
     street: '',
     colony: '',
@@ -242,7 +242,7 @@ export default function MemoryCustomizer() {
         setVoiceNoteUrl(data.voice_note_url || '');
         setAuthorName(data.author_name || '');
         setRecipientName(data.recipient_name || '');
-        setProductType(data.product_type || 'physical_box');
+        setProductType(data.product_type || 'digital_poster');
         setPhone(data.phone || '');
         if (data.shipping_address) {
           try {
@@ -552,7 +552,7 @@ export default function MemoryCustomizer() {
         </div>
         <h2 className="text-2xl font-serif font-bold text-white mb-2">Abriendo el Estudio Loveflix...</h2>
         <p className="text-zinc-400 max-w-sm text-sm">
-          Naranjín está preparando la mesa de diseño para tu Caja Musical.
+          Naranjín está preparando la mesa de diseño para tu plantilla de Loveflix.
         </p>
       </div>
     );
@@ -612,9 +612,9 @@ export default function MemoryCustomizer() {
             <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
               <div>
                 <h1 className="text-2xl font-serif font-bold text-white flex items-center gap-2">
-                  Caja Musical <span className="text-red-600 italic">Loveflix</span>
+                  Plantilla Interactiva <span className="text-red-600 italic">Loveflix</span>
                 </h1>
-                <p className="text-xs text-zinc-400 mt-1">Personaliza el diseño para la tapa en madera MDF</p>
+                <p className="text-xs text-zinc-400 mt-1">Personaliza tu afiche, galería y dedicatoria</p>
               </div>
               <span className="px-3 py-1 bg-red-950/80 text-red-400 border border-red-800/60 rounded-full text-[10px] font-black uppercase tracking-widest">
                 Edición Parejas
@@ -1141,7 +1141,7 @@ export default function MemoryCustomizer() {
           </div>
 
           <p className="text-[11px] text-zinc-500 mt-4 text-center max-w-sm">
-            💡 Este arte se imprimirá directamente en la tapa de la caja musical MDF o podrás descargarlo en formato póster digital.
+            💡 Esta plantilla se convertirá en tu mini página web interactiva con fotos y nota de voz, además de tu lámina digital en PDF (300 DPI) con código QR.
           </p>
         </div>
 

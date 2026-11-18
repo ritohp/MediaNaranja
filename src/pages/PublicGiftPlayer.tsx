@@ -47,8 +47,9 @@ export default function PublicGiftPlayer() {
   const [isInMyList, setIsInMyList] = useState(true);
   const [liked, setLiked] = useState(false);
 
-  // Sección de Compra Post-Demo: 3 Paquetes o Upgrade
-  const [selectedProduct, setSelectedProduct] = useState<'physical_box' | 'digital_poster' | 'solo_cancion'>('digital_poster');
+  // Sección de Compra Post-Demo: 2 Paquetes Activos
+  const [selectedProduct, setSelectedProduct] = useState<'digital_poster' | 'solo_cancion'>('digital_poster');
+  const [showBoxComingSoonModal, setShowBoxComingSoonModal] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     street: '',
     colony: '',
@@ -946,31 +947,23 @@ export default function PublicGiftPlayer() {
                     </p>
                   </div>
 
-                  {/* OPCIÓN 2: CAJA MUSICAL MDF ($899 MXN) */}
+                  {/* OPCIÓN 2: CAJA MUSICAL MDF (PRÓXIMAMENTE) */}
                   <div
-                    onClick={() => setSelectedProduct('physical_box')}
-                    className={`p-5 rounded-2xl border cursor-pointer transition-all ${
-                      selectedProduct === 'physical_box' 
-                        ? 'bg-red-950/40 border-red-600 ring-2 ring-red-600/50 shadow-xl shadow-red-950/40' 
-                        : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-700'
-                    }`}
+                    onClick={() => setShowBoxComingSoonModal(true)}
+                    className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/50 hover:border-amber-500/30 transition-all cursor-pointer relative overflow-hidden group"
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="px-2 py-0.5 bg-amber-600 text-white rounded text-[9px] font-black uppercase tracking-wider">
-                        👑 FÍSICO ARTESANAL
+                      <span className="px-2.5 py-0.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                        <Lock size={10} /> PRÓXIMAMENTE
                       </span>
-                      {selectedProduct === 'physical_box' ? (
-                        <CheckCircle2 size={18} className="text-red-500" />
-                      ) : (
-                        <span className="text-xs text-zinc-500">Seleccionar</span>
-                      )}
+                      <span className="text-xs text-amber-400/80 font-bold group-hover:underline">Conoce más →</span>
                     </div>
                     <div className="flex items-baseline justify-between">
-                      <h4 className="text-base font-bold text-white">Caja Musical MDF</h4>
-                      <span className="text-base font-black text-white">$899 MXN</span>
+                      <h4 className="text-base font-bold text-zinc-200">Caja Musical MDF</h4>
+                      <span className="text-base font-black text-zinc-500 line-through text-opacity-50">$899 MXN</span>
                     </div>
                     <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                      Caja de madera MDF con chip recargable al abrirse + portada Loveflix a color + QR grabado + envío a domicilio en México incluido.
+                      Caja artesanal de madera MDF con chip recargable al abrirse + portada a color + QR grabado + envío en México. <span className="text-amber-300/80 font-medium">Edición artesanal de próximo lanzamiento.</span>
                     </p>
                   </div>
                 </div>
@@ -1043,34 +1036,29 @@ export default function PublicGiftPlayer() {
                   </div>
                 </div>
 
-                {/* PAQUETE 3: CAJA MUSICAL DE MADERA MDF ($899 MXN) - FÍSICO */}
+                {/* PAQUETE 3: CAJA MUSICAL DE MADERA MDF (PRÓXIMAMENTE) */}
                 <div
-                  onClick={() => setSelectedProduct('physical_box')}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
-                    selectedProduct === 'physical_box' 
-                      ? 'bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/50 shadow-xl shadow-amber-950/40' 
-                      : 'bg-zinc-900/70 border-zinc-800 hover:border-zinc-700'
-                  }`}
+                  onClick={() => setShowBoxComingSoonModal(true)}
+                  className="p-5 rounded-2xl border border-zinc-800 bg-zinc-900/40 hover:border-amber-500/30 transition-all flex flex-col justify-between cursor-pointer relative group"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-2xl">📦</span>
-                      {selectedProduct === 'physical_box' ? (
-                        <CheckCircle2 size={18} className="text-amber-500" />
-                      ) : (
-                        <span className="text-xs text-zinc-500">Elegir</span>
-                      )}
+                      <span className="text-2xl opacity-75">📦</span>
+                      <span className="px-2.5 py-0.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                        <Lock size={10} /> PRÓXIMAMENTE
+                      </span>
                     </div>
                     <div className="flex items-baseline justify-between">
-                      <h4 className="text-base font-bold text-white">Caja Musical MDF</h4>
-                      <span className="text-base font-black text-amber-400">$899 MXN</span>
+                      <h4 className="text-base font-bold text-zinc-200">Caja Musical MDF</h4>
+                      <span className="text-base font-black text-zinc-500 line-through text-opacity-50">$899 MXN</span>
                     </div>
                     <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                      Todo lo digital incluido + Caja artesanal de madera MDF con portada impresa + chip de música recargable al abrirse + QR grabado + envío a México incluido.
+                      Todo lo digital incluido + Caja artesanal de madera MDF con portada impresa + chip de música recargable al abrirse + QR grabado + envío a México.
                     </p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-zinc-800/80 text-[11px] text-amber-300 font-medium">
-                    👑 El regalo físico definitivo
+                  <div className="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-amber-300/80 font-medium flex items-center justify-between">
+                    <span>👑 Edición física artesanal</span>
+                    <span className="group-hover:underline">Conoce más →</span>
                   </div>
                 </div>
               </div>
@@ -1139,113 +1127,6 @@ export default function PublicGiftPlayer() {
                 </button>
               </div>
             )}
-
-            {/* FORMULARIO DE ENVÍO SI ELIGE CAJA MUSICAL FÍSICA */}
-            {selectedProduct === 'physical_box' && (
-              <div className="space-y-4 pt-4 border-t border-zinc-800 animate-in fade-in duration-300">
-                <div className="flex items-center gap-2 text-xs font-bold text-red-500 uppercase tracking-wider">
-                  <MapPin size={16} /> Datos para Envío a Domicilio en México
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
-                    Calle, Número y Depto *
-                  </label>
-                  <input
-                    type="text"
-                    value={shippingAddress.street}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, street: e.target.value })}
-                    placeholder="Ej: Av. Juárez 450, Interior 201"
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
-                      Colonia / Fraccionamiento *
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingAddress.colony}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, colony: e.target.value })}
-                      placeholder="Ej: Centro"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
-                      Código Postal *
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingAddress.zipCode}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, zipCode: e.target.value })}
-                      placeholder="Ej: 06000"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
-                      Ciudad / Municipio *
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingAddress.city}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
-                      placeholder="Ej: Monterrey"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
-                      Estado *
-                    </label>
-                    <input
-                      type="text"
-                      value={shippingAddress.state}
-                      onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
-                      placeholder="Ej: Nuevo León"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">
-                    Teléfono / WhatsApp de Contacto para Paquetería *
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Ej: 55 1234 5678"
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm focus:border-red-600 outline-none transition-colors"
-                  />
-                </div>
-
-                {/* BOTÓN CONFIRMAR CAJA MUSICAL */}
-                <button
-                  type="button"
-                  onClick={handleOrderPhysicalBox}
-                  disabled={isUpdatingOrder}
-                  className="w-full py-4.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-red-700 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-red-950 flex items-center justify-center gap-2.5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  {isUpdatingOrder ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <Gift size={18} />
-                  )}
-                  <span>
-                    {isUpdatingOrder ? "Guardando..." : "Confirmar Pedido de Caja Musical ($899 MXN)"}
-                  </span>
-                </button>
-              </div>
-            )}
-
           </section>
         )}
 
@@ -1377,23 +1258,24 @@ export default function PublicGiftPlayer() {
                     </p>
                   </div>
 
-                  {/* CAJA MDF */}
+                  {/* CAJA MDF (PRÓXIMAMENTE) */}
                   <div 
                     onClick={() => {
                       setShowUnlockModal(false);
-                      setSelectedProduct('physical_box');
-                      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                      setShowBoxComingSoonModal(true);
                     }}
-                    className="p-3.5 bg-zinc-800/60 rounded-2xl border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-all hover:scale-[1.01] space-y-1"
+                    className="p-3.5 bg-zinc-800/40 rounded-2xl border border-zinc-800 hover:border-amber-500/40 cursor-pointer transition-all space-y-1"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                      <span className="text-xs font-bold uppercase text-zinc-300 tracking-wider flex items-center gap-1.5">
                         📦 Caja Musical MDF Física
                       </span>
-                      <span className="text-sm font-black text-white">$899 MXN</span>
+                      <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                        <Lock size={10} /> PRÓXIMAMENTE
+                      </span>
                     </div>
                     <p className="text-[11px] text-zinc-400 leading-snug">
-                      Caja de madera con chip de música recargable + impresión en la tapa + QR grabado + envío a domicilio en México.
+                      Caja de madera con chip de música recargable + portada a color + QR grabado + envío a México. (Edición artesanal de próximo lanzamiento).
                     </p>
                   </div>
                 </>
@@ -1439,23 +1321,24 @@ export default function PublicGiftPlayer() {
                     </p>
                   </div>
 
-                  {/* CAJA MDF 899 (VIP FÍSICO) */}
+                  {/* CAJA MDF 899 (PRÓXIMAMENTE) */}
                   <div 
                     onClick={() => {
                       setShowUnlockModal(false);
-                      setSelectedProduct('physical_box');
-                      document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                      setShowBoxComingSoonModal(true);
                     }}
-                    className="p-3.5 bg-zinc-800/60 rounded-2xl border border-zinc-700 hover:border-zinc-500 cursor-pointer transition-all hover:scale-[1.01] space-y-1"
+                    className="p-3.5 bg-zinc-800/40 rounded-2xl border border-zinc-800 hover:border-amber-500/40 cursor-pointer transition-all space-y-1"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
-                        👑 Caja Musical MDF Física
+                      <span className="text-xs font-bold uppercase text-zinc-300 tracking-wider flex items-center gap-1.5">
+                        📦 Caja Musical MDF Física
                       </span>
-                      <span className="text-sm font-black text-white">$899 MXN</span>
+                      <span className="px-2 py-0.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1">
+                        <Lock size={10} /> PRÓXIMAMENTE
+                      </span>
                     </div>
                     <p className="text-[11px] text-zinc-400 leading-snug">
-                      Todo lo digital + Caja de madera MDF física con chip musical y envío express en México.
+                      Todo lo digital + Caja de madera MDF física con chip musical y grabado especial. (Próximo lanzamiento).
                     </p>
                   </div>
                 </>
@@ -1478,6 +1361,77 @@ export default function PublicGiftPlayer() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL INFORMATIVO: CAJA MUSICAL PRÓXIMAMENTE */}
+      {showBoxComingSoonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/85 backdrop-blur-md" 
+            onClick={() => setShowBoxComingSoonModal(false)}
+          />
+          <div className="relative z-10 w-full max-w-md bg-[#121212] border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center space-y-5 shadow-2xl shadow-amber-950/40 animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowBoxComingSoonModal(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white p-2 rounded-full hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-lg shadow-amber-950/30">
+              <Gift size={28} />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full text-[10px] font-black uppercase tracking-wider">
+                ✨ Edición Artesanal Limitada
+              </span>
+              <h3 className="text-xl font-serif font-bold text-white pt-2">
+                Caja Musical de Madera MDF
+              </h3>
+              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                Estamos afinando los últimos detalles artesanales para el grabado y el chip de apertura musical recargable de esta edición física especial. Estará disponible muy pronto para entregas en México.
+              </p>
+            </div>
+
+            <div className="bg-zinc-900/80 p-4 rounded-2xl border border-zinc-800 text-left space-y-2">
+              <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Sparkles size={14} className="text-red-400" />
+                ¡Disfruta hoy de tu Serie Loveflix Digital!
+              </p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Puedes activar de inmediato tu mini página web interactiva con fotos, dedicatoria de voz y la lámina PDF en alta resolución (300 DPI) con código QR lista para imprimir y enmarcar cuando quieras.
+              </p>
+            </div>
+
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBoxComingSoonModal(false);
+                  setSelectedProduct('digital_poster');
+                  document.getElementById('checkout-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-red-950 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <Sparkles size={16} />
+                <span>
+                  {isSongPaidOnly 
+                    ? "Elegir Serie Loveflix Digital ($199 MXN)" 
+                    : "Elegir Serie Loveflix Digital ($399 MXN)"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowBoxComingSoonModal(false)}
+                className="text-xs text-zinc-500 hover:text-zinc-300 font-bold uppercase tracking-wider underline cursor-pointer"
+              >
+                Cerrar y continuar
+              </button>
+            </div>
           </div>
         </div>
       )}
