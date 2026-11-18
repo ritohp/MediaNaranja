@@ -7,6 +7,7 @@ import {
   MapPin, Loader2, Phone
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getStripeCheckoutUrl } from '../config/payments';
 
 export default function PublicGiftPlayer() {
   const { id } = useParams();
@@ -290,30 +291,26 @@ export default function PublicGiftPlayer() {
     }
   };
 
-  // Guardar y Confirmar Experiencia Loveflix Digital o Upgrade
+  // Redirigir a compra de Experiencia Loveflix Digital ($399 MXN) o Upgrade ($199 MXN)
   const handleOrderDigitalLoveflix = async () => {
     setIsUpdatingOrder(true);
     try {
-      await supabase.from('memories').update({
-        product_type: 'digital_poster',
-        status: 'pending_payment',
-      }).eq('id', memory.id);
+      if (memory?.id) {
+        await supabase.from('memories').update({
+          product_type: 'digital_poster',
+          status: 'pending_payment',
+        }).eq('id', memory.id);
+      }
 
-      const price = isSongPaidOnly ? '199' : '399';
-      const packageName = isSongPaidOnly 
-        ? 'Upgrade Serie Loveflix Digital ($199 MXN)' 
-        : 'Experiencia Loveflix Digital ($399 MXN)';
-
-      const message = encodeURIComponent(
-        `¡Hola Media Naranja! Quiero confirmar mi pedido de ${packageName} para ${memory.names || 'mi pareja'}.\n\n` +
-        `✨ Paquete: ${packageName}\n` +
-        `🎵 Canción: ${song?.title || 'Canción Personalizada'}\n` +
-        `🔗 Ver Serie Loveflix: ${window.location.origin}/escuchar/${memory.id}\n` +
-        `🆔 ID de Pedido: ${memory.id}`
-      );
-      window.open(`https://wa.me/5215512345678?text=${message}`, '_blank');
+      const productType = isSongPaidOnly ? 'loveflix_upgrade' : 'loveflix_full';
+      const referenceId = memory?.id || song?.id;
+      const stripeUrl = getStripeCheckoutUrl(productType, referenceId);
+      window.location.href = stripeUrl;
     } catch (err: any) {
-      alert("Error: " + err.message);
+      console.error("Error al registrar intención de compra:", err);
+      const productType = isSongPaidOnly ? 'loveflix_upgrade' : 'loveflix_full';
+      const referenceId = memory?.id || song?.id;
+      window.location.href = getStripeCheckoutUrl(productType, referenceId);
     } finally {
       setIsUpdatingOrder(false);
     }
@@ -321,8 +318,8 @@ export default function PublicGiftPlayer() {
 
   // Redirigir a compra de Solo Canción MP3 ($249 MXN)
   const handleOrderSoloCancion = () => {
-    const stripeUrl = `https://buy.stripe.com/dRmdR23mZ07ZdIEfQf2Ry01?client_reference_id=${song?.id || memory.id}`;
-    window.location.href = stripeUrl;
+    const referenceId = song?.id || memory?.song_id || memory?.id;
+    window.location.href = getStripeCheckoutUrl('solo_cancion', referenceId);
   };
 
   // Loading

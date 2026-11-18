@@ -49,11 +49,11 @@ Deno.serve(async (req) => {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object
       
-      // Asumimos que mandaremos el song_id oculto en los metadatos o ref
-      const songId = session.client_reference_id || session.metadata?.song_id
-      console.log(`Checkout session completed. Song ID: ${songId}, amount: ${session.amount_total}`);
+      const refId = session.client_reference_id || session.metadata?.song_id || session.metadata?.memory_id
+      const amount = session.amount_total ? session.amount_total / 100 : 0
+      console.log(`Checkout session completed. Reference ID: ${refId}, amount: ${amount}`);
 
-      if (songId) {
+      if (refId) {
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -65,30 +65,114 @@ Deno.serve(async (req) => {
         // Conexión con privilegios de administrador para alterar base de datos
         const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
 
-        // 1. Libera la canción en la base de datos (desbloquea)
-        const { error: updateError } = await supabaseAdmin.from('mn_songs').update({ is_paid: true }).eq('id', songId)
-        if (updateError) {
-             console.error("Error updating mn_songs:", updateError);
-        } else {
-             console.log(`mn_songs updated successfully for song: ${songId}`);
-        }
+        // 1. Verificar si refId corresponde a una plantilla en memories
+        const { data: memoryRecord } = await supabaseAdmin
+          .from('memories')
+          .select('id, song_id, user_id')
+          .eq('id', refId)
+          .maybeSingle();
 
-        // 2. Crea el ticket comercial para uso estadístico
-        const { error: insertError } = await supabaseAdmin.from('mn_payments').insert({
-          song_id: songId,
-          amount: session.amount_total ? session.amount_total / 100 : 0,
-          provider: 'stripe',
-          external_id: session.id,
-          status: 'completed'
-        })
-        
-        if (insertError) {
-             console.error("Error inserting into mn_payments:", insertError);
+        if (memoryRecord) {
+          console.log(`Payment confirmed for Memory: ${memoryRecord.id}`);
+
+          // A. Desbloquea la experiencia web y el código QR
+          const { error: memErr } = await supabaseAdmin
+            .from('memories')
+            .update({ status: 'paid' })
+            .eq('id', memoryRecord.id);
+
+          if (memErr) {
+            console.error("Error updating memories:", memErr);
+          } else {
+            console.log(`Memory ${memoryRecord.id} successfully marked as paid.`);
+          }
+
+          // B. Si tiene canción vinculada, también la desbloquea
+          if (memoryRecord.song_id) {
+            const { error: songErr } = await supabaseAdmin
+              .from('mn_songs')
+              .update({ is_paid: true })
+              .eq('id', memoryRecord.song_id);
+
+            if (songErr) {
+              console.error("Error updating mn_songs from memory:", songErr);
+            } else {
+              console.log(`Song ${memoryRecord.song_id} marked as paid for memory ${memoryRecord.id}`);
+            }
+          }
+
+          // C. Registra la transacción en mn_payments
+          const { error: insertErr } = await supabaseAdmin.from('mn_payments').insert({
+            song_id: memoryRecord.song_id || null,
+            user_id: memoryRecord.user_id || null,
+            amount: amount,
+            provider: 'stripe',
+            external_id: session.id,
+            status: 'completed'
+          });
+
+          if (insertErr) {
+            console.error("Error inserting into mn_payments:", insertErr);
+          } else {
+            console.log("mn_payments inserted successfully for memory.");
+          }
+
         } else {
-             console.log("mn_payments inserted successfully.");
+          // 2. Si refId es directamente un song_id
+          console.log(`Checking song ID directly: ${refId}`);
+          const { data: songRecord } = await supabaseAdmin
+            .from('mn_songs')
+            .select('id, user_id')
+            .eq('id', refId)
+            .maybeSingle();
+
+          const targetSongId = songRecord?.id || refId;
+          const targetUserId = songRecord?.user_id || null;
+
+          // A. Libera la canción
+          const { error: updateError } = await supabaseAdmin
+            .from('mn_songs')
+            .update({ is_paid: true })
+            .eq('id', targetSongId);
+
+          if (updateError) {
+            console.error("Error updating mn_songs:", updateError);
+          } else {
+            console.log(`mn_songs updated successfully for song: ${targetSongId}`);
+          }
+
+          // B. Si el paquete pagado es de $199 o $399, desbloquea cualquier recuerdo vinculado
+          if (amount >= 190) {
+            const { error: memErr } = await supabaseAdmin
+              .from('memories')
+              .update({ status: 'paid' })
+              .eq('song_id', targetSongId);
+
+            if (memErr) {
+              console.error("Error updating memories for song:", memErr);
+            } else {
+              console.log(`Memories for song ${targetSongId} marked as paid.`);
+            }
+          }
+
+          // C. Registra en mn_payments
+          const { error: insertError } = await supabaseAdmin.from('mn_payments').insert({
+            song_id: targetSongId,
+            user_id: targetUserId,
+            amount: amount,
+            provider: 'stripe',
+            external_id: session.id,
+            status: 'completed'
+          });
+          
+          if (insertError) {
+            console.error("Error inserting into mn_payments:", insertError);
+          } else {
+            console.log("mn_payments inserted successfully for song.");
+          }
         }
       } else {
-          console.error("No songId found in session reference or metadata.");
+        console.error("No reference ID found in session reference or metadata.");
       }
     }
 
